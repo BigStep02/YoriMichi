@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
@@ -20,9 +21,11 @@ public class FestivalService {
     private static final int[] EXPAND_STEPS = {10, 30, 50};
 
     private final FestivalRepository festivalRepository;
+    private final Clock clock;
 
-    public FestivalService(FestivalRepository festivalRepository) {
+    public FestivalService(FestivalRepository festivalRepository, Clock clock) {
         this.festivalRepository = festivalRepository;
+        this.clock = clock;
     }
 
     @Transactional(readOnly = true)
@@ -53,7 +56,7 @@ public class FestivalService {
     public FestivalDetailDto findById(Long id) {
         Festival f = festivalRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("축제를 찾을 수 없습니다."));
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(clock);
         boolean ongoing = isOngoing(f.getStartDate(), f.getEndDate(), today);
         int dDay = ongoing ? 0 : (int) ChronoUnit.DAYS.between(today, f.getStartDate());
         return new FestivalDetailDto(
@@ -85,7 +88,7 @@ public class FestivalService {
         return festivalRepository.findUpcomingByBoundingBox(
                         bd(box.minLat()), bd(box.maxLat()),
                         bd(box.minLng()), bd(box.maxLng()),
-                        LocalDate.now()
+                        LocalDate.now(clock)
                 ).stream()
                 .filter(f -> dist(f, lat, lng) <= 100.0)
                 .sorted(Comparator.comparing(Festival::getStartDate))
@@ -94,7 +97,7 @@ public class FestivalService {
     }
 
     private List<FestivalSummaryDto> toSummaries(List<Festival> festivals, double lat, double lng) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(clock);
         return festivals.stream()
                 .map(f -> {
                     boolean ongoing = isOngoing(f.getStartDate(), f.getEndDate(), today);
@@ -127,8 +130,9 @@ public class FestivalService {
 
     private String extractSummary(String description) {
         if (description == null || description.isBlank()) return null;
-        int dotIdx = description.indexOf('。');
+        int dotIdx = description.indexOf(". ");
         if (dotIdx >= 0) return description.substring(0, dotIdx + 1);
-        return description.length() > 80 ? description.substring(0, 80) : description;
+        if (description.length() <= 80) return description;
+        return description.substring(0, 80) + "…";
     }
 }

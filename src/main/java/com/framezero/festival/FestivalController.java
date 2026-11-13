@@ -13,6 +13,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Clock;
 import java.time.LocalDate;
 
 @RestController
@@ -22,9 +23,11 @@ import java.time.LocalDate;
 public class FestivalController {
 
     private final FestivalService festivalService;
+    private final Clock clock;
 
-    public FestivalController(FestivalService festivalService) {
+    public FestivalController(FestivalService festivalService, Clock clock) {
         this.festivalService = festivalService;
+        this.clock = clock;
     }
 
     @GetMapping
@@ -54,7 +57,7 @@ public class FestivalController {
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
             LocalDate to
     ) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(clock);
         LocalDate resolvedFrom = from != null ? from : today;
         LocalDate resolvedTo = to != null ? to : today.plusDays(7);
         if (resolvedFrom.isAfter(resolvedTo)) {
