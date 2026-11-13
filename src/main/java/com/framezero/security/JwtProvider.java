@@ -24,18 +24,20 @@ public class JwtProvider {
         this.expirationMs = expirationMs;
     }
 
-    public String generate(String email) {
+    public String generate(Long userId, String email) {
         Date now = new Date();
         return Jwts.builder()
                 .subject(email)
+                .claim("userId", userId)
                 .issuedAt(now)
                 .expiration(new Date(now.getTime() + expirationMs))
                 .signWith(key)
                 .compact();
     }
 
-    public String extractEmail(String token) {
-        return parse(token).getSubject();
+    public AuthUser extractAuthUser(String token) {
+        Claims claims = parse(token);
+        return new AuthUser(claims.get("userId", Long.class), claims.getSubject());
     }
 
     public boolean isValid(String token) {

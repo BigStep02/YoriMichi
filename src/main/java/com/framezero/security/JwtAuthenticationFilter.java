@@ -28,9 +28,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = resolveToken(request);
 
         if (token != null && jwtProvider.isValid(token)) {
-            String email = jwtProvider.extractEmail(token);
-            // principal을 email 문자열로 저장 — DB 조회 없이 토큰만으로 인증
-            var auth = new UsernamePasswordAuthenticationToken(email, null, Collections.emptyList());
+            AuthUser authUser = jwtProvider.extractAuthUser(token);
+            var auth = new UsernamePasswordAuthenticationToken(authUser, null, Collections.emptyList());
             SecurityContextHolder.getContext().setAuthentication(auth);
         }
 
