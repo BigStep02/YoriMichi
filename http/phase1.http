@@ -1,0 +1,14 @@
+### Phase 1 — 서버 기동 확인
+
+# Swagger UI 접속 (브라우저에서 열거나 여기서 GET 으로 200 확인)
+GET http://localhost:8080/swagger-ui/index.html
+
+###
+
+# OpenAPI JSON 스펙 (엔드포인트 목록 JSON으로 확인)
+GET http://localhost:8080/v3/api-docs
+
+###
+
+# Actuator health (spring-boot-actuator 추가 시 사용)
+# GET http://localhost:8080/actuator/health
