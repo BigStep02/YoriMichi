@@ -2,6 +2,8 @@ package com.framezero.common;
 
 import com.framezero.auth.exception.DuplicateEmailException;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.ConstraintViolationException;
+import org.springframework.context.MessageSourceResolvable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -9,8 +11,10 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
@@ -23,6 +27,30 @@ public class GlobalExceptionHandler {
                 .collect(Collectors.joining(", "));
         return ResponseEntity.badRequest()
                 .body(new ErrorResponse(400, "VALIDATION_ERROR", message));
+    }
+
+    // @RequestParam / @PathVariable 등 메서드 파라미터 검증 실패 (Spring 6.1+)
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<ErrorResponse> handleMethodValidation(HandlerMethodValidationException e) {
+        String message = e.getAllErrors().stream()
+                .map(MessageSourceResolvable::getDefaultMessage)
+                .filter(Objects::nonNull)
+                .collect(Collectors.joining(", "));
+        return ResponseEntity.badRequest()
+                .body(new ErrorResponse(400, "VALIDATION_ERROR",
+                        message.isBlank() ? "파라미터 검증 오류" : message));
+    }
+
+    // @Validated 컨트롤러에서 @DecimalMin/@DecimalMax 등 Bean Validation 직접 위반
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraintViolation(ConstraintViolationException e) {
+        String message = e.getConstraintViolations().stream()
+                .map(cv -> cv.getMessage())
+                .filter(Objects::nonNull)
+                .collect(Collectors.joining(", "));
+        return ResponseEntity.badRequest()
+                .body(new ErrorResponse(400, "VALIDATION_ERROR",
+                        message.isBlank() ? "파라미터 검증 오류" : message));
     }
 
     @ExceptionHandler({EntityNotFoundException.class, NoSuchElementException.class})
