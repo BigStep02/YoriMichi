@@ -6,11 +6,16 @@ spring:
     username: ${DB_USERNAME:framezero}
     password: ${DB_PASSWORD:Framezero_1234}
     driver-class-name: oracle.jdbc.OracleDriver
+    hikari:
+      initialization-fail-timeout: 60000
   jpa:
     hibernate:
       ddl-auto: none
     open-in-view: false
     show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.OracleDialect
   sql:
     init:
       mode: never
