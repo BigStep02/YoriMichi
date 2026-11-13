@@ -1,0 +1,17 @@
+### 1. 오사카 도쇼마치 근처, 신노사이 기간 → 신노사이가 첫 번째
+GET http://localhost:8080/api/festivals?lat=34.6905&lng=135.5066&radiusKm=10&from=2026-11-20&to=2026-11-23
+
+### 2. 나라역 근처, 12월 중순 → 가스가 와카미야 온마쓰리
+GET http://localhost:8080/api/festivals?lat=34.6851&lng=135.8048&from=2026-12-14&to=2026-12-20
+
+### 3. 반경 자동 확장 확인: 나가하마 1km, 4월 → searchedRadiusKm가 1보다 커야 함
+GET http://localhost:8080/api/festivals?lat=35.3780&lng=136.2650&radiusKm=1&from=2027-04-13&to=2027-04-16
+
+### 4. fallback 확인: 도쿄 (축제 데이터 없음) → fallback: true, festivals: []
+GET http://localhost:8080/api/festivals?lat=35.6812&lng=139.7671
+
+### 5. 상세 조회
+GET http://localhost:8080/api/festivals/1
+
+### 6. 잘못된 lat → 400 VALIDATION_ERROR
+GET http://localhost:8080/api/festivals?lat=999&lng=135
