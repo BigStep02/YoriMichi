@@ -13,9 +13,6 @@ spring:
       ddl-auto: none
     open-in-view: false
     show-sql: false
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.OracleDialect
   sql:
     init:
       mode: never
