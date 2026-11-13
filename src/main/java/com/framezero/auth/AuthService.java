@@ -3,6 +3,7 @@ package com.framezero.auth;
 import com.framezero.auth.dto.AuthResponse;
 import com.framezero.auth.dto.LoginRequest;
 import com.framezero.auth.dto.SignUpRequest;
+import com.framezero.auth.exception.DuplicateEmailException;
 import com.framezero.security.JwtProvider;
 import com.framezero.user.User;
 import com.framezero.user.UserRepository;
@@ -30,7 +31,7 @@ public class AuthService {
     @Transactional
     public AuthResponse signUp(SignUpRequest request) {
         if (userRepository.existsByEmail(request.email())) {
-            throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
+            throw new DuplicateEmailException();
         }
 
         User user = User.builder()
@@ -40,7 +41,7 @@ public class AuthService {
                 .build();
 
         userRepository.save(user);
-        return new AuthResponse(jwtProvider.generate(user.getEmail()));
+        return new AuthResponse(jwtProvider.generate(user.getId(), user.getEmail()));
     }
 
     @Transactional(readOnly = true)
@@ -54,6 +55,6 @@ public class AuthService {
                     HttpStatus.UNAUTHORIZED, "이메일 또는 비밀번호가 올바르지 않습니다.");
         }
 
-        return new AuthResponse(jwtProvider.generate(user.getEmail()));
+        return new AuthResponse(jwtProvider.generate(user.getId(), user.getEmail()));
     }
 }

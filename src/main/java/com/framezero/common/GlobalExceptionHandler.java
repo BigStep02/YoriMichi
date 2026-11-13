@@ -1,6 +1,8 @@
 package com.framezero.common;
 
+import com.framezero.auth.exception.DuplicateEmailException;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -33,6 +35,18 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException e) {
         return ResponseEntity.badRequest()
                 .body(new ErrorResponse(400, "BAD_REQUEST", e.getMessage()));
+    }
+
+    @ExceptionHandler(DuplicateEmailException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicateEmail(DuplicateEmailException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse(409, "DUPLICATE_EMAIL", e.getMessage()));
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrity(DataIntegrityViolationException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse(409, "CONFLICT", "데이터 충돌이 발생했습니다."));
     }
 
     @ExceptionHandler(AccessDeniedException.class)
