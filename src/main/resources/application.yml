@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: YoriMichi
+  datasource:
+    url: ${DB_URL:jdbc:oracle:thin:@localhost:1521/FREEPDB1}
+    username: ${DB_USERNAME:framezero}
+    password: ${DB_PASSWORD:Framezero_1234}
+    driver-class-name: oracle.jdbc.OracleDriver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.OracleDialect
+  docker:
+    compose:
+      lifecycle-management: start-only
+
+server:
+  port: 8080
+
+jwt:
+  # 운영 환경에서는 반드시 JWT_SECRET 환경변수로 덮어써야 함 (최소 32자)
+  secret: ${JWT_SECRET:yorimichi-dev-secret-key-must-be-at-least-32-bytes}
+  expiration-ms: 7200000
+
+hotpepper:
+  api-key: ${HOTPEPPER_API_KEY:}
+
+google:
+  maps:
+    api-key: ${GOOGLE_MAPS_API_KEY:}
+
+gemini:
+  api-key: ${GEMINI_API_KEY:}
+  model: ${GEMINI_MODEL:gemini-2.0-flash}
+
+app:
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:5173,http://localhost:3000}

@@ -1,0 +1,14 @@
+services:
+  oracle:
+    image: 'gvenzl/oracle-free:slim'
+    environment:
+      ORACLE_PASSWORD: Oracle_1234
+      APP_USER: framezero
+      APP_USER_PASSWORD: Framezero_1234
+    ports:
+      - '1521:1521'
+    volumes:
+      - oracle-data:/opt/oracle/oradata
+
+volumes:
+  oracle-data:
