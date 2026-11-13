@@ -1,14 +1,28 @@
 package com.framezero.config;
 
-import org.springframework.boot.orm.jpa.EntityManagerFactoryDependsOnPostProcessor;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.annotation.Configuration;
 
-// Spring Boot 4에서 Flyway → JPA 초기화 순서가 자동 보장되지 않는 경우를 대비한 명시적 설정.
-// entityManagerFactory(ddl-auto: validate)가 flyway bean 완료 후 실행되도록 의존 관계 추가.
-@Configuration(proxyBeanMethods = false)
-public class FlywayJpaOrderConfig extends EntityManagerFactoryDependsOnPostProcessor {
+import java.util.Arrays;
+import java.util.stream.Stream;
 
-    public FlywayJpaOrderConfig() {
-        super("flyway");
+// Spring Boot 4에서 EntityManagerFactoryDependsOnPostProcessor가 제거됨.
+// BeanFactoryPostProcessor로 entityManagerFactory → flyway 의존 관계를 직접 추가.
+@Configuration(proxyBeanMethods = false)
+public class FlywayJpaOrderConfig implements BeanFactoryPostProcessor {
+
+    @Override
+    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
+        if (!beanFactory.containsBeanDefinition("entityManagerFactory")) return;
+        BeanDefinition bd = beanFactory.getBeanDefinition("entityManagerFactory");
+        String[] existing = bd.getDependsOn();
+        if (existing != null && Arrays.asList(existing).contains("flyway")) return;
+        bd.setDependsOn(Stream.concat(
+                existing == null ? Stream.empty() : Arrays.stream(existing),
+                Stream.of("flyway")
+        ).toArray(String[]::new));
     }
 }
