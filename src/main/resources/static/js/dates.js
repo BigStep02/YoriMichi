@@ -36,8 +36,13 @@ export function formatDate(ymd) {
   return y === todayTokyo().slice(0, 4) ? md : `${y}.${md}`;
 }
 
-/** formatRange('2026-11-22', '2026-11-23') → '11.22 – 11.23' */
-export function formatRange(from, to) {
+/** formatRange('2026-11-22', '2026-11-23') → '11.22 – 11.23'  (withYear=true면 항상 연도 표시) */
+export function formatRange(from, to, withYear = false) {
+  if (withYear) {
+    const left = from.replaceAll('-', '.');
+    if (!to || from === to) return left;
+    return `${left} – ${from.slice(0, 4) === to.slice(0, 4) ? to.slice(5).replace('-', '.') : to.replaceAll('-', '.')}`;
+  }
   if (!to || from === to) return formatDate(from);
   const [fy] = from.split('-');
   const [ty, tm, td] = to.split('-');

@@ -36,7 +36,7 @@ function skeleton() {
     </div>`).join('');
 }
 
-function card(f) {
+function card(f, withYear = false) {
   const ended = !f.ongoing && f.dDay < 0;
   return `
     <a class="card f-card" href="/festival.html?id=${encodeURIComponent(f.id)}">
@@ -48,7 +48,7 @@ function card(f) {
         <span class="badge${ended ? ' ended' : ''}">${dDayLabel(f.dDay, f.ongoing)}</span>
       </div>
       <div class="meta">
-        <span>${icons.calendar()}${formatRange(f.startDate, f.endDate)}</span>
+        <span>${icons.calendar()}${formatRange(f.startDate, f.endDate, withYear)}</span>
         <span>${icons.route()}${Number(f.distanceKm).toFixed(1)}km</span>
         <span>${icons.pin()}${esc([f.prefecture, f.city].filter(Boolean).join(' '))}</span>
       </div>
@@ -84,13 +84,14 @@ async function load(state) {
     }
 
     if (data.fallback) {
-      notice('이 기간엔 축제가 없어요. 가장 가까운 일정을 보여드릴게요');
+      notice(`${formatRange(from, to, true)} 에는 등록된 축제가 없어요.<br>
+        <span class="muted">대신 근처에서 가장 가까운 일정을 보여 드려요. 축제는 다음 개최 일정 1회분만 등록돼 있어요.</span>`);
     } else if (data.searchedRadiusKm > radiusKm) {
       notice(`반경 ${radiusKm}km에 없어서 ${data.searchedRadiusKm}km까지 넓혀 찾았어요`);
     } else {
       noticeEl.innerHTML = '';
     }
-    resultsEl.innerHTML = list.map(card).join('');
+    resultsEl.innerHTML = list.map(f => card(f, data.fallback)).join('');
   } catch (e) {
     if (seq !== requestSeq) return;
     resultsEl.innerHTML = `<button type="button" class="btn btn-outline btn-block" data-retry>다시 시도</button>`;

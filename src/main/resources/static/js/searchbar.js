@@ -21,6 +21,9 @@ export function initialRange() {
     to = addDays(from, 7);
   }
   if (from > to) [from, to] = [to, from];
+  const today = todayTokyo();
+  if (to < today) { from = today; to = addDays(today, 7); } // 저장된 기간이 이미 지났으면 초기화
+  else if (from < today) from = today;
   return { from, to };
 }
 
@@ -51,7 +54,10 @@ export function mountSearchBar(el, onChange) {
       <label class="field">기준 위치
         <select data-loc-select>
           <option value="geo">현재 위치 (일본 밖이면 테스트 도시)</option>
-          ${TEST_CITIES.map(c => `<option value="${c.key}">${esc(c.name)} (테스트)</option>`).join('')}
+          ${[...new Set(TEST_CITIES.map(c => c.region))].map(region => `
+          <optgroup label="${esc(region)} (테스트)">
+            ${TEST_CITIES.filter(c => c.region === region).map(c => `<option value="${c.key}">${esc(c.name)}</option>`).join('')}
+          </optgroup>`).join('')}
         </select>
       </label>
     </div>
@@ -60,6 +66,7 @@ export function mountSearchBar(el, onChange) {
         <label class="field">시작일<input type="date" data-from required></label>
         <label class="field">종료일<input type="date" data-to required></label>
       </div>
+      <p class="muted panel-hint">축제는 앞으로 열리는 일정만 있어요. 1년 뒤까지 고를 수 있어요.</p>
     </div>`;
 
   const $ = (s) => el.querySelector(s);
@@ -72,6 +79,8 @@ export function mountSearchBar(el, onChange) {
     $('[data-date-label]').textContent = formatRange(state.from, state.to);
     fromInput.value = state.from;
     toInput.value = state.to;
+    fromInput.min = todayTokyo(); // 지난 날짜 선택 방지 (DB엔 다음 개최분만 있음)
+    fromInput.max = toInput.max = addDays(todayTokyo(), 365); // 1년 뒤까지만 (그 이후 일정은 아직 없음)
     toInput.min = state.from;
   };
 
@@ -104,7 +113,12 @@ export function mountSearchBar(el, onChange) {
     let from = fromInput.value;
     let to = toInput.value;
     if (!isValidYmd(from) || !isValidYmd(to)) return;
-    if (from > to) to = from;
+    const today = todayTokyo();
+    const max = addDays(today, 365);
+    if (from < today) from = today;
+    if (from > max) from = max;
+    if (to > max) to = max;
+    if (to < from) to = from;
     state.from = from;
     state.to = to;
     saveRange({ from, to });
