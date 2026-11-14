@@ -41,3 +41,17 @@ GET http://localhost:8080/api/users/me
 ### 6. GET /api/users/me (토큰 위조) → 401 JSON
 GET http://localhost:8080/api/users/me
 Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.fake.payload
+### 7. 틀린 비밀번호 로그인 → 401 UNAUTHORIZED "이메일 또는 비밀번호가 올바르지 않습니다."
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "wrong-password"
+}
+
+### 8. 깨진 JSON → 400 BAD_REQUEST "요청 본문을 읽을 수 없습니다."
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{ "email": "test@example.com",

@@ -15,3 +15,11 @@ GET http://localhost:8080/api/festivals/1
 
 ### 6. 잘못된 lat → 400 VALIDATION_ERROR
 GET http://localhost:8080/api/festivals?lat=999&lng=135
+### 7. 필수 파라미터 lat 누락 → 400 BAD_REQUEST
+GET http://localhost:8080/api/festivals?lng=135
+
+### 8. lat 타입 오류 → 400 BAD_REQUEST "파라미터 형식이 올바르지 않습니다: lat"
+GET http://localhost:8080/api/festivals?lat=abc&lng=135
+
+### 9. 없는 정적 파일 → 404 NOT_FOUND
+GET http://localhost:8080/nope.html
