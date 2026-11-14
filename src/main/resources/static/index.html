@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>YoriMichi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <header id="app-header"></header>
+  <main class="container">
+    <h1 class="page-title">오늘은 어디로<br>들러 볼까요?</h1>
+    <p class="page-sub">간사이 여행 중 우연히 들를 곳을 골라 드려요.</p>
+
+    <div id="search-bar"></div>
+
+    <button type="button" class="btn btn-primary btn-hero" disabled aria-disabled="true">
+      <span data-icon="dice"></span>
+      오늘의 우연 뽑기
+      <small><span class="soon">곧 열려요</span></small>
+    </button>
+
+    <div class="cards-2">
+      <div class="card cat-card disabled" aria-disabled="true">
+        <span data-icon="bowl"></span>
+        <div>
+          <div class="cat-name">맛집</div>
+          <span class="soon">곧 열려요</span>
+        </div>
+      </div>
+      <a class="card cat-card" id="festival-link" href="/festivals.html">
+        <span data-icon="lantern"></span>
+        <div>
+          <div class="cat-name">축제</div>
+          <span class="muted">이 기간 근처 마쓰리</span>
+        </div>
+      </a>
+    </div>
+  </main>
+  <script type="module" src="/js/home.js"></script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>로그인 · YoriMichi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <header id="app-header"></header>
+  <main class="container">
+    <h1 class="page-title">반가워요</h1>
+    <p class="page-sub">로그인하면 들른 곳을 저장할 수 있어요. (곧 제공)</p>
+
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" id="tab-login" aria-controls="form-login" aria-selected="true">로그인</button>
+      <button type="button" role="tab" id="tab-signup" aria-controls="form-signup" aria-selected="false">회원가입</button>
+    </div>
+
+    <form class="form" id="form-login" role="tabpanel" aria-labelledby="tab-login" novalidate>
+      <label class="field">이메일
+        <input type="email" name="email" autocomplete="username" inputmode="email" required>
+      </label>
+      <label class="field">비밀번호
+        <input type="password" name="password" autocomplete="current-password" required>
+      </label>
+      <div class="form-error" role="alert"></div>
+      <button type="submit" class="btn btn-primary btn-block">로그인</button>
+    </form>
+
+    <form class="form" id="form-signup" role="tabpanel" aria-labelledby="tab-signup" novalidate hidden>
+      <label class="field">이메일
+        <input type="email" name="email" autocomplete="email" inputmode="email" required>
+      </label>
+      <label class="field">비밀번호
+        <input type="password" name="password" autocomplete="new-password" minlength="8" required>
+        <span class="hint">8자 이상</span>
+      </label>
+      <label class="field">닉네임
+        <input type="text" name="nickname" autocomplete="nickname" maxlength="50" required>
+      </label>
+      <div class="form-error" role="alert"></div>
+      <button type="submit" class="btn btn-primary btn-block">회원가입</button>
+    </form>
+  </main>
+  <script type="module" src="/js/auth.js"></script>
+</body>
+</html>

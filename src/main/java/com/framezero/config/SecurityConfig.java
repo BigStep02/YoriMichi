@@ -4,6 +4,7 @@ import com.framezero.common.ErrorResponse;
 import com.framezero.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -45,6 +46,12 @@ public class SecurityConfig {
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
+                        // 정적 프론트 리소스 (src/main/resources/static)
+                        .requestMatchers(HttpMethod.GET,
+                                "/", "/index.html", "/*.html",
+                                "/css/**", "/js/**", "/images/**",
+                                "/favicon.ico", "/manifest.json"
+                        ).permitAll()
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/api/cities/**",
