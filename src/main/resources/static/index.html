@@ -6,39 +6,63 @@
   <title>YoriMichi</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/app.css">
 </head>
 <body>
   <header id="app-header"></header>
   <main class="container">
-    <h1 class="page-title">오늘은 어디로<br>들러 볼까요?</h1>
-    <p class="page-sub">간사이 여행 중 우연히 들를 곳을 골라 드려요.</p>
+
+    <section class="home-hero">
+      <!-- 해 + 등불 줄 + 산 (직접 그린 일러스트) -->
+      <svg class="home-hero-art" viewBox="0 0 250 270" aria-hidden="true">
+        <defs>
+          <linearGradient id="sun" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F59A82"/><stop offset="1" stop-color="#F2765C"/></linearGradient>
+          <g id="lamp"><rect x="-1.5" y="-6" width="3" height="5" fill="#1E2A4A"/><ellipse cx="0" cy="11" rx="12" ry="15" fill="#fff" stroke="#1E2A4A" stroke-width="2"/><path d="M-12 11h24" stroke="#F2765C" stroke-width="2"/><rect x="-5" y="25" width="10" height="3" fill="#1E2A4A"/></g>
+        </defs>
+        <circle cx="150" cy="120" r="88" fill="url(#sun)"/>
+        <path d="M0 270 L70 175 Q85 162 100 175 L150 215 L195 180 Q210 168 225 180 L250 200 L250 270Z" fill="#C7D2EE"/>
+        <path d="M20 270 L95 205 Q110 193 125 205 L210 270Z" fill="#DDE4F6"/>
+        <path d="M30 40 Q120 90 250 60" fill="none" stroke="#1E2A4A" stroke-width="1.5"/>
+        <use href="#lamp" transform="translate(62 58) scale(.92)"/>
+        <use href="#lamp" transform="translate(112 74)"/>
+        <use href="#lamp" transform="translate(168 76)"/>
+        <use href="#lamp" transform="translate(222 66) scale(.92)"/>
+      </svg>
+      <h1>Yori<br>Michi</h1>
+      <span class="jp" lang="ja">よりみち</span>
+      <p>계획에 없던 즐거움,<br>지금 근처에서 골라 드려요.</p>
+    </section>
 
     <div id="search-bar"></div>
 
-    <button type="button" class="btn btn-primary btn-hero" disabled aria-disabled="true">
-      <span data-icon="dice"></span>
-      오늘의 우연 뽑기
-      <small><span class="soon">곧 열려요</span></small>
+    <button type="button" class="cta" disabled aria-disabled="true">
+      <span class="cta-icon" data-icon="dice"></span>
+      <span class="cta-text"><b>오늘의 우연 뽑기</b><span>근처 한 곳을 랜덤으로</span></span>
+      <span class="soon">곧 열려요</span>
     </button>
 
-    <div class="cards-2">
-      <div class="card cat-card disabled" aria-disabled="true">
-        <span data-icon="bowl"></span>
-        <div>
-          <div class="cat-name">맛집</div>
-          <span class="soon">곧 열려요</span>
-        </div>
+    <div class="cats">
+      <div class="cat food disabled" aria-disabled="true">
+        <span class="pill">곧 열려요</span>
+        <span data-icon="fork"></span>
+        <span class="name">맛집</span>
+        <span class="desc">평점 보정해서 한 곳 뽑기</span>
       </div>
-      <a class="card cat-card" id="festival-link" href="/festivals.html">
+      <a class="cat fest" id="festival-link" href="/festivals.html">
         <span data-icon="lantern"></span>
-        <div>
-          <div class="cat-name">축제</div>
-          <span class="muted">이 기간 근처 마쓰리</span>
-        </div>
+        <span class="name">축제</span>
+        <span class="desc">이 기간 근처 마쓰리</span>
+        <span class="arrow" data-icon="arrowRight"></span>
       </a>
     </div>
+
+    <div class="sec-title">
+      <h2>곧 열리는 근처 축제</h2>
+      <a id="festival-all" href="/festivals.html">전체 보기 →</a>
+    </div>
+    <div id="upcoming" aria-live="polite"></div>
+
   </main>
   <script type="module" src="/js/home.js"></script>
 </body>

@@ -3,6 +3,9 @@
   --navy: #1E2A4A;
   --coral: #F2765C;
   --lavender: #DDE4F6;
+  --lavender-2: #C7D2EE;
+  --coral-soft: #FDE6DF;
+  --coral-text: #C4492E;
   --ivory: #FAF8F5;
   --gray: #5F6577;
   --white: #FFFFFF;
@@ -39,6 +42,7 @@ a { color: inherit; }
 }
 
 .icon { width: 18px; height: 18px; flex: none; vertical-align: -3px; }
+.icon-lg { width: 24px; height: 24px; }
 
 /* ---------- 헤더 ---------- */
 .app-header {
@@ -51,11 +55,27 @@ a { color: inherit; }
   gap: 12px;
 }
 .app-header .brand {
-  font-weight: 800;
-  font-size: 20px;
+  font-weight: 900;
+  font-size: 19px;
   letter-spacing: -0.02em;
   text-decoration: none;
 }
+.app-header .brand small {
+  font-family: var(--font-jp);
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--gray);
+  margin-left: 6px;
+  letter-spacing: 0.1em;
+}
+.icon-btn {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  color: var(--navy);
+  text-decoration: none;
+}
+.icon-btn:hover { background: var(--white); }
 .app-header .user {
   display: flex;
   align-items: center;
@@ -103,35 +123,40 @@ a { color: inherit; }
   padding: 8px 0;
 }
 
-/* ---------- 지역·날짜 바 ---------- */
-.search-bar {
-  background: var(--white);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 12px;
-  margin-bottom: 16px;
-}
+/* ---------- 지역·날짜 바 (알약형) ---------- */
+.search-bar { margin-bottom: 16px; position: relative; z-index: 3; }
 .search-bar .row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px;
+  box-shadow: 0 6px 20px rgba(30, 42, 74, 0.06);
 }
 .chip {
+  flex: 1;
+  min-width: 0;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  min-height: 40px;
+  gap: 8px;
+  min-height: 44px;
   padding: 0 14px;
   border-radius: 999px;
-  background: var(--lavender);
+  background: transparent;
   color: var(--navy);
   font: inherit;
   font-size: 14px;
   font-weight: 700;
   border: 0;
   cursor: pointer;
+  white-space: nowrap;
 }
+.chip + .chip { border-left: 1px solid var(--line); border-radius: 0 999px 999px 0; }
+.chip:hover, .chip[aria-expanded="true"] { background: var(--ivory); }
+.chip > .icon:first-child { color: var(--coral); }
+.chip span { overflow: hidden; text-overflow: ellipsis; }
+.chip .icon:last-child:not(:first-child) { margin-left: auto; opacity: 0.5; }
 .chip .divider { color: var(--gray); font-weight: 400; }
 .search-bar .loc-note {
   font-size: 13px;
@@ -139,7 +164,11 @@ a { color: inherit; }
   margin: 8px 4px 0;
 }
 .search-bar .panel {
-  margin-top: 12px;
+  margin-top: 8px;
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px;
   display: grid;
   gap: 10px;
 }
@@ -180,23 +209,15 @@ a { color: inherit; }
 .btn:disabled,
 .btn[aria-disabled="true"] { opacity: 0.45; cursor: not-allowed; }
 
-.btn-hero {
-  width: 100%;
-  min-height: 72px;
-  border-radius: var(--radius);
-  font-size: 20px;
-  flex-direction: column;
-  gap: 2px;
-}
-.btn-hero small { font-size: 13px; font-weight: 500; opacity: 0.9; }
 
 .soon {
   display: inline-block;
   padding: 2px 10px;
   border-radius: 999px;
   background: var(--coral);
-  color: var(--navy);
+  color: var(--white);
   font-size: 12px;
+  white-space: nowrap;
   font-weight: 700;
 }
 
@@ -212,21 +233,6 @@ a { color: inherit; }
 }
 a.card:active { transform: scale(0.99); }
 
-.cards-2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-top: 16px;
-}
-.cat-card {
-  min-height: 140px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-.cat-card .cat-icon { width: 32px; height: 32px; }
-.cat-card .cat-name { font-size: 20px; font-weight: 800; }
-.cat-card.disabled { opacity: 0.55; cursor: not-allowed; }
 
 /* 축제 카드 */
 .list { display: grid; gap: 12px; }
@@ -310,6 +316,87 @@ a.card:active { transform: scale(0.99); }
   animation: shimmer 1.2s infinite;
 }
 @keyframes shimmer { to { background-position: -200% 0; } }
+
+/* ---------- 홈 ---------- */
+.home-hero { position: relative; padding: 14px 0 0; min-height: 300px; margin: 0 -16px 0 0; }
+.home-hero h1 { margin: 0; font-size: 56px; line-height: 0.95; font-weight: 900; letter-spacing: -0.045em; position: relative; z-index: 2; }
+.home-hero .jp { display: inline-block; margin-top: 14px; font-size: 13px; font-weight: 700; letter-spacing: 0.3em; color: var(--coral); position: relative; z-index: 2; }
+.home-hero p { margin: 6px 0 0; font-size: 15px; color: var(--gray); position: relative; z-index: 2; }
+.home-hero-art { position: absolute; right: -4px; top: 20px; width: 250px; height: 270px; z-index: 1; }
+@media (max-width: 360px) { .home-hero-art { width: 200px; opacity: 0.9; } }
+
+.cta {
+  width: 100%;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--navy);
+  color: var(--white);
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+  font: inherit;
+}
+.cta:disabled { cursor: not-allowed; }
+.cta-icon { width: 44px; height: 44px; border-radius: 14px; background: rgba(255,255,255,0.12); display: grid; place-items: center; flex: none; }
+.cta-text { min-width: 0; }
+.cta-text b { display: block; font-size: 17px; }
+.cta-text span { font-size: 13px; opacity: 0.7; }
+.cta .soon { margin-left: auto; flex: none; }
+
+.cats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.cat {
+  border-radius: var(--radius);
+  padding: 18px 16px 16px;
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: var(--navy);
+  position: relative;
+  transition: transform 0.15s;
+}
+a.cat:hover { transform: translateY(-2px); }
+.cat.food { background: var(--lavender); }
+.cat.fest { background: var(--coral-soft); }
+.cat.fest .cat-icon { color: var(--coral-text); }
+.cat .cat-icon { width: 30px; height: 30px; }
+.cat .name { font-size: 26px; font-weight: 900; letter-spacing: -0.03em; margin-top: auto; }
+.cat .desc { font-size: 12.5px; color: var(--gray); }
+.cat .arrow { position: absolute; right: 14px; bottom: 14px; }
+.cat .arrow .icon { width: 22px; height: 22px; }
+.cat.disabled { cursor: not-allowed; }
+.cat .pill { position: absolute; right: 12px; top: 14px; font-size: 11px; font-weight: 700; background: rgba(255,255,255,0.7); padding: 3px 8px; border-radius: 999px; }
+
+.sec-title { display: flex; align-items: baseline; justify-content: space-between; margin: 28px 0 10px; }
+.sec-title h2 { margin: 0; font-size: 17px; font-weight: 900; }
+.sec-title a { font-size: 13px; color: var(--gray); text-decoration: none; font-weight: 500; }
+
+.next-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  text-decoration: none;
+  color: var(--navy);
+}
+.next-card + .next-card { margin-top: 10px; }
+.next-card > .icon { color: var(--gray); }
+.date-box { width: 54px; flex: none; text-align: center; border-radius: 14px; background: var(--navy); color: var(--white); padding: 8px 0 7px; line-height: 1.1; }
+.date-box .m { font-size: 11px; opacity: 0.7; font-weight: 700; }
+.date-box .d { font-size: 20px; font-weight: 900; }
+.next-card.alt .date-box { background: var(--lavender); color: var(--navy); }
+.next-card .info { min-width: 0; flex: 1; }
+.next-card .t { font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.next-card .ja { font-size: 12px; color: var(--gray); }
+.next-card .meta { font-size: 12px; color: var(--gray); margin-top: 2px; }
+.mini-badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 999px; background: var(--coral-soft); color: var(--coral-text); margin-right: 4px; }
+.skeleton-row { height: 84px; background: linear-gradient(90deg, #efebe5 25%, #f8f6f2 50%, #efebe5 75%); background-size: 200% 100%; animation: shimmer 1.2s infinite; border: 0; }
+.empty-line { margin: 0; padding: 14px 4px; }
 
 /* ---------- 상세 ---------- */
 .hero {

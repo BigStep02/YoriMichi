@@ -13,6 +13,10 @@ export const icons = {
   link: (c) => svg('<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>', c),
   dice: (c) => svg('<rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1" fill="currentColor"/><circle cx="15" cy="15" r="1" fill="currentColor"/><circle cx="15" cy="9" r="1" fill="currentColor"/><circle cx="9" cy="15" r="1" fill="currentColor"/>', c),
   bowl: (c) => svg('<path d="M3 11h18a9 9 0 0 1-18 0z"/><path d="M8 7c0-1.5 1-2 1-3.5M12 7c0-1.5 1-2 1-3.5M16 7c0-1.5 1-2 1-3.5"/>', c),
+  fork: (c) => svg('<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M16 3c-2 1.5-2.5 4-2.5 7h4V3M17.5 10v11"/>', c),
+  arrowRight: (c) => svg('<path d="M5 12h14M13 6l6 6-6 6"/>', c),
+  chevronRight: (c) => svg('<path d="M9 6l6 6-6 6"/>', c),
+  user: (c) => svg('<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>', c),
   lantern: (c) => svg('<path d="M12 2v2"/><rect x="9" y="4" width="6" height="2" rx="1"/><path d="M8 6h8c1.5 2 2 4 2 6s-.5 4-2 6H8c-1.5-2-2-4-2-6s.5-4 2-6z"/><rect x="9" y="18" width="6" height="2" rx="1"/><path d="M12 20v2"/>', c),
 };
 

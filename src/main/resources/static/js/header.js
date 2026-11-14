@@ -1,6 +1,6 @@
 // 공통 헤더: 서비스명 + 로그인 상태
 import { api, getToken, clearToken } from './api.js';
-import { esc } from './icons.js';
+import { esc, icons } from './icons.js';
 
 export const APP_NAME = 'YoriMichi';
 
@@ -8,11 +8,11 @@ export async function renderHeader() {
   const el = document.getElementById('app-header');
   if (!el) return;
   el.className = 'app-header';
-  el.innerHTML = `<a class="brand" href="/">${esc(APP_NAME)}</a><div class="user"></div>`;
+  el.innerHTML = `<a class="brand" href="/">${esc(APP_NAME)}<small lang="ja">寄り道</small></a><div class="user"></div>`;
   const userBox = el.querySelector('.user');
 
   const loginLink = () => {
-    userBox.innerHTML = `<a class="link-btn" href="/login.html">로그인</a>`;
+    userBox.innerHTML = `<a class="icon-btn" href="/login.html" aria-label="로그인" title="로그인">${icons.user('icon icon-lg')}</a>`;
   };
 
   if (!getToken()) return loginLink();
