@@ -44,3 +44,8 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+// 개발 시 src/main/resources를 직접 읽어서 정적 파일 수정이 새로고침만으로 반영되게 함
+tasks.named('bootRun') {
+    sourceResources sourceSets.main
+}
