@@ -35,7 +35,7 @@ function saveRange(range) {
  * @param {HTMLElement} el
  * @param {(state: {loc: object, from: string, to: string}) => void} onChange
  */
-export function mountSearchBar(el, onChange) {
+export function mountSearchBar(el, onChange, { dates = true } = {}) {
   const state = { loc: null, ...initialRange() };
   el.className = 'search-bar';
 
@@ -68,6 +68,12 @@ export function mountSearchBar(el, onChange) {
       </div>
       <p class="muted panel-hint">축제는 앞으로 열리는 일정만 있어요. 1년 뒤까지 고를 수 있어요.</p>
     </div>`;
+
+  if (!dates) { // 맛집 뽑기처럼 날짜가 필요 없는 화면
+    el.querySelector('[data-toggle="date"]').remove();
+    el.querySelector('[data-panel="date"]').remove();
+    el.classList.add('no-dates');
+  }
 
   const $ = (s) => el.querySelector(s);
   const select = $('[data-loc-select]');
@@ -125,10 +131,11 @@ export function mountSearchBar(el, onChange) {
     renderDate();
     emit();
   };
-  fromInput.addEventListener('change', onDateChange);
-  toInput.addEventListener('change', onDateChange);
-
-  renderDate();
+  if (dates) {
+    fromInput.addEventListener('change', onDateChange);
+    toInput.addEventListener('change', onDateChange);
+    renderDate();
+  }
   resolveLocation();
 
   return {

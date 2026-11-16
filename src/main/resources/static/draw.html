@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>오늘의 우연 뽑기 · YoriMichi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <header id="app-header"></header>
+  <main class="container">
+    <a class="back" href="/" id="back-link">홈으로</a>
+
+    <!-- 1) 조건 고르기 -->
+    <section id="step-form">
+      <h1 class="draw-title">오늘의 우연 뽑기</h1>
+      <p class="muted draw-sub">조건만 고르면, 근처 괜찮은 곳 중 한 곳을 골라 드려요.</p>
+
+      <div id="search-bar"></div>
+
+      <div class="opt-group">
+        <div class="opt-label">뭐 먹을까</div>
+        <div class="chips" role="radiogroup" aria-label="종류" data-opt="category">
+          <button type="button" role="radio" data-v="ALL" aria-checked="true">아무거나</button>
+          <button type="button" role="radio" data-v="RAMEN">라멘</button>
+          <button type="button" role="radio" data-v="SUSHI">스시</button>
+          <button type="button" role="radio" data-v="CAFE">카페</button>
+        </div>
+      </div>
+
+      <div class="opt-group">
+        <div class="opt-label">얼마나 걸을까</div>
+        <div class="chips" role="radiogroup" aria-label="거리" data-opt="radiusM">
+          <button type="button" role="radio" data-v="400">5분 <small>400m</small></button>
+          <button type="button" role="radio" data-v="800" aria-checked="true">10분 <small>800m</small></button>
+          <button type="button" role="radio" data-v="1500">20분 <small>1.5km</small></button>
+        </div>
+      </div>
+
+      <div class="opt-group">
+        <div class="opt-label">예산</div>
+        <div class="chips" role="radiogroup" aria-label="예산" data-opt="maxPrice">
+          <button type="button" role="radio" data-v="" aria-checked="true">상관없음</button>
+          <button type="button" role="radio" data-v="1">¥ 저렴</button>
+          <button type="button" role="radio" data-v="2">¥¥ 보통</button>
+          <button type="button" role="radio" data-v="3">¥¥¥ 여유</button>
+        </div>
+      </div>
+
+      <label class="switch-row">
+        <span>지금 영업 중인 곳만</span>
+        <input type="checkbox" data-opt="openNow" checked>
+        <span class="switch" aria-hidden="true"></span>
+      </label>
+
+      <button type="button" class="cta draw-btn" data-draw>
+        <span class="cta-icon" data-icon="dice"></span>
+        <span class="cta-text"><b>뽑기</b><span>평점 좋은 곳 중에서 랜덤으로</span></span>
+      </button>
+    </section>
+
+    <!-- 2) 뽑는 중 -->
+    <section id="step-loading" class="draw-loading" hidden aria-live="polite">
+      <div class="swing" data-illust></div>
+      <p class="loading-title">근처 가게를 둘러보는 중…</p>
+      <p class="muted" data-loading-sub>평점과 리뷰 수를 함께 보고 있어요</p>
+    </section>
+
+    <!-- 3) 결과 -->
+    <section id="step-result" hidden aria-live="polite"></section>
+  </main>
+  <script type="module" src="/js/draw.js"></script>
+</body>
+</html>
