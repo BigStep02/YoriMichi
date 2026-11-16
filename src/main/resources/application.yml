@@ -27,6 +27,7 @@ spring:
 
 server:
   port: 8080
+  forward-headers-strategy: framework  # 터널/프록시 뒤에서 원래 https 주소·호스트를 인식 (CORS 오판 방지)
 
 jwt:
   # 운영 환경에서는 반드시 JWT_SECRET 환경변수로 덮어써야 함 (최소 32자)
@@ -39,8 +40,8 @@ google:
 
 gemini:
   api-key: ${GEMINI_API_KEY:}
-  model: ${GEMINI_MODEL:}
+  model: ${GEMINI_MODEL:gemini-2.5-flash-lite}
 
 app:
   cors:
-    allowed-origins: ${CORS_ORIGINS:http://localhost:5173,http://localhost:3000}
+    allowed-origins: ${CORS_ORIGINS:http://localhost:5173,http://localhost:3000,https://*.trycloudflare.com}
