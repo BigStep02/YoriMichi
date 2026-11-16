@@ -1,0 +1,26 @@
+### R-01 뽑기 ALL (도톤보리, 800m)
+GET http://localhost:8080/api/restaurants/draw?lat=34.6687&lng=135.5013&radiusM=800&category=ALL
+
+### R-01 뽑기 RAMEN (도톤보리, 800m)
+GET http://localhost:8080/api/restaurants/draw?lat=34.6687&lng=135.5013&radiusM=800&category=RAMEN
+
+### R-01 두 번째 뽑기 (exclude로 첫 번째 placeId 제외 — 위 응답의 pick.placeId를 넣을 것)
+GET http://localhost:8080/api/restaurants/draw?lat=34.6687&lng=135.5013&radiusM=800&category=RAMEN&exclude=PLACE_ID_HERE
+
+### R-01 같은 조건 재호출 → cached: true 확인
+GET http://localhost:8080/api/restaurants/draw?lat=34.6687&lng=135.5013&radiusM=800&category=ALL
+
+### R-01 최소 반경 200m
+GET http://localhost:8080/api/restaurants/draw?lat=34.6687&lng=135.5013&radiusM=200&category=RAMEN
+
+### R-01 maxPrice 필터 (가격대 2 이하)
+GET http://localhost:8080/api/restaurants/draw?lat=34.6687&lng=135.5013&radiusM=800&category=ALL&maxPrice=2
+
+### R-02 상세 조회 (위 뽑기의 pick.placeId를 넣을 것)
+GET http://localhost:8080/api/restaurants/PLACE_ID_HERE
+
+### R-01 lat 범위 초과 → 400 VALIDATION_ERROR
+GET http://localhost:8080/api/restaurants/draw?lat=999&lng=135.5013
+
+### R-01 radiusM 범위 초과 → 400 VALIDATION_ERROR
+GET http://localhost:8080/api/restaurants/draw?lat=34.6687&lng=135.5013&radiusM=9999

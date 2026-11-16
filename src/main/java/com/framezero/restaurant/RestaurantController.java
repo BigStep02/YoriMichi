@@ -1,0 +1,73 @@
+package com.framezero.restaurant;
+
+import com.framezero.restaurant.dto.DrawResponse;
+import com.framezero.restaurant.dto.RestaurantDetailDto;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.*;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Arrays;
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/restaurants")
+@Tag(name = "Restaurant", description = "맛집 뽑기 (R-01, R-02)")
+@Validated
+public class RestaurantController {
+
+    private final RestaurantService restaurantService;
+
+    public RestaurantController(RestaurantService restaurantService) {
+        this.restaurantService = restaurantService;
+    }
+
+    @GetMapping("/draw")
+    @Operation(summary = "R-01 맛집 뽑기 (Nearby Search + 베이지안 보정 평점 + 랜덤)")
+    @SecurityRequirements
+    public DrawResponse draw(
+            @RequestParam
+            @DecimalMin(value = "-90", message = "lat은 -90 이상이어야 합니다")
+            @DecimalMax(value = "90",  message = "lat은 90 이하이어야 합니다")
+            double lat,
+
+            @RequestParam
+            @DecimalMin(value = "-180", message = "lng은 -180 이상이어야 합니다")
+            @DecimalMax(value = "180",  message = "lng은 180 이하이어야 합니다")
+            double lng,
+
+            @RequestParam(defaultValue = "800")
+            @Min(value = 200, message = "radiusM은 200 이상이어야 합니다")
+            @Max(value = 3000, message = "radiusM은 3000 이하이어야 합니다")
+            int radiusM,
+
+            @RequestParam(defaultValue = "ALL") Category category,
+
+            @RequestParam(defaultValue = "true") boolean openNow,
+
+            @RequestParam(required = false)
+            @Min(value = 1, message = "maxPrice는 1 이상이어야 합니다")
+            @Max(value = 4, message = "maxPrice는 4 이하이어야 합니다")
+            Integer maxPrice,
+
+            @RequestParam(required = false) String exclude
+    ) {
+        List<String> excludeList = (exclude == null || exclude.isBlank()) ? List.of()
+                : Arrays.stream(exclude.split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .limit(20)
+                        .toList();
+
+        return restaurantService.draw(lat, lng, radiusM, category, openNow, maxPrice, excludeList);
+    }
+
+    @GetMapping("/{placeId}")
+    @Operation(summary = "R-02 맛집 상세 조회")
+    @SecurityRequirements
+    public RestaurantDetailDto detail(@PathVariable String placeId) {
+        return restaurantService.detail(placeId);
+    }
+}
