@@ -2,6 +2,7 @@ package com.framezero.restaurant;
 
 import org.springframework.stereotype.Component;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
@@ -46,11 +47,12 @@ public class RestaurantPicker {
 
         double C = filtered.stream().mapToDouble(Candidate::rating).average().orElse(0);
 
+        int n = filtered.size();
+        int poolSize = Math.max((int) Math.ceil(n / 2.0), Math.min(3, n));
         var pool = filtered.stream()
-                .filter(c -> computeScore(c.rating(), c.ratingCount(), C) >= C)
+                .sorted(Comparator.comparingDouble((Candidate c) -> computeScore(c.rating(), c.ratingCount(), C)).reversed())
+                .limit(poolSize)
                 .toList();
-
-        if (pool.isEmpty()) pool = filtered;
 
         var pick = pool.get(ThreadLocalRandom.current().nextInt(pool.size()));
         return new PickResult(pick, filtered.size(), pool.size(), C);

@@ -67,7 +67,10 @@ public class RestaurantController {
     @GetMapping("/{placeId}")
     @Operation(summary = "R-02 맛집 상세 조회")
     @SecurityRequirements
-    public RestaurantDetailDto detail(@PathVariable String placeId) {
+    public RestaurantDetailDto detail(
+            @PathVariable
+            @Pattern(regexp = "^[A-Za-z0-9_-]{10,300}$", message = "placeId 형식이 올바르지 않습니다")
+            String placeId) {
         return restaurantService.detail(placeId);
     }
 }

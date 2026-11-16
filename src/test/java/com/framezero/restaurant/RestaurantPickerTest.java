@@ -62,6 +62,24 @@ class RestaurantPickerTest {
         assertThat(result.pick().placeId()).isIn("none", "cheap");  // 나머지 중 하나
     }
 
+    // 보정 평점 정렬: 5.0점·리뷰 12개는 4.3점·리뷰 9489개보다 뒤에 정렬 (평균이 낮을 때)
+    @Test
+    void sort_highReviewCountRanksAboveLowReviewCount() {
+        double C = 3.9;
+        double scoreHighCount = picker.computeScore(4.3, 9489, C);
+        double scoreLowCount  = picker.computeScore(5.0, 12,   C);
+        assertThat(scoreHighCount).isGreaterThan(scoreLowCount);
+    }
+
+    // 후보 2개일 때 pool = 2 (최소 min(3, n) 보장)
+    @Test
+    void pool_twoFilteredCandidates_poolIsTwo() {
+        var result = picker.pick(List.of(c("a", 4.5, 100), c("b", 4.0, 200)),
+                false, null, Set.of());
+        assertThat(result.candidateCount()).isEqualTo(2);
+        assertThat(result.poolCount()).isEqualTo(2);
+    }
+
     // 후보 없으면 pick = null
     @Test
     void pick_allFiltered_returnsNull() {
