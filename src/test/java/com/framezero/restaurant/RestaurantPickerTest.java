@@ -87,4 +87,33 @@ class RestaurantPickerTest {
         assertThat(result.pick()).isNull();
         assertThat(result.candidateCount()).isEqualTo(0);
     }
+
+    // filter() 직접 호출 — pick() 내부 필터와 같은 결과
+    @Test
+    void filter_publicMethod_sameResultAsPick() {
+        var excluded = c("skip", 4.5, 500);
+        var closed   = new RestaurantPicker.Candidate("closed", "닫힘", "식당", 4.3, 200, null, false, 0, 0, "");
+        var lowCount = c("low", 4.8, 9);
+        var valid    = c("ok", 4.1, 100);
+
+        var filtered = picker.filter(List.of(excluded, closed, lowCount, valid),
+                true, null, Set.of("skip"));
+
+        assertThat(filtered).hasSize(1);
+        assertThat(filtered.get(0).placeId()).isEqualTo("ok");
+
+        // pick()과 동일한 candidateCount 보장
+        var result = picker.pick(List.of(excluded, closed, lowCount, valid),
+                true, null, Set.of("skip"));
+        assertThat(result.candidateCount()).isEqualTo(filtered.size());
+    }
+
+    // SCORE 정렬: 리뷰 9489개·4.3점이 리뷰 12개·5.0점보다 앞 (C=3.9 기준)
+    @Test
+    void sort_score_highReviewCountLeadsLowReviewCount() {
+        double C = 3.9;
+        double scoreHigh = picker.computeScore(4.3, 9489, C);
+        double scoreLow  = picker.computeScore(5.0, 12,   C);
+        assertThat(scoreHigh).isGreaterThan(scoreLow);
+    }
 }

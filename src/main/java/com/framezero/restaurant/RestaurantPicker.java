@@ -32,14 +32,18 @@ public class RestaurantPicker {
             double avgRating
     ) {}
 
-    public PickResult pick(List<Candidate> all, boolean filterOpenNow, Integer maxPrice, Set<String> excludeIds) {
-        var filtered = all.stream()
+    public List<Candidate> filter(List<Candidate> all, boolean filterOpenNow, Integer maxPrice, Set<String> excludeIds) {
+        return all.stream()
                 .filter(c -> !excludeIds.contains(c.placeId()))
                 .filter(c -> !filterOpenNow || Boolean.TRUE.equals(c.openNow()))
                 .filter(c -> maxPrice == null || c.priceLevel() == null || c.priceLevel() <= maxPrice)
                 .filter(c -> c.ratingCount() >= 10)
                 .filter(c -> c.rating() > 0)
                 .toList();
+    }
+
+    public PickResult pick(List<Candidate> all, boolean filterOpenNow, Integer maxPrice, Set<String> excludeIds) {
+        var filtered = filter(all, filterOpenNow, maxPrice, excludeIds);
 
         if (filtered.isEmpty()) {
             return new PickResult(null, 0, 0, 0.0);

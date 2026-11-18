@@ -1,6 +1,7 @@
 package com.framezero.restaurant;
 
 import com.framezero.restaurant.dto.DrawResponse;
+import com.framezero.restaurant.dto.NearbyResponse;
 import com.framezero.restaurant.dto.RestaurantDetailDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
@@ -62,6 +63,39 @@ public class RestaurantController {
                         .toList();
 
         return restaurantService.draw(lat, lng, radiusM, Category.normalize(category), openNow, maxPrice, excludeList);
+    }
+
+    @GetMapping("/nearby")
+    @Operation(summary = "R-03 주변 맛집 목록 (Nearby Search + 보정 평점·거리 정렬)")
+    @SecurityRequirements
+    public NearbyResponse nearby(
+            @RequestParam
+            @DecimalMin(value = "-90", message = "lat은 -90 이상이어야 합니다")
+            @DecimalMax(value = "90",  message = "lat은 90 이하이어야 합니다")
+            double lat,
+
+            @RequestParam
+            @DecimalMin(value = "-180", message = "lng은 -180 이상이어야 합니다")
+            @DecimalMax(value = "180",  message = "lng은 180 이하이어야 합니다")
+            double lng,
+
+            @RequestParam(defaultValue = "800")
+            @Min(value = 200, message = "radiusM은 200 이상이어야 합니다")
+            @Max(value = 3000, message = "radiusM은 3000 이하이어야 합니다")
+            int radiusM,
+
+            @RequestParam(defaultValue = "ALL") List<Category> category,
+
+            @RequestParam(defaultValue = "false") boolean openNow,
+
+            @RequestParam(required = false)
+            @Min(value = 1, message = "maxPrice는 1 이상이어야 합니다")
+            @Max(value = 4, message = "maxPrice는 4 이하이어야 합니다")
+            Integer maxPrice,
+
+            @RequestParam(defaultValue = "SCORE") SortOrder sort
+    ) {
+        return restaurantService.nearby(lat, lng, radiusM, Category.normalize(category), openNow, maxPrice, sort);
     }
 
     @GetMapping("/{placeId}")
