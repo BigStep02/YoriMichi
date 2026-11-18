@@ -50,13 +50,13 @@ public class PlacesClient {
         return apiKey == null || apiKey.isBlank();
     }
 
-    public List<RestaurantPicker.Candidate> searchNearby(double lat, double lng, int radiusM, Category category) {
+    public List<RestaurantPicker.Candidate> searchNearby(double lat, double lng, int radiusM, List<Category> categories) {
         if (isKeyMissing()) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "맛집 기능 준비 중이에요");
         }
 
         var body = Map.of(
-                "includedPrimaryTypes", category.includedPrimaryTypes(),
+                "includedPrimaryTypes", Category.mergedTypes(categories),
                 "maxResultCount", 20,
                 "rankPreference", "POPULARITY",
                 "languageCode", "ja",

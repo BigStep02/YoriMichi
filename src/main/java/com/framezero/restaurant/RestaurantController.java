@@ -43,7 +43,7 @@ public class RestaurantController {
             @Max(value = 3000, message = "radiusM은 3000 이하이어야 합니다")
             int radiusM,
 
-            @RequestParam(defaultValue = "ALL") Category category,
+            @RequestParam(defaultValue = "ALL") List<Category> category,
 
             @RequestParam(defaultValue = "true") boolean openNow,
 
@@ -61,7 +61,7 @@ public class RestaurantController {
                         .limit(20)
                         .toList();
 
-        return restaurantService.draw(lat, lng, radiusM, category, openNow, maxPrice, excludeList);
+        return restaurantService.draw(lat, lng, radiusM, Category.normalize(category), openNow, maxPrice, excludeList);
     }
 
     @GetMapping("/{placeId}")

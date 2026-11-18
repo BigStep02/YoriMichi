@@ -28,15 +28,15 @@ public class RestaurantService {
         this.cache = cache;
     }
 
-    public DrawResponse draw(double lat, double lng, int radiusM, Category category,
+    public DrawResponse draw(double lat, double lng, int radiusM, List<Category> categories,
                              boolean openNow, Integer maxPrice, List<String> excludeList) {
-        String cacheKey = cache.nearbyKey(lat, lng, radiusM, category.name());
+        String cacheKey = cache.nearbyKey(lat, lng, radiusM, categories);
 
         List<RestaurantPicker.Candidate> candidates = cache.getNearby(cacheKey);
         boolean cached = candidates != null;
 
         if (!cached) {
-            candidates = placesClient.searchNearby(lat, lng, radiusM, category);
+            candidates = placesClient.searchNearby(lat, lng, radiusM, categories);
             cache.putNearby(cacheKey, candidates);
             cache.putNames(candidates);
         }
@@ -45,7 +45,7 @@ public class RestaurantService {
         RestaurantPicker.PickResult result = picker.pick(candidates, openNow, maxPrice, excludeIds);
 
         if (result.pick() == null) {
-            return new DrawResponse(null, 0, 0, 0.0, radiusM, category, cached, "NO_CANDIDATES");
+            return new DrawResponse(null, 0, 0, 0.0, radiusM, categories, cached, "NO_CANDIDATES");
         }
 
         RestaurantPicker.Candidate c = result.pick();
@@ -61,7 +61,7 @@ public class RestaurantService {
         );
 
         return new DrawResponse(pickDto, result.candidateCount(), result.poolCount(),
-                avgRating, radiusM, category, cached, null);
+                avgRating, radiusM, categories, cached, null);
     }
 
     public RestaurantDetailDto detail(String placeId) {

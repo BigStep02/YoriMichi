@@ -1,8 +1,38 @@
 ### R-01 뽑기 ALL (도톤보리, 800m)
 GET http://localhost:8080/api/restaurants/draw?lat=34.6687&lng=135.5013&radiusM=800&category=ALL
 
-### R-01 뽑기 RAMEN (도톤보리, 800m)
+### R-01 뽑기 RAMEN
 GET http://localhost:8080/api/restaurants/draw?lat=34.6687&lng=135.5013&radiusM=800&category=RAMEN
+
+### R-01 뽑기 SUSHI
+GET http://localhost:8080/api/restaurants/draw?lat=34.6687&lng=135.5013&radiusM=800&category=SUSHI
+
+### R-01 뽑기 IZAKAYA
+GET http://localhost:8080/api/restaurants/draw?lat=34.6687&lng=135.5013&radiusM=800&category=IZAKAYA
+
+### R-01 뽑기 YAKINIKU
+GET http://localhost:8080/api/restaurants/draw?lat=34.6687&lng=135.5013&radiusM=800&category=YAKINIKU
+
+### R-01 뽑기 YAKITORI
+GET http://localhost:8080/api/restaurants/draw?lat=34.6687&lng=135.5013&radiusM=800&category=YAKITORI
+
+### R-01 뽑기 TONKATSU
+GET http://localhost:8080/api/restaurants/draw?lat=34.6687&lng=135.5013&radiusM=800&category=TONKATSU
+
+### R-01 뽑기 CURRY
+GET http://localhost:8080/api/restaurants/draw?lat=34.6687&lng=135.5013&radiusM=800&category=CURRY
+
+### R-01 뽑기 SEAFOOD
+GET http://localhost:8080/api/restaurants/draw?lat=34.6687&lng=135.5013&radiusM=800&category=SEAFOOD
+
+### R-01 뽑기 CAFE
+GET http://localhost:8080/api/restaurants/draw?lat=34.6687&lng=135.5013&radiusM=800&category=CAFE
+
+### R-01 복수 선택: RAMEN,IZAKAYA,YAKITORI 조합
+GET http://localhost:8080/api/restaurants/draw?lat=34.6687&lng=135.5013&radiusM=800&category=RAMEN,IZAKAYA,YAKITORI
+
+### R-01 정규화 확인: ALL,RAMEN → ALL 단독으로 정규화
+GET http://localhost:8080/api/restaurants/draw?lat=34.6687&lng=135.5013&radiusM=800&category=ALL,RAMEN
 
 ### R-01 두 번째 뽑기 (exclude로 첫 번째 placeId 제외 — 위 응답의 pick.placeId를 넣을 것)
 GET http://localhost:8080/api/restaurants/draw?lat=34.6687&lng=135.5013&radiusM=800&category=RAMEN&exclude=PLACE_ID_HERE

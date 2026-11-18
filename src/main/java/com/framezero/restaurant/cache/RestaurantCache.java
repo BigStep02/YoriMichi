@@ -1,5 +1,6 @@
 package com.framezero.restaurant.cache;
 
+import com.framezero.restaurant.Category;
 import com.framezero.restaurant.RestaurantPicker;
 import com.framezero.restaurant.dto.RestaurantDetailDto;
 import org.springframework.stereotype.Component;
@@ -10,6 +11,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Component
 public class RestaurantCache {
@@ -26,8 +28,11 @@ public class RestaurantCache {
     private final ConcurrentHashMap<String, Entry> detailCache = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, String> nameByPlaceId = new ConcurrentHashMap<>();
 
-    public String nearbyKey(double lat, double lng, int radiusM, String category) {
-        return "%.3f,%.3f,%d,%s".formatted(lat, lng, radiusM, category);
+    public String nearbyKey(double lat, double lng, int radiusM, List<Category> categories) {
+        String catKey = categories.stream()
+                .map(Enum::name)
+                .collect(Collectors.joining(","));
+        return "%.3f,%.3f,%d,%s".formatted(lat, lng, radiusM, catKey);
     }
 
     @SuppressWarnings("unchecked")
