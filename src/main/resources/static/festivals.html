@@ -6,25 +6,29 @@
   <title>근처 축제 · YoriMichi</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/app.css">
 </head>
 <body>
   <header id="app-header"></header>
   <main class="container">
     <a class="back" href="/" id="back-link">홈으로</a>
-    <h1 class="page-title">근처 축제</h1>
+    <h1 class="draw-title">근처 축제</h1>
+    <p class="muted draw-sub">여행 기간에 근처에서 열리는 마쓰리예요.</p>
 
     <div id="search-bar"></div>
 
-    <div class="radius-tabs" role="group" aria-label="검색 반경">
-      <button type="button" data-radius="10">10km</button>
-      <button type="button" data-radius="30">30km</button>
-      <button type="button" data-radius="50">50km</button>
+    <div class="list-tools">
+      <div class="seg" role="radiogroup" aria-label="검색 반경">
+        <button type="button" role="radio" data-radius="10">10km</button>
+        <button type="button" role="radio" data-radius="30">30km</button>
+        <button type="button" role="radio" data-radius="50">50km</button>
+      </div>
     </div>
 
     <div id="notice"></div>
-    <div id="results" class="list" aria-live="polite"></div>
+    <p class="list-count muted" id="count"></p>
+    <div id="results" aria-live="polite"></div>
   </main>
   <script type="module" src="/js/festivals.js"></script>
 </body>

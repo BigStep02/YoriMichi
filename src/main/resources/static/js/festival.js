@@ -1,8 +1,9 @@
 // F-02 축제 상세
 import { api } from './api.js';
 import { renderHeader } from './header.js';
-import { formatRange, dDayLabel } from './dates.js';
-import { icons, lanternIllustration, esc } from './icons.js';
+import { dDayLabel } from './dates.js';
+import { regionKo } from './regions.js';
+import { icons, esc } from './icons.js';
 
 renderHeader();
 
@@ -12,73 +13,83 @@ const id = new URLSearchParams(location.search).get('id');
 
 // 목록에서 왔으면 뒤로가기로 검색 조건 유지
 const backHref = document.referrer.includes('/festivals.html') ? 'javascript:history.back()' : '/festivals.html';
-const backLink = `<a class="back" href="${backHref}">${icons.back()}축제 목록</a>`;
+const backLink = `<a class="back on-dark" href="${backHref}">${icons.back()}축제 목록</a>`;
+const WD = ['일', '월', '화', '수', '목', '금', '토'];
+
+const lantern = `<svg class="f-hero-lamp" viewBox="0 0 40 56" aria-hidden="true"><rect x="12" y="0" width="16" height="5" rx="2" fill="#F7B4A3"/><ellipse cx="20" cy="27" rx="17" ry="20" fill="#F2765C"/><path d="M4 20h32M3 27h34M4 34h32" stroke="#fff" stroke-opacity=".35" stroke-width="1.6"/><rect x="12" y="46" width="16" height="5" rx="2" fill="#F7B4A3"/></svg>`;
+
+function fullDate(ymd) {
+  const [y, m, d] = ymd.split('-').map(Number);
+  return `${y}.${m}.${d} (${WD[new Date(Date.UTC(y, m - 1, d)).getUTCDay()]})`;
+}
+function shortRange(f) {
+  const s = f.startDate.slice(5).replace('-', '.').replace(/^0/, '').replace(/\.0/, '.');
+  const e = f.endDate.slice(5).replace('-', '.').replace(/^0/, '').replace(/\.0/, '.');
+  return f.startDate === f.endDate ? s : `${s} – ${e}`;
+}
+function safeUrl(url) {
+  try { const u = new URL(url); return u.protocol === 'http:' || u.protocol === 'https:' ? u.href : null; }
+  catch { return null; }
+}
 
 function renderLoading() {
-  heroEl.innerHTML = `${backLink}${lanternIllustration}<h1>불러오는 중…</h1>`;
-  contentEl.innerHTML = `
-    <div class="skeleton" style="margin-top:20px" aria-hidden="true">
-      <div class="bar" style="width:50%"></div><div class="bar" style="width:80%"></div><div class="bar"></div>
-    </div>`;
+  heroEl.innerHTML = `${backLink}${lantern}<div class="f-hero-kicker">&nbsp;</div><h1>불러오는 중…</h1>`;
+  contentEl.innerHTML = '<div class="f-sec skeleton-row" style="height:120px" aria-hidden="true"></div>';
 }
 
 function renderError(message) {
-  heroEl.innerHTML = `${backLink}${lanternIllustration}<h1>축제를 불러오지 못했어요</h1>`;
+  heroEl.innerHTML = `${backLink}${lantern}<h1>축제를 불러오지 못했어요</h1>`;
   contentEl.innerHTML = `
-    <div class="notice error" style="margin-top:20px">${icons.info()}<div>${esc(message)}</div></div>
-    <button type="button" class="btn btn-outline btn-block" data-retry>다시 시도</button>`;
+    <div class="f-empty">${esc(message)}</div>
+    <div class="r-actions"><button type="button" class="btn-ghost" data-retry>다시 시도</button></div>`;
   contentEl.querySelector('[data-retry]').addEventListener('click', load);
-}
-
-function safeUrl(url) {
-  try {
-    const u = new URL(url);
-    return u.protocol === 'http:' || u.protocol === 'https:' ? u.href : null;
-  } catch { return null; }
 }
 
 function render(f) {
   document.title = `${f.name} · YoriMichi`;
-  const ended = !f.ongoing && f.dDay < 0;
+  const [, em, ed] = f.endDate.split('-').map(Number);
+  const kicker = f.ongoing ? `진행 중 · ${em}월 ${ed}일까지`
+    : f.dDay < 0 ? '종료된 일정' : `${dDayLabel(f.dDay, f.ongoing)} · ${fullDate(f.startDate)} 시작`;
+  const region = regionKo(f.prefecture, f.city);
+
   heroEl.innerHTML = `
     ${backLink}
-    ${lanternIllustration}
+    ${lantern}
+    <div class="f-hero-kicker">${esc(kicker)}</div>
     <h1>${esc(f.name)}</h1>
-    ${f.nameJa ? `<p class="name-ja" lang="ja">${esc(f.nameJa)}</p>` : ''}
-    <span class="badge${ended ? ' ended' : ''}">${dDayLabel(f.dDay, f.ongoing)}</span>`;
+    ${f.nameJa ? `<p class="f-hero-ja" lang="ja">${esc(f.nameJa)}</p>` : ''}
+    <div class="f-hero-chips"><span>${shortRange(f)}</span><span>${esc(region)}</span></div>`;
 
   const mapUrl = `https://www.google.com/maps/search/?api=1&query=${f.lat},${f.lng}`;
+  const nearbyUrl = `/restaurants.html?lat=${f.lat}&lng=${f.lng}&near=${encodeURIComponent(f.name)}`;
   const official = f.officialUrl ? safeUrl(f.officialUrl) : null;
+  const sameYear = f.startDate.slice(0, 4) === f.endDate.slice(0, 4);
+  const endText = sameYear ? fullDate(f.endDate).slice(5) : fullDate(f.endDate);
+  const period = f.startDate === f.endDate ? fullDate(f.startDate) : `${fullDate(f.startDate)} – ${endText}`;
 
   contentEl.innerHTML = `
-    <ul class="info-list">
-      <li>${icons.calendar()}<span class="label">기간</span><span>${formatRange(f.startDate, f.endDate)}</span></li>
-      <li>${icons.pin()}<span class="label">지역</span><span>${esc([f.prefecture, f.city].filter(Boolean).join(' '))}</span></li>
-    </ul>
-
-    <h2 class="section-title">소개</h2>
-    <p class="prose">${esc(f.description)}</p>
-
-    ${f.tips ? `<h2 class="section-title">팁</h2><div class="tips"><p class="prose">${esc(f.tips)}</p></div>` : ''}
-
-    <div class="actions">
-      <a class="btn btn-primary" href="${esc(mapUrl)}" target="_blank" rel="noopener">${icons.map()}구글맵에서 보기</a>
-      ${official ? `<a class="btn btn-outline" href="${esc(official)}" target="_blank" rel="noopener">${icons.link()}공식 사이트</a>` : ''}
-    </div>
-    ${f.verifiedAt ? `<p class="muted center" style="margin-top:16px">정보 확인일 ${esc(f.verifiedAt)}</p>` : ''}`;
+    ${f.description ? `<section class="f-sec"><h2>어떤 축제예요?</h2><p>${esc(f.description)}</p></section>` : ''}
+    ${f.tips ? `<section class="f-sec"><h2>이렇게 즐겨요</h2><p>${esc(f.tips)}</p></section>` : ''}
+    <section class="f-sec">
+      <h2>한눈에</h2>
+      <dl class="f-facts">
+        <dt>기간</dt><dd>${period}</dd>
+        <dt>지역</dt><dd>${esc(region)}</dd>
+        ${f.nameJa ? `<dt>현지 이름</dt><dd lang="ja">${esc(f.nameJa)}</dd>` : ''}
+      </dl>
+      <p class="f-verify">${f.verifiedAt ? `날짜 확인: ${esc(f.verifiedAt.replaceAll('-', '.'))} · ` : '날짜는 예년 일정 기준 추정이에요 · '}일정은 바뀔 수 있으니 공식 안내를 확인하세요</p>
+    </section>
+    <div class="r-actions">
+      <a class="btn-primary" href="${esc(mapUrl)}" target="_blank" rel="noopener">${icons.map('icon')} 구글 지도에서 길찾기</a>
+      <a class="btn-ghost" href="${esc(nearbyUrl)}">${icons.fork('icon')} 축제장 근처 맛집 보기</a>
+      ${official ? `<a class="btn-sub" href="${esc(official)}" target="_blank" rel="noopener">공식 사이트 ↗</a>` : ''}
+    </div>`;
 }
 
 async function load() {
-  if (!id || !/^\d+$/.test(id)) {
-    renderError('잘못된 주소예요. 축제 목록에서 다시 선택해 주세요.');
-    return;
-  }
+  if (!id || !/^\d+$/.test(id)) { renderError('잘못된 주소예요. 축제 목록에서 다시 선택해 주세요.'); return; }
   renderLoading();
-  try {
-    render(await api(`/api/festivals/${id}`));
-  } catch (e) {
-    renderError(e.status === 404 ? '해당 축제를 찾을 수 없어요.' : e.message);
-  }
+  try { render(await api(`/api/festivals/${id}`)); }
+  catch (e) { renderError(e.status === 404 ? '해당 축제를 찾을 수 없어요.' : e.message); }
 }
-
 load();

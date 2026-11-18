@@ -51,10 +51,26 @@ document.querySelector('[data-opt="openNow"]').addEventListener('change', (e) =>
   load();
 });
 
-mountSearchBar(document.getElementById('search-bar'), (state) => {
-  loc = state.loc;
+// 축제 상세에서 넘어온 경우: ?lat=&lng=&near=축제이름 → 축제장 기준으로 고정
+const qp = new URLSearchParams(location.search);
+const fixLat = Number(qp.get('lat'));
+const fixLng = Number(qp.get('lng'));
+if (qp.has('lat') && qp.has('lng') && fixLat > 20 && fixLat < 46 && fixLng > 122 && fixLng < 154) {
+  loc = { lat: fixLat, lng: fixLng };
+  const near = qp.get('near') || '축제장';
+  document.getElementById('search-bar').innerHTML = `
+    <div class="near-pill">
+      <span>🏮 <b>${esc(near)}</b> 근처</span>
+      <a href="/restaurants.html">내 위치로 보기</a>
+    </div>`;
+  document.querySelector('.draw-sub').textContent = '축제장에서 걸어갈 만한 곳을 보정 평점 순으로 보여 드려요.';
   load();
-}, { dates: false });
+} else {
+  mountSearchBar(document.getElementById('search-bar'), (state) => {
+    loc = state.loc;
+    load();
+  }, { dates: false });
+}
 
 // ---------- 목록 ----------
 function priceLabel(level) {

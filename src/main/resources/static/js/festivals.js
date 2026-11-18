@@ -2,7 +2,8 @@
 import { api } from './api.js';
 import { renderHeader } from './header.js';
 import { mountSearchBar } from './searchbar.js';
-import { formatRange, dDayLabel } from './dates.js';
+import { formatRange, dDayLabel, todayTokyo } from './dates.js';
+import { regionKo } from './regions.js';
 import { icons, esc } from './icons.js';
 
 renderHeader();
@@ -13,51 +14,51 @@ const params = new URLSearchParams(location.search);
 let radiusKm = RADII.includes(Number(params.get('radiusKm'))) ? Number(params.get('radiusKm')) : 30;
 
 const noticeEl = document.getElementById('notice');
+const countEl = document.getElementById('count');
 const resultsEl = document.getElementById('results');
 const radiusButtons = document.querySelectorAll('[data-radius]');
-
 let requestSeq = 0;
 
 function renderRadius() {
-  radiusButtons.forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.radius) === radiusKm)));
-}
-
-function notice(html, type = '') {
-  noticeEl.innerHTML = `<div class="notice ${type}">${icons.info()}<div>${html}</div></div>`;
+  radiusButtons.forEach(b => b.setAttribute('aria-checked', String(Number(b.dataset.radius) === radiusKm)));
 }
 
 function skeleton() {
   noticeEl.innerHTML = '';
-  resultsEl.innerHTML = Array.from({ length: 3 }, () => `
-    <div class="skeleton" aria-hidden="true">
-      <div class="bar" style="width:60%"></div>
-      <div class="bar" style="width:35%"></div>
-      <div class="bar" style="width:90%"></div>
-    </div>`).join('');
+  countEl.textContent = '';
+  resultsEl.innerHTML = '<div class="f-item skeleton-row" aria-hidden="true"></div>'.repeat(3);
 }
 
-function card(f, withYear = false) {
-  const ended = !f.ongoing && f.dDay < 0;
+function dateBox(f) {
+  if (f.ongoing) {
+    const [, em, ed] = f.endDate.split('-').map(Number);
+    return `<div class="date-box live"><div class="m">진행 중</div><div class="d">~${ed}</div></div>`;
+  }
+  const [y, m, d] = f.startDate.split('-').map(Number);
+  const yr = String(y) !== todayTokyo().slice(0, 4) ? `${String(y).slice(2)}년 ` : '';
+  return `<div class="date-box"><div class="m">${yr}${m}월</div><div class="d">${d}</div></div>`;
+}
+
+function card(f, later) {
+  const badge = f.ongoing
+    ? '<span class="b-live">진행 중</span>'
+    : `<span class="b-d">${dDayLabel(f.dDay, f.ongoing)}</span>`;
   return `
-    <a class="card f-card" href="/festival.html?id=${encodeURIComponent(f.id)}">
-      <div class="top">
-        <div>
-          <h2 class="name">${esc(f.name)}</h2>
-          ${f.nameJa ? `<p class="name-ja" lang="ja">${esc(f.nameJa)}</p>` : ''}
-        </div>
-        <span class="badge${ended ? ' ended' : ''}">${dDayLabel(f.dDay, f.ongoing)}</span>
+    <a class="f-item${later ? ' later' : ''}" href="/festival.html?id=${encodeURIComponent(f.id)}">
+      ${dateBox(f)}
+      <div class="f-main">
+        <div class="f-top">${badge}</div>
+        <div class="f-name">${esc(f.name)}</div>
+        ${f.nameJa ? `<div class="f-ja" lang="ja">${esc(f.nameJa)}</div>` : ''}
+        <div class="f-meta">${formatRange(f.startDate, f.endDate, later)} · ${esc(regionKo(f.prefecture, f.city))} · ${Number(f.distanceKm).toFixed(1)}km</div>
+        ${!later && f.summary ? `<p class="f-sum">${esc(f.summary)}</p>` : ''}
       </div>
-      <div class="meta">
-        <span>${icons.calendar()}${formatRange(f.startDate, f.endDate, withYear)}</span>
-        <span>${icons.route()}${Number(f.distanceKm).toFixed(1)}km</span>
-        <span>${icons.pin()}${esc([f.prefecture, f.city].filter(Boolean).join(' '))}</span>
-      </div>
-      ${f.summary ? `<p class="summary">${esc(f.summary)}</p>` : ''}
     </a>`;
 }
 
 function syncUrl({ from, to }) {
-  const q = new URLSearchParams({ from, to, radiusKm });
+  const q = new URLSearchParams(location.search);
+  q.set('from', from); q.set('to', to); q.set('radiusKm', radiusKm);
   history.replaceState(null, '', `?${q}`);
 }
 
@@ -67,42 +68,37 @@ async function load(state) {
   const seq = ++requestSeq;
   skeleton();
 
-  const q = new URLSearchParams({
-    lat: loc.lat.toFixed(6), lng: loc.lng.toFixed(6), radiusKm, from, to,
-  });
-
+  const q = new URLSearchParams({ lat: loc.lat.toFixed(6), lng: loc.lng.toFixed(6), radiusKm, from, to });
   try {
     const data = await api(`/api/festivals?${q}`);
-    if (seq !== requestSeq) return; // 더 최신 요청이 있음
-
+    if (seq !== requestSeq) return;
     const list = data.festivals || [];
-    if (list.length === 0) {
-      notice(`근처 100km 안에 등록된 축제가 없어요.<br>
-        <span class="muted">위쪽 위치 칩을 눌러 테스트 도시를 바꿔 보세요. (예: 오사카, 교토)</span>`);
+
+    if (!list.length) {
+      noticeEl.innerHTML = `<div class="f-empty"><b>🏮 근처 100km 안에 등록된 축제가 없어요</b><span>위치를 다른 도시로 바꿔 보세요</span></div>`;
       resultsEl.innerHTML = '';
       return;
     }
-
     if (data.fallback) {
-      notice(`${formatRange(from, to, true)} 에는 등록된 축제가 없어요.<br>
-        <span class="muted">대신 근처에서 가장 가까운 일정을 보여 드려요. 축제는 다음 개최 일정 1회분만 등록돼 있어요.</span>`);
-    } else if (data.searchedRadiusKm > radiusKm) {
-      notice(`반경 ${radiusKm}km에 없어서 ${data.searchedRadiusKm}km까지 넓혀 찾았어요`);
-    } else {
-      noticeEl.innerHTML = '';
+      noticeEl.innerHTML = `<div class="f-empty"><b>🏮 이 기간엔 근처 축제가 없어요</b><span>대신 가장 가까운 일정을 모았어요</span></div>`;
+      countEl.textContent = '다가오는 축제';
+      resultsEl.innerHTML = list.map(f => card(f, true)).join('');
+      return;
     }
-    resultsEl.innerHTML = list.map(f => card(f, data.fallback)).join('');
+    noticeEl.innerHTML = data.searchedRadiusKm > radiusKm
+      ? `<p class="f-widen">${radiusKm}km 안에 없어서 ${data.searchedRadiusKm}km까지 넓혀 찾았어요</p>` : '';
+    countEl.textContent = `이 기간 ${list.length}개 · 가까운 순`;
+    resultsEl.innerHTML = list.map(f => card(f, false)).join('');
   } catch (e) {
     if (seq !== requestSeq) return;
-    resultsEl.innerHTML = `<button type="button" class="btn btn-outline btn-block" data-retry>다시 시도</button>`;
-    notice(esc(e.message), 'error');
+    noticeEl.innerHTML = `<div class="f-empty"><b>잠깐 문제가 생겼어요</b><span>${esc(e.message)}</span></div>`;
+    resultsEl.innerHTML = `<div class="r-actions"><button type="button" class="btn-ghost" data-retry>다시 시도</button></div>`;
     resultsEl.querySelector('[data-retry]').addEventListener('click', () => load(bar.state));
   }
 }
 
 const bar = mountSearchBar(document.getElementById('search-bar'), load);
 skeleton();
-
 radiusButtons.forEach(btn => btn.addEventListener('click', () => {
   radiusKm = Number(btn.dataset.radius);
   renderRadius();
