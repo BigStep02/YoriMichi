@@ -193,7 +193,7 @@ function renderResult(data) {
 
     <div class="r-actions">
       <a class="btn-primary" href="${esc(p.googleMapsUri)}" target="_blank" rel="noopener">${icons.map('icon')} 구글 지도에서 길찾기</a>
-      <a class="btn-sub" href="https://www.google.com/search?q=${encodeURIComponent('食べログ ' + p.name)}" target="_blank" rel="noopener"><span lang="ja">食べログ</span>에서 찾아보기 ↗</a>
+      <a class="btn-sub" href="https://tabelog.com/rstLst/?vs=1&sk=${encodeURIComponent(p.name)}&sw=${encodeURIComponent(p.name)}" target="_blank" rel="noopener"><span lang="ja">食べログ</span>에서 보기 ↗</a>
       <button type="button" class="btn-ghost" data-redraw>${icons.dice('icon')} 다시 뽑기</button>
     </div>
     <button type="button" class="text-btn" data-change>조건 바꾸기</button>
