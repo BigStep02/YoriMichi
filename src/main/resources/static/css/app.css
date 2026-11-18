@@ -476,7 +476,8 @@ a.cat:hover { transform: translateY(-2px); }
   min-height: 40px;
 }
 .chips button small { font-weight: 500; color: var(--gray); margin-left: 2px; }
-.chips button[aria-checked="true"] { background: var(--navy); border-color: var(--navy); color: var(--white); }
+.chips button[aria-checked="true"], .chips button[aria-pressed="true"] { background: var(--navy); border-color: var(--navy); color: var(--white); }
+.opt-hint { font-size: 12px; font-weight: 500; color: var(--gray); margin-left: 6px; }
 .chips button[aria-checked="true"] small { color: rgba(255,255,255,0.7); }
 
 .switch-row {
@@ -550,3 +551,20 @@ a.cat:hover { transform: translateY(-2px); }
 
 .empty-state { text-align: center; padding: 50px 8px 20px; }
 .empty-state h2 { margin: 16px 0 6px; font-size: 20px; font-weight: 800; }
+
+/* ---------- 뽑기 힌트 ---------- */
+.hint-card { position: relative; background: var(--navy); color: var(--white); border-radius: 24px; padding: 26px 20px 20px; overflow: hidden; }
+.hint-seal { position: absolute; right: -18px; top: -22px; width: 104px; height: 104px; border-radius: 50%; background: var(--coral); opacity: 0.9; display: grid; place-items: center; padding: 20px 18px 0 0; }
+.hint-seal svg { animation: lamp-swing 1.4s ease-in-out infinite alternate; transform-origin: 50% 0; }
+.hint-title { margin: 0; font-size: 22px; max-width: 70%; line-height: 1.35; font-weight: 900; position: relative; }
+.hint-sub { margin: 6px 0 0; font-size: 13px; color: rgba(255,255,255,0.7); max-width: 72%; position: relative; }
+.clues { margin: 22px 0 0; display: grid; gap: 10px; }
+.clue { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.08); border-radius: 14px; padding: 12px 14px; opacity: 0; transform: translateY(6px); animation: clue-in 0.35s ease-out forwards; }
+.clue dt { flex: none; width: 48px; font-size: 12px; font-weight: 800; color: rgba(255,255,255,0.6); }
+.clue dd { margin: 0; font-size: 15px; font-weight: 700; }
+.clue .muted { color: rgba(255,255,255,0.6); }
+@keyframes clue-in { to { opacity: 1; transform: none; } }
+.result-card.reveal { animation: reveal-in 0.45s ease-out; }
+@keyframes reveal-in { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .clue { animation: none; opacity: 1; transform: none; } .result-card.reveal { animation: none; } }
+.btn-sub { display: flex; align-items: center; justify-content: center; min-height: 44px; border-radius: 14px; background: var(--ivory); border: 1px solid var(--line); color: var(--navy); font-weight: 700; font-size: 14px; text-decoration: none; }

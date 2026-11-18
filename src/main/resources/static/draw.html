@@ -22,12 +22,18 @@
       <div id="search-bar"></div>
 
       <div class="opt-group">
-        <div class="opt-label">뭐 먹을까</div>
-        <div class="chips" role="radiogroup" aria-label="종류" data-opt="category">
-          <button type="button" role="radio" data-v="ALL" aria-checked="true">아무거나</button>
-          <button type="button" role="radio" data-v="RAMEN">라멘</button>
-          <button type="button" role="radio" data-v="SUSHI">스시</button>
-          <button type="button" role="radio" data-v="CAFE">카페</button>
+        <div class="opt-label">뭐 먹을까 <small class="opt-hint">여러 개 고를 수 있어요</small></div>
+        <div class="chips" role="group" aria-label="종류 (여러 개 선택)" data-opt="category" data-multi>
+          <button type="button" data-v="ALL" aria-pressed="true">아무거나</button>
+          <button type="button" data-v="RAMEN" aria-pressed="false">라멘</button>
+          <button type="button" data-v="SUSHI" aria-pressed="false">스시</button>
+          <button type="button" data-v="IZAKAYA" aria-pressed="false">이자카야</button>
+          <button type="button" data-v="YAKINIKU" aria-pressed="false">야키니쿠</button>
+          <button type="button" data-v="YAKITORI" aria-pressed="false">야키토리</button>
+          <button type="button" data-v="TONKATSU" aria-pressed="false">돈카츠</button>
+          <button type="button" data-v="CURRY" aria-pressed="false">카레</button>
+          <button type="button" data-v="SEAFOOD" aria-pressed="false">해산물</button>
+          <button type="button" data-v="CAFE" aria-pressed="false">카페</button>
         </div>
       </div>
 

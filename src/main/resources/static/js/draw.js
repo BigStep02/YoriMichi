@@ -21,13 +21,31 @@ const steps = {
 };
 const resultEl = steps.result;
 
-const opts = { category: 'ALL', radiusM: '800', maxPrice: '', openNow: true };
+const opts = { category: ['ALL'], radiusM: '800', maxPrice: '', openNow: true };
 let loc = null;
 let excluded = []; // 이번 조건에서 이미 뽑힌 곳 (다시 뽑기용)
 let drawSeq = 0;
 
 // ---------- 조건 ----------
-document.querySelectorAll('.chips[data-opt]').forEach(group => {
+// 종류: 여러 개 선택. '아무거나'는 단독, 다 끄면 '아무거나'로 돌아감
+const catGroup = document.querySelector('.chips[data-multi]');
+catGroup.addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-v]');
+  if (!btn) return;
+  const btns = [...catGroup.querySelectorAll('button')];
+  const anyBtn = btns.find(b => b.dataset.v === 'ALL');
+  if (btn === anyBtn) {
+    btns.forEach(b => b.setAttribute('aria-pressed', String(b === anyBtn)));
+  } else {
+    btn.setAttribute('aria-pressed', String(btn.getAttribute('aria-pressed') !== 'true'));
+    const picked = btns.filter(b => b !== anyBtn && b.getAttribute('aria-pressed') === 'true');
+    anyBtn.setAttribute('aria-pressed', String(picked.length === 0));
+  }
+  opts.category = btns.filter(b => b.getAttribute('aria-pressed') === 'true').map(b => b.dataset.v);
+  excluded = [];
+});
+
+document.querySelectorAll('.chips[data-opt]:not([data-multi])').forEach(group => {
   group.addEventListener('click', (e) => {
     const btn = e.target.closest('button[data-v]');
     if (!btn) return;
@@ -67,7 +85,7 @@ async function draw() {
     lat: (loc?.lat ?? 34.6687).toFixed(6),
     lng: (loc?.lng ?? 135.5013).toFixed(6),
     radiusM: opts.radiusM,
-    category: opts.category,
+    category: opts.category.join(','),
     openNow: String(opts.openNow),
   });
   if (opts.maxPrice) q.set('maxPrice', opts.maxPrice);
@@ -89,9 +107,50 @@ async function draw() {
 
   excluded.push(data.pick.placeId);
   if (excluded.length > 20) excluded = excluded.slice(-20);
-  renderResult(data);
+  const detailPromise = loadDetailData(data.pick); // 힌트 보는 동안 미리 불러둠
+  renderHint(data, () => {
+    renderResult(data);
+    resultEl.querySelector('.result-card').classList.add('reveal');
+    applyDetail(data.pick, mySeq, detailPromise);
+  });
   show('result');
-  loadDetail(data.pick, mySeq);
+}
+
+// ---------- 미리보기 (가게 이름 대신 조건만 먼저) ----------
+function hintLantern() {
+  return `<svg viewBox="0 0 40 56" width="40" height="56"><rect x="12" y="0" width="16" height="5" rx="2" fill="#1E2A4A"/><ellipse cx="20" cy="27" rx="17" ry="20" fill="#FAF8F5"/><path d="M4 20h32M3 27h34M4 34h32" stroke="#F2765C" stroke-width="1.6"/><rect x="12" y="46" width="16" height="5" rx="2" fill="#1E2A4A"/><line x1="20" y1="51" x2="20" y2="56" stroke="#1E2A4A" stroke-width="2"/></svg>`;
+}
+function renderHint(data, onReveal) {
+  const p = data.pick;
+  const clues = [
+    p.typeLabel ? { k: '장르', v: `<span lang="ja">${esc(p.typeLabel)}</span>` } : null,
+    { k: '거리', v: walkLabel(p.distanceM) },
+    p.priceLevel != null ? { k: '가격대', v: priceLabel(p.priceLevel) } : null,
+    p.rating != null ? { k: '평점', v: `<span class="star">★ ${p.rating.toFixed(1)}</span> <span class="muted">· 리뷰 ${p.ratingCount.toLocaleString()}개</span>` } : null,
+  ].filter(Boolean);
+
+  resultEl.innerHTML = `
+    <p class="result-kicker">오늘의 우연</p>
+    <article class="hint-card">
+      <div class="hint-seal" aria-hidden="true">${hintLantern()}</div>
+      <h2 class="hint-title">오늘의 한 끼가 정해졌어요</h2>
+      <p class="muted hint-sub">근처 ${data.candidateCount}곳 중 보정 평점 상위 ${data.poolCount}곳에서 골랐어요. 조건이 마음에 들면 열어보세요</p>
+      <dl class="clues">
+        ${clues.map((c, i) => `<div class="clue" style="animation-delay:${0.15 + i * 0.18}s"><dt>${c.k}</dt><dd>${c.v}</dd></div>`).join('')}
+      </dl>
+    </article>
+    <div class="r-actions">
+      <button type="button" class="btn-primary" data-reveal>열어보기</button>
+      <button type="button" class="btn-ghost" data-redraw>${icons.dice('icon')} 별로예요, 다시 뽑기</button>
+    </div>
+    <button type="button" class="text-btn" data-change>조건 바꾸기</button>`;
+
+  resultEl.querySelector('[data-reveal]').addEventListener('click', () => {
+    onReveal();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+  resultEl.querySelector('[data-redraw]').addEventListener('click', () => draw());
+  resultEl.querySelector('[data-change]').addEventListener('click', () => show('form'));
 }
 
 // ---------- 결과 ----------
@@ -134,6 +193,7 @@ function renderResult(data) {
 
     <div class="r-actions">
       <a class="btn-primary" href="${esc(p.googleMapsUri)}" target="_blank" rel="noopener">${icons.map('icon')} 구글 지도에서 길찾기</a>
+      <a class="btn-sub" href="https://www.google.com/search?q=${encodeURIComponent('食べログ ' + p.name)}" target="_blank" rel="noopener"><span lang="ja">食べログ</span>에서 찾아보기 ↗</a>
       <button type="button" class="btn-ghost" data-redraw>${icons.dice('icon')} 다시 뽑기</button>
     </div>
     <button type="button" class="text-btn" data-change>조건 바꾸기</button>
@@ -143,13 +203,16 @@ function renderResult(data) {
   resultEl.querySelector('[data-change]').addEventListener('click', () => show('form'));
 }
 
-async function loadDetail(pick, mySeq) {
-  let d;
+async function loadDetailData(pick) {
   try {
-    d = MOCK ? await mockDetail() : await api(`/api/restaurants/${encodeURIComponent(pick.placeId)}`, { auth: false });
+    return MOCK ? await mockDetail() : await api(`/api/restaurants/${encodeURIComponent(pick.placeId)}`, { auth: false });
   } catch {
-    d = null;
+    return null;
   }
+}
+
+async function applyDetail(pick, mySeq, detailPromise) {
+  const d = await detailPromise;
   if (mySeq !== drawSeq) return;
 
   const aiEl = resultEl.querySelector('[data-ai]');
