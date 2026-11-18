@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>주변 맛집 · YoriMichi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <header id="app-header"></header>
+  <main class="container">
+    <a class="back" href="/" id="back-link">홈으로</a>
+    <h1 class="draw-title">주변 맛집</h1>
+    <p class="muted draw-sub">리뷰 수까지 반영한 보정 평점 순으로 보여 드려요.</p>
+
+    <div id="search-bar"></div>
+
+    <div class="chips cat-scroll" role="group" aria-label="종류 (여러 개 선택)" data-opt="category" data-multi>
+      <button type="button" data-v="ALL" aria-pressed="true">전체</button>
+      <button type="button" data-v="RAMEN" aria-pressed="false">라멘</button>
+      <button type="button" data-v="SUSHI" aria-pressed="false">스시</button>
+      <button type="button" data-v="IZAKAYA" aria-pressed="false">이자카야</button>
+      <button type="button" data-v="YAKINIKU" aria-pressed="false">야키니쿠</button>
+      <button type="button" data-v="YAKITORI" aria-pressed="false">야키토리</button>
+      <button type="button" data-v="TONKATSU" aria-pressed="false">돈카츠</button>
+      <button type="button" data-v="CURRY" aria-pressed="false">카레</button>
+      <button type="button" data-v="SEAFOOD" aria-pressed="false">해산물</button>
+      <button type="button" data-v="CAFE" aria-pressed="false">카페</button>
+    </div>
+
+    <div class="list-tools">
+      <div class="seg" role="radiogroup" aria-label="정렬" data-opt="sort">
+        <button type="button" role="radio" data-v="SCORE" aria-checked="true">추천순</button>
+        <button type="button" role="radio" data-v="DISTANCE" aria-checked="false">거리순</button>
+      </div>
+      <div class="seg" role="radiogroup" aria-label="거리" data-opt="radiusM">
+        <button type="button" role="radio" data-v="400" aria-checked="false">5분</button>
+        <button type="button" role="radio" data-v="800" aria-checked="true">10분</button>
+        <button type="button" role="radio" data-v="1500" aria-checked="false">20분</button>
+      </div>
+    </div>
+
+    <label class="switch-row compact">
+      <span>지금 영업 중인 곳만</span>
+      <input type="checkbox" data-opt="openNow">
+      <span class="switch" aria-hidden="true"></span>
+    </label>
+
+    <p class="list-count muted" data-count aria-live="polite"></p>
+    <div id="list"></div>
+    <p class="attribution">가게 정보·리뷰: Google 지도 · 리뷰 요약은 AI가 만든 참고용이에요</p>
+  </main>
+  <script type="module" src="/js/restaurants.js"></script>
+</body>
+</html>

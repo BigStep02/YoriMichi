@@ -1,7 +1,8 @@
 // 지역·날짜 바 (홈·축제 목록 공통)
-import { TEST_CITIES, getSearchLocation, getLocationMode, getTestCity, setLocationChoice } from './location.js';
-import { todayTokyo, addDays, formatRange, isValidYmd } from './dates.js';
-import { icons, esc } from './icons.js';
+import { getSearchLocation, getLocationMode, getTestCity, setLocationChoice } from './location.js';
+import { todayTokyo, addDays, isValidYmd } from './dates.js';
+import { icons } from './icons.js';
+import { openLocationSheet, openDateSheet } from './sheet.js';
 
 const RANGE_KEY = 'dateRange';
 
@@ -42,52 +43,28 @@ export function mountSearchBar(el, onChange, { dates = true } = {}) {
   const choice = getLocationMode() === 'geo' ? 'geo' : getTestCity().key;
   el.innerHTML = `
     <div class="row">
-      <button type="button" class="chip" data-toggle="loc" aria-expanded="false">
+      <button type="button" class="chip" data-open="loc" aria-haspopup="dialog">
         ${icons.pin()}<span data-loc-label>위치 확인 중…</span>${icons.chevronDown()}
       </button>
-      <button type="button" class="chip" data-toggle="date" aria-expanded="false">
+      ${dates ? `
+      <button type="button" class="chip" data-open="date" aria-haspopup="dialog">
         ${icons.calendar()}<span data-date-label></span>
-      </button>
+      </button>` : ''}
     </div>
-    <p class="loc-note" data-loc-note hidden></p>
-    <div class="panel" data-panel="loc" hidden>
-      <label class="field">기준 위치
-        <select data-loc-select>
-          <option value="geo">현재 위치 (일본 밖이면 테스트 도시)</option>
-          ${[...new Set(TEST_CITIES.map(c => c.region))].map(region => `
-          <optgroup label="${esc(region)} (테스트)">
-            ${TEST_CITIES.filter(c => c.region === region).map(c => `<option value="${c.key}">${esc(c.name)}</option>`).join('')}
-          </optgroup>`).join('')}
-        </select>
-      </label>
-    </div>
-    <div class="panel" data-panel="date" hidden>
-      <div class="date-grid">
-        <label class="field">시작일<input type="date" data-from required></label>
-        <label class="field">종료일<input type="date" data-to required></label>
-      </div>
-      <p class="muted panel-hint">축제는 앞으로 열리는 일정만 있어요. 1년 뒤까지 고를 수 있어요.</p>
-    </div>`;
+    <p class="loc-note" data-loc-note hidden></p>`;
 
-  if (!dates) { // 맛집 뽑기처럼 날짜가 필요 없는 화면
-    el.querySelector('[data-toggle="date"]').remove();
-    el.querySelector('[data-panel="date"]').remove();
-    el.classList.add('no-dates');
-  }
+  if (!dates) el.classList.add('no-dates'); // 맛집 뽑기처럼 날짜가 필요 없는 화면
 
   const $ = (s) => el.querySelector(s);
-  const select = $('[data-loc-select]');
-  const fromInput = $('[data-from]');
-  const toInput = $('[data-to]');
-  select.value = choice;
+  let locChoice = choice;
 
+  const short = (v) => {
+    const [y, m, d] = v.split('-');
+    return (y !== todayTokyo().slice(0, 4) ? `${y}.` : '') + `${+m}.${+d}`;
+  };
   const renderDate = () => {
-    $('[data-date-label]').textContent = formatRange(state.from, state.to);
-    fromInput.value = state.from;
-    toInput.value = state.to;
-    fromInput.min = todayTokyo(); // 지난 날짜 선택 방지 (DB엔 다음 개최분만 있음)
-    fromInput.max = toInput.max = addDays(todayTokyo(), 365); // 1년 뒤까지만 (그 이후 일정은 아직 없음)
-    toInput.min = state.from;
+    $('[data-date-label]').textContent =
+      state.from === state.to ? short(state.from) : `${short(state.from)} – ${short(state.to)}`;
   };
 
   const emit = () => { if (state.loc) onChange({ ...state }); };
@@ -102,38 +79,24 @@ export function mountSearchBar(el, onChange, { dates = true } = {}) {
     emit();
   };
 
-  el.querySelectorAll('[data-toggle]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const panel = $(`[data-panel="${btn.dataset.toggle}"]`);
-      panel.hidden = !panel.hidden;
-      btn.setAttribute('aria-expanded', String(!panel.hidden));
+  $('[data-open="loc"]').addEventListener('click', () => {
+    openLocationSheet(locChoice, (v) => {
+      locChoice = v;
+      setLocationChoice(v);
+      resolveLocation();
     });
   });
 
-  select.addEventListener('change', () => {
-    setLocationChoice(select.value);
-    resolveLocation();
-  });
-
-  const onDateChange = () => {
-    let from = fromInput.value;
-    let to = toInput.value;
-    if (!isValidYmd(from) || !isValidYmd(to)) return;
-    const today = todayTokyo();
-    const max = addDays(today, 365);
-    if (from < today) from = today;
-    if (from > max) from = max;
-    if (to > max) to = max;
-    if (to < from) to = from;
-    state.from = from;
-    state.to = to;
-    saveRange({ from, to });
-    renderDate();
-    emit();
-  };
   if (dates) {
-    fromInput.addEventListener('change', onDateChange);
-    toInput.addEventListener('change', onDateChange);
+    $('[data-open="date"]').addEventListener('click', () => {
+      openDateSheet({ from: state.from, to: state.to }, ({ from, to }) => {
+        state.from = from;
+        state.to = to;
+        saveRange({ from, to });
+        renderDate();
+        emit();
+      });
+    });
     renderDate();
   }
   resolveLocation();
