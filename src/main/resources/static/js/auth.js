@@ -1,8 +1,10 @@
 // U-01 회원가입 / U-02 로그인
 import { api, setToken } from './api.js';
 import { renderHeader } from './header.js';
+import { icons } from './icons.js';
 
 renderHeader();
+document.getElementById('back-link').insertAdjacentHTML('afterbegin', icons.back());
 
 const tabs = {
   login: { tab: document.getElementById('tab-login'), form: document.getElementById('form-login') },
