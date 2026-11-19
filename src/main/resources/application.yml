@@ -41,7 +41,11 @@ google:
 gemini:
   api-key: ${GEMINI_API_KEY:}
   model: ${GEMINI_MODEL:gemini-3.5-flash-lite}
+  fallback-model: ${GEMINI_FALLBACK_MODEL:}
 
 app:
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:5173,http://localhost:3000,https://*.trycloudflare.com}
+  places:
+    daily-nearby-limit: ${PLACES_NEARBY_LIMIT:200}
+    daily-detail-limit: ${PLACES_DETAIL_LIMIT:200}

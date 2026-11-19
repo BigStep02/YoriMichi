@@ -17,9 +17,12 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.server.ResponseStatusException;
 import tools.jackson.databind.ObjectMapper;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @Component
@@ -41,6 +44,16 @@ public class PlacesClient {
     @Value("${google.maps.api-key:}")
     private String apiKey;
 
+    @Value("${app.places.daily-nearby-limit:200}")
+    private int dailyNearbyLimit;
+
+    @Value("${app.places.daily-detail-limit:200}")
+    private int dailyDetailLimit;
+
+    private final AtomicInteger nearbyCount = new AtomicInteger(0);
+    private final AtomicInteger detailCount = new AtomicInteger(0);
+    private volatile LocalDate countDate = LocalDate.now(ZoneId.of("Asia/Tokyo"));
+
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
 
@@ -51,6 +64,38 @@ public class PlacesClient {
 
     public boolean isKeyMissing() {
         return apiKey == null || apiKey.isBlank();
+    }
+
+    private void resetIfNewDay() {
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Tokyo"));
+        if (!today.equals(countDate)) {
+            synchronized (this) {
+                if (!today.equals(countDate)) {
+                    countDate = today;
+                    nearbyCount.set(0);
+                    detailCount.set(0);
+                    log.info("[Places] 일일 카운터 초기화");
+                }
+            }
+        }
+    }
+
+    private void tickNearby() {
+        resetIfNewDay();
+        if (nearbyCount.incrementAndGet() > dailyNearbyLimit) {
+            nearbyCount.decrementAndGet();
+            log.warn("[Places] Nearby 일일 한도 초과 ({})", dailyNearbyLimit);
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "오늘 조회 한도를 넘었어요. 내일 다시 시도해 주세요");
+        }
+    }
+
+    private void tickDetail() {
+        resetIfNewDay();
+        if (detailCount.incrementAndGet() > dailyDetailLimit) {
+            detailCount.decrementAndGet();
+            log.warn("[Places] Detail 일일 한도 초과 ({})", dailyDetailLimit);
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "오늘 조회 한도를 넘었어요. 내일 다시 시도해 주세요");
+        }
     }
 
     public List<RestaurantPicker.Candidate> searchNearby(double lat, double lng, int radiusM, List<Category> categories) {
@@ -72,6 +117,7 @@ public class PlacesClient {
                 )
         );
 
+        tickNearby();
         try {
             var response = restClient.post()
                     .uri(NEARBY_URL)
@@ -102,6 +148,7 @@ public class PlacesClient {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "맛집 기능 준비 중이에요");
         }
 
+        tickDetail();
         try {
             String json = restClient.get()
                     .uri(DETAIL_URL, placeId)
