@@ -15,6 +15,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.server.ResponseStatusException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 import java.util.Map;
@@ -35,15 +36,17 @@ public class PlacesClient {
     private static final String DETAIL_FIELD_MASK =
             "id,displayName,formattedAddress,location,rating,userRatingCount,priceLevel," +
             "currentOpeningHours.openNow,regularOpeningHours.weekdayDescriptions," +
-            "googleMapsUri,websiteUri,reviews";
+            "googleMapsUri,websiteUri,reviews,reviewSummary";
 
     @Value("${google.maps.api-key:}")
     private String apiKey;
 
     private final RestClient restClient;
+    private final ObjectMapper objectMapper;
 
-    public PlacesClient(@Qualifier("placesRestClient") RestClient restClient) {
+    public PlacesClient(@Qualifier("placesRestClient") RestClient restClient, ObjectMapper objectMapper) {
         this.restClient = restClient;
+        this.objectMapper = objectMapper;
     }
 
     public boolean isKeyMissing() {
@@ -56,7 +59,7 @@ public class PlacesClient {
         }
 
         var body = Map.of(
-                "includedPrimaryTypes", Category.mergedTypes(categories),
+                "includedTypes", Category.mergedTypes(categories),
                 "maxResultCount", 20,
                 "rankPreference", "POPULARITY",
                 "languageCode", "ja",
@@ -100,17 +103,23 @@ public class PlacesClient {
         }
 
         try {
-            return restClient.get()
+            String json = restClient.get()
                     .uri(DETAIL_URL, placeId)
                     .header("X-Goog-Api-Key", apiKey)
                     .header("X-Goog-FieldMask", DETAIL_FIELD_MASK)
                     .retrieve()
-                    .body(PlaceDetailResult.class);
+                    .body(String.class);
+
+            if (json == null || json.isBlank()) return null;
+            return objectMapper.readValue(json, PlaceDetailResult.class);
 
         } catch (HttpClientErrorException e) {
             throw asPlacesError(e);
         } catch (RestClientException e) {
-            log.warn("Places getPlace failed", e);
+            log.warn("Places getPlace HTTP failed", e);
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "맛집 정보를 불러오지 못했어요");
+        } catch (Exception e) {
+            log.warn("Places getPlace parse failed: {}", e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "맛집 정보를 불러오지 못했어요");
         }
     }

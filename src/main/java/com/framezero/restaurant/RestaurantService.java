@@ -37,29 +37,53 @@ public class RestaurantService {
 
     public DrawResponse draw(double lat, double lng, int radiusM, List<Category> categories,
                              boolean openNow, Integer maxPrice, List<String> excludeList) {
-        var load = loadCandidates(lat, lng, radiusM, categories);
+        int effectiveRadius = radiusM;
+        var load = loadCandidates(lat, lng, effectiveRadius, categories);
 
         Set<String> excludeIds = Set.copyOf(excludeList);
         RestaurantPicker.PickResult result = picker.pick(load.candidates(), openNow, maxPrice, excludeIds);
 
+        if (result.pick() == null && effectiveRadius < 1500) {
+            int expanded = effectiveRadius <= 400 ? 800 : 1500;
+            var expandedLoad = loadCandidates(lat, lng, expanded, categories);
+            var expandedResult = picker.pick(expandedLoad.candidates(), openNow, maxPrice, excludeIds);
+            if (expandedResult.pick() != null) {
+                load = expandedLoad;
+                result = expandedResult;
+                effectiveRadius = expanded;
+            }
+        }
+
         if (result.pick() == null) {
-            return new DrawResponse(null, 0, 0, 0.0, radiusM, categories, load.cached(), "NO_CANDIDATES");
+            return new DrawResponse(null, 0, 0, 0.0, effectiveRadius, categories, load.cached(), "NO_CANDIDATES");
         }
 
         double avgRating = Math.round(result.avgRating() * 100.0) / 100.0;
         var pickDto = toPickDto(lat, lng, result.pick(), result.avgRating());
 
         return new DrawResponse(pickDto, result.candidateCount(), result.poolCount(),
-                avgRating, radiusM, categories, load.cached(), null);
+                avgRating, effectiveRadius, categories, load.cached(), null);
     }
 
     public NearbyResponse nearby(double lat, double lng, int radiusM, List<Category> categories,
                                   boolean openNow, Integer maxPrice, SortOrder sort) {
-        var load = loadCandidates(lat, lng, radiusM, categories);
+        int effectiveRadius = radiusM;
+        var load = loadCandidates(lat, lng, effectiveRadius, categories);
         var filtered = picker.filter(load.candidates(), openNow, maxPrice, Set.of());
 
+        if (filtered.size() < 5 && effectiveRadius < 1500) {
+            int expanded = effectiveRadius <= 400 ? 800 : 1500;
+            var expandedLoad = loadCandidates(lat, lng, expanded, categories);
+            var expandedFiltered = picker.filter(expandedLoad.candidates(), openNow, maxPrice, Set.of());
+            if (expandedFiltered.size() > filtered.size()) {
+                load = expandedLoad;
+                filtered = expandedFiltered;
+                effectiveRadius = expanded;
+            }
+        }
+
         if (filtered.isEmpty()) {
-            return new NearbyResponse(List.of(), 0, 0.0, radiusM, categories, sort, load.cached());
+            return new NearbyResponse(List.of(), 0, 0.0, effectiveRadius, categories, sort, load.cached());
         }
 
         double C = filtered.stream().mapToDouble(RestaurantPicker.Candidate::rating).average().orElse(0);
@@ -83,7 +107,7 @@ public class RestaurantService {
                 .map(c -> toPickDto(lat, lng, c, C))
                 .toList();
 
-        return new NearbyResponse(restaurants, restaurants.size(), avgRating, radiusM, categories, sort, load.cached());
+        return new NearbyResponse(restaurants, restaurants.size(), avgRating, effectiveRadius, categories, sort, load.cached());
     }
 
     public RestaurantDetailDto detail(String placeId) {
