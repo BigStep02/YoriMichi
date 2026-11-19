@@ -8,7 +8,7 @@ export async function renderHeader() {
   const el = document.getElementById('app-header');
   if (!el) return;
   el.className = 'app-header';
-  el.innerHTML = `<a class="brand" href="/">${esc(APP_NAME)}<small lang="ja">寄り道</small></a><div class="user"></div>`;
+  el.innerHTML = `<a class="brand" href="/">${esc(APP_NAME)}<small lang="ja">よりみち</small></a><div class="user"></div>`;
   const userBox = el.querySelector('.user');
 
   const loginLink = () => {
