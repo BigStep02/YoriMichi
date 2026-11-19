@@ -50,7 +50,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET,
                                 "/", "/index.html", "/*.html",
                                 "/css/**", "/js/**", "/images/**",
-                                "/favicon.ico", "/manifest.json"
+                                "/favicon.ico", "/manifest.json", "/sw.js"
                         ).permitAll()
                         .requestMatchers(
                                 "/api/auth/**",
