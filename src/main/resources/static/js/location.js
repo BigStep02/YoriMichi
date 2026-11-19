@@ -20,6 +20,7 @@ export const TEST_CITIES = [
   { key: 'nagoya',    region: '주부',     name: '나고야 (사카에)',     short: '나고야',   lat: 35.1700, lng: 136.9080 },
   // 간사이
   { key: 'osaka',     region: '간사이',   name: '오사카 (도쇼마치)',   short: '오사카',   lat: 34.6905, lng: 135.5066 },
+  { key: 'dotonbori', region: '간사이',   name: '오사카 (도톤보리)',   short: '도톤보리', lat: 34.6687, lng: 135.5013 },
   { key: 'kyoto',     region: '간사이',   name: '교토역',              short: '교토',     lat: 34.9858, lng: 135.7588 },
   { key: 'nara',      region: '간사이',   name: '나라역',              short: '나라',     lat: 34.6851, lng: 135.8048 },
   { key: 'nagahama',  region: '간사이',   name: '나가하마',            short: '나가하마', lat: 35.3780, lng: 136.2650 },
@@ -57,6 +58,7 @@ export function getLocationMode() {
 
 /** 'geo' 또는 테스트 도시 key */
 export function setLocationChoice(value) {
+  try { localStorage.removeItem(DEV_KEY); sessionStorage.removeItem(DEV_KEY); } catch { /* noop */ }
   if (value === 'geo') {
     write(MODE_KEY, 'geo');
   } else {
@@ -65,8 +67,15 @@ export function setLocationChoice(value) {
   }
 }
 
+// 일본 범위 판정. 단순 사각형(위도 24~46, 경도 122~146)에는 한국이 통째로 들어가서
+// 한국에서 위치를 허용하면 서울·부산을 "일본 안"으로 착각했음 → 한반도·제주·연해주를 뺌
 function inJapan(lat, lng) {
-  return lat >= 24 && lat <= 46 && lng >= 122 && lng <= 146;
+  if (lat < 24 || lat > 46 || lng < 122 || lng > 146) return false;
+  if (lat >= 33.9 && lng < 129.6 && !(lat <= 34.75 && lng >= 129.15)) return false; // 한반도 (쓰시마는 일본)
+  if (lat >= 33.0 && lat < 33.7 && lng < 127.2) return false;                        // 제주
+  if (lat >= 37.4 && lat <= 37.6 && lng >= 130.7 && lng <= 131.0) return false;      // 울릉도
+  if (lat > 41.3 && lng < 139.3) return false;                                        // 연해주·중국 동북부
+  return true;
 }
 
 function currentPosition() {
@@ -80,19 +89,37 @@ function currentPosition() {
   });
 }
 
-// 개발·시연용 가짜 현재 위치: 주소에 ?devLat=34.69&devLng=135.50 를 붙이면 탭을 닫을 때까지 유지
-// ?devLat=off 로 해제
+// 시연용 위치 고정 (발표·테스트용)
+//  ?devLat=34.6687&devLng=135.5013 → 이 브라우저에서 계속 그 좌표를 "현재 위치 (시연)"으로 사용 (GPS 권한을 묻지 않음)
+//  ?city=dotonbori                → 테스트 도시 고정 모드로 전환 (TEST_CITIES의 key)
+//  ?devLat=off                    → 시연 위치 해제
 const DEV_KEY = 'devLocation';
-function devLocation() {
+function applyUrlOverrides() {
   try {
     const p = new URLSearchParams(location.search);
-    if (p.get('devLat') === 'off') sessionStorage.removeItem(DEV_KEY);
+    if (p.get('devLat') === 'off') {
+      localStorage.removeItem(DEV_KEY);
+      sessionStorage.removeItem(DEV_KEY);
+    }
     const lat = Number(p.get('devLat'));
     const lng = Number(p.get('devLng'));
     if (p.has('devLat') && p.has('devLng') && inJapan(lat, lng)) {
-      sessionStorage.setItem(DEV_KEY, JSON.stringify({ lat, lng }));
+      localStorage.setItem(DEV_KEY, JSON.stringify({ lat, lng }));
+      localStorage.setItem(MODE_KEY, 'geo');
     }
-    const saved = JSON.parse(sessionStorage.getItem(DEV_KEY) || 'null');
+    const city = p.get('city');
+    if (city && TEST_CITIES.some(c => c.key === city)) {
+      localStorage.removeItem(DEV_KEY);
+      localStorage.setItem(MODE_KEY, 'city');
+      localStorage.setItem(CITY_KEY, city);
+    }
+  } catch { /* 저장소를 못 쓰는 환경이면 무시 */ }
+}
+applyUrlOverrides();
+
+function devLocation() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(DEV_KEY) || sessionStorage.getItem(DEV_KEY) || 'null');
     return saved && inJapan(saved.lat, saved.lng) ? saved : null;
   } catch { return null; }
 }
