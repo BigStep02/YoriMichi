@@ -349,13 +349,7 @@ function mockDraw() {
 }
 async function mockDetail() {
   await new Promise(r => setTimeout(r, 700));
-  return {
-    nameKo: '이치란 도톤보리점 본관',
-    reviews: [
-      { author: 'Minji K.', rating: 5, relativeTime: '2주 전', text: '혼자 먹기 정말 편했어요. 맵기랑 면 익힘을 종이에 체크하는 방식이라 일본어 몰라도 괜찮아요.' },
-      { author: 'Taro', rating: 4, relativeTime: '1달 전', text: '맛은 확실한데 밤 9시쯤 갔더니 줄이 꽤 길었습니다. 회전은 빠른 편이에요.' },
-    ],
-  };
+  return { nameKo: '이치란 도톤보리점 본관', reviews: [] };
 }
 async function mockSummary() {
   await new Promise(r => setTimeout(r, 900));

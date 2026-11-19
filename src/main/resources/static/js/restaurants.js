@@ -251,10 +251,7 @@ function mockNearby() {
 }
 async function mockDetail() {
   await new Promise(r => setTimeout(r, 600));
-  return {
-    nameKo: '이치란 도톤보리점 본관',
-    reviews: [{ author: 'Minji K.', rating: 5, relativeTime: '2주 전', text: '혼자 먹기 정말 편했어요. 주문 종이에 체크하는 방식이라 일본어 몰라도 괜찮아요.' }],
-  };
+  return { nameKo: '이치란 도톤보리점 본관', reviews: [] };
 }
 async function mockSummary() {
   await new Promise(r => setTimeout(r, 900));
