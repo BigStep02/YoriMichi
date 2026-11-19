@@ -12,6 +12,7 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.ObjectMapper;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -29,8 +30,8 @@ public class GeminiClient {
     @Value("${gemini.model}")
     private String model;
 
-    @Value("${gemini.fallback-model:}")
-    private String fallbackModel;
+    @Value("${gemini.fallback-models:}")
+    private String fallbackModelsRaw;
 
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
@@ -42,6 +43,14 @@ public class GeminiClient {
 
     public boolean isKeyMissing() {
         return apiKey == null || apiKey.isBlank();
+    }
+
+    private List<String> fallbackModels() {
+        if (fallbackModelsRaw == null || fallbackModelsRaw.isBlank()) return List.of();
+        return Arrays.stream(fallbackModelsRaw.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
     }
 
     public AiSummaryDto summarize(List<ReviewDto> reviews) {
@@ -87,43 +96,52 @@ public class GeminiClient {
                 "generationConfig", Map.of("responseMimeType", "application/json", "maxOutputTokens", 600)
         );
 
-        AiSummaryDto result = callWithRetry(model, body);
+        AiSummaryDto result = callPrimary(model, body);
         if (result != null) return result;
 
-        if (fallbackModel != null && !fallbackModel.isBlank()) {
-            log.info("[AI] 예비 모델로 전환: {}", fallbackModel);
-            try {
-                result = doCallGemini(fallbackModel, body);
-            } catch (Exception e) {
-                log.warn("Gemini 호출 실패: {}", e.getMessage());
-            }
+        for (String fb : fallbackModels()) {
+            result = callOnce(fb, body);
+            if (result != null) return result;
         }
-        return result;
+        return null;
     }
 
-    private AiSummaryDto callWithRetry(String modelName, Map<String, Object> body) {
+    // 기본 모델: 503/429면 1.5초 후 1회 재시도, 타임아웃이면 재시도 없이 종료
+    private AiSummaryDto callPrimary(String modelName, Map<String, Object> body) {
+        long t = System.currentTimeMillis();
         try {
-            return doCallGemini(modelName, body);
+            AiSummaryDto r = doCallGemini(modelName, body);
+            if (r != null) log.info("[AI] 성공 model={} {}ms", modelName, System.currentTimeMillis() - t);
+            return r;
         } catch (Exception e) {
-            if (!isRetryable(e)) {
-                if (e instanceof HttpClientErrorException ce && ce.getStatusCode().value() == 400) {
-                    log.debug("[AI] 400 오류 (프롬프트/모델 문제): {}", e.getMessage());
-                } else {
-                    log.warn("[AI] 호출 실패: {}", e.getMessage());
-                }
-                return null;
-            }
-            log.info("[AI] 재시도");
+            if (is400(e)) { log.debug("[AI] 실패 model={} 400 오류", modelName); return null; }
+            log.info("[AI] 실패 model={} {}", modelName, reasonOf(e));
+            if (!isRateLimited(e)) return null;
+
+            try { Thread.sleep(1500); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); return null; }
+            long t2 = System.currentTimeMillis();
             try {
-                Thread.sleep(1500);
-                return doCallGemini(modelName, body);
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
-                return null;
+                AiSummaryDto r = doCallGemini(modelName, body);
+                if (r != null) log.info("[AI] 성공 model={} {}ms", modelName, System.currentTimeMillis() - t2);
+                return r;
             } catch (Exception e2) {
-                log.warn("[AI] 재시도 실패: {}", e2.getMessage());
+                log.info("[AI] 실패 model={} {}", modelName, reasonOf(e2));
                 return null;
             }
+        }
+    }
+
+    // 예비 모델: 각 1회만
+    private AiSummaryDto callOnce(String modelName, Map<String, Object> body) {
+        long t = System.currentTimeMillis();
+        try {
+            AiSummaryDto r = doCallGemini(modelName, body);
+            if (r != null) log.info("[AI] 성공 model={} {}ms", modelName, System.currentTimeMillis() - t);
+            return r;
+        } catch (Exception e) {
+            if (is400(e)) { log.debug("[AI] 실패 model={} 400 오류", modelName); }
+            else { log.info("[AI] 실패 model={} {}", modelName, reasonOf(e)); }
+            return null;
         }
     }
 
@@ -157,9 +175,24 @@ public class GeminiClient {
         return objectMapper.readValue(json, AiSummaryDto.class);
     }
 
-    private boolean isRetryable(Exception e) {
+    private boolean isRateLimited(Exception e) {
         if (e instanceof HttpClientErrorException ce && ce.getStatusCode().value() == 429) return true;
         if (e instanceof HttpServerErrorException se && se.getStatusCode().value() == 503) return true;
+        return false;
+    }
+
+    private boolean is400(Exception e) {
+        return e instanceof HttpClientErrorException ce && ce.getStatusCode().value() == 400;
+    }
+
+    private String reasonOf(Exception e) {
+        if (e instanceof HttpClientErrorException ce) return "HTTP " + ce.getStatusCode().value();
+        if (e instanceof HttpServerErrorException se) return "HTTP " + se.getStatusCode().value();
+        if (isTimeout(e)) return "타임아웃";
+        return e.getClass().getSimpleName();
+    }
+
+    private boolean isTimeout(Exception e) {
         Throwable cause = e;
         while (cause != null) {
             if (cause instanceof java.net.SocketTimeoutException

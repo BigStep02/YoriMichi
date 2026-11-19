@@ -174,7 +174,6 @@ async function openDetail(p) {
   const wrap = mountSheet('가게 정보', body, { footer });
 
   const detailP = MOCK ? mockDetail() : api(`/api/restaurants/${encodeURIComponent(p.placeId)}`, { auth: false }).catch(() => null);
-  const summaryP = MOCK ? mockSummary() : detailP.then(() => api(`/api/restaurants/${encodeURIComponent(p.placeId)}/summary`, { auth: false }).catch(() => null));
 
   const d = await detailP;
   if (!wrap.isConnected) return;
@@ -192,7 +191,15 @@ async function openDetail(p) {
         <p class="rv-text">${esc(r.text)}</p>
       </div>`).join('')}` : '';
 
-  const s = await summaryP;
+  const s = await new Promise(resolve => {
+    if (MOCK) { mockSummary().then(resolve); return; }
+    setTimeout(() => {
+      if (!wrap.isConnected) { resolve(null); return; }
+      api(`/api/restaurants/${encodeURIComponent(p.placeId)}/summary`, { auth: false })
+        .catch(() => null)
+        .then(resolve);
+    }, 1500);
+  });
   if (!wrap.isConnected) return;
   applySheetSummary(wrap, p.placeId, s, s?.reviewsUri || p.googleMapsUri);
 }
