@@ -108,7 +108,7 @@ async function draw() {
   excluded.push(data.pick.placeId);
   if (excluded.length > 20) excluded = excluded.slice(-20);
   const detailPromise = loadDetailData(data.pick); // 힌트 보는 동안 미리 불러둠
-  const summaryPromise = loadSummaryData(data.pick);
+  const summaryPromise = detailPromise.then(() => loadSummaryData(data.pick));
   renderHint(data, () => {
     renderResult(data);
     resultEl.querySelector('.result-card').classList.add('reveal');
@@ -268,11 +268,11 @@ async function applySummary(pick, mySeq, summaryPromise) {
       row('좋아요', 'pro', s.pros) + row('참고', 'con', s.cons) + row('추천 메뉴', 'menu', s.menus) + attr + orig;
   } else if (s?.status === 'NO_SOURCE') {
     aiEl.querySelector('.ai-body').innerHTML = `
-      <p class="ai-muted">리뷰 데이터가 없어요</p>
+      <p class="ai-muted">리뷰가 아직 적어서 AI 요약이 없어요</p>
       <a href="${esc(fallbackLink)}" class="btn-ghost" target="_blank" rel="noopener">구글 지도에서 리뷰 보기 ↗</a>`;
-  } else if (s?.status === 'FAILED') {
+  } else {
     aiEl.querySelector('.ai-body').innerHTML = `
-      <p class="ai-muted">AI 요약을 불러오지 못했어요</p>
+      <p class="ai-muted">지금은 AI 요약을 불러오지 못했어요</p>
       <div class="ai-actions">
         <button type="button" class="btn-ghost" data-ai-retry>다시 시도</button>
         <a href="${esc(fallbackLink)}" class="btn-ghost" target="_blank" rel="noopener">구글 지도에서 리뷰 보기 ↗</a>
@@ -283,8 +283,6 @@ async function applySummary(pick, mySeq, summaryPromise) {
       btn.disabled = true;
       applySummary(pick, mySeq, loadSummaryData(pick, true));
     });
-  } else {
-    aiEl.remove();
   }
 }
 

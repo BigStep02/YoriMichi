@@ -164,28 +164,21 @@ public class RestaurantService {
             cache.markRetried(placeId);
         }
 
-        com.framezero.restaurant.client.response.PlaceDetailResult detail;
+        RestaurantDetailDto detailDto;
         try {
-            detail = placesClient.getPlace(placeId);
+            detailDto = detail(placeId);
         } catch (Exception e) {
             var failed = new SummaryResponse("FAILED", null, null, null, null, null, null, null, null);
             cache.putSummary(placeId, failed);
             return failed;
         }
 
-        if (detail == null) {
-            var failed = new SummaryResponse("FAILED", null, null, null, null, null, null, null, null);
-            cache.putSummary(placeId, failed);
-            return failed;
-        }
-
-        var rs = detail.reviewSummary();
-        String googleSummaryText = (rs != null && rs.text() != null) ? rs.text().text() : null;
-        List<ReviewDto> reviews = buildReviews(detail);
+        String googleSummaryText = detailDto.reviewSummaryText();
+        List<ReviewDto> reviews = detailDto.reviews() != null ? detailDto.reviews() : List.of();
 
         if ((googleSummaryText == null || googleSummaryText.isBlank()) && reviews.isEmpty()) {
             var noSource = new SummaryResponse("NO_SOURCE", null, null, null, null, null, null,
-                    rs != null ? rs.reviewsUri() : null, null);
+                    detailDto.reviewsUri(), null);
             cache.putSummary(placeId, noSource);
             return noSource;
         }
@@ -197,9 +190,9 @@ public class RestaurantService {
         if (aiSummary == null) {
             var failed = new SummaryResponse("FAILED", null, null, null, null,
                     googleSummaryText,
-                    (rs != null && rs.disclosureText() != null) ? rs.disclosureText().text() : null,
-                    rs != null ? rs.reviewsUri() : null,
-                    rs != null ? rs.flagContentUri() : null);
+                    detailDto.reviewSummaryDisclosure(),
+                    detailDto.reviewsUri(),
+                    detailDto.reviewSummaryFlagUri());
             cache.putSummary(placeId, failed);
             return failed;
         }
@@ -207,9 +200,9 @@ public class RestaurantService {
         var ok = new SummaryResponse("OK",
                 aiSummary.pros(), aiSummary.cons(), aiSummary.menus(), aiSummary.fullKo(),
                 googleSummaryText,
-                (rs != null && rs.disclosureText() != null) ? rs.disclosureText().text() : null,
-                rs != null ? rs.reviewsUri() : null,
-                rs != null ? rs.flagContentUri() : null);
+                detailDto.reviewSummaryDisclosure(),
+                detailDto.reviewsUri(),
+                detailDto.reviewSummaryFlagUri());
         cache.putSummary(placeId, ok);
         return ok;
     }
