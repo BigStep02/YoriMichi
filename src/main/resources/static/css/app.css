@@ -528,6 +528,14 @@ a.cat:hover { transform: translateY(-2px); }
 .ai-row.pro .ai-k { color: #1F7A4A; }
 .ai-row.con .ai-k { color: var(--coral-text); }
 .ai-row.menu .ai-k { color: var(--navy); }
+.ai-attr { margin-top: 8px; font-size: 11px; color: var(--gray); line-height: 1.5; }
+.ai-attr a { color: var(--gray); text-decoration: underline; }
+.ai-orig { margin-top: 6px; font-size: 12px; color: var(--gray); }
+.ai-orig summary { cursor: pointer; font-size: 11px; }
+.ai-orig p { margin-top: 4px; line-height: 1.5; }
+.ai-flag { font-size: 10px; color: var(--gray); opacity: .6; }
+.ai-muted { font-size: 13px; color: var(--gray); margin: 4px 0 8px; }
+.ai-actions { display: grid; gap: 8px; }
 .sk-line { height: 12px; border-radius: 6px; background: linear-gradient(90deg, #cfd8ef 25%, #e6ebf8 50%, #cfd8ef 75%); background-size: 200% 100%; animation: shimmer 1.2s infinite; }
 .sk-line.short { width: 60%; }
 

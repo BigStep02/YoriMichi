@@ -3,6 +3,7 @@ package com.framezero.restaurant;
 import com.framezero.restaurant.dto.DrawResponse;
 import com.framezero.restaurant.dto.NearbyResponse;
 import com.framezero.restaurant.dto.RestaurantDetailDto;
+import com.framezero.restaurant.dto.SummaryResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -106,5 +107,15 @@ public class RestaurantController {
             @Pattern(regexp = "^[A-Za-z0-9_-]{10,300}$", message = "placeId 형식이 올바르지 않습니다")
             String placeId) {
         return restaurantService.detail(placeId);
+    }
+
+    @GetMapping("/{placeId}/summary")
+    @Operation(summary = "R-02a AI 리뷰 요약 (status: OK | NO_SOURCE | FAILED)")
+    @SecurityRequirements
+    public SummaryResponse summary(
+            @PathVariable
+            @Pattern(regexp = "^[A-Za-z0-9_-]{10,300}$", message = "placeId 형식이 올바르지 않습니다")
+            String placeId) {
+        return restaurantService.summary(placeId);
     }
 }

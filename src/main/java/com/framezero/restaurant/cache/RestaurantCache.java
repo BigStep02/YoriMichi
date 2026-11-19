@@ -3,11 +3,11 @@ package com.framezero.restaurant.cache;
 import com.framezero.restaurant.Category;
 import com.framezero.restaurant.RestaurantPicker;
 import com.framezero.restaurant.dto.RestaurantDetailDto;
+import com.framezero.restaurant.dto.SummaryResponse;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -16,16 +16,19 @@ import java.util.stream.Collectors;
 @Component
 public class RestaurantCache {
 
-    private static final Duration NEARBY_TTL = Duration.ofMinutes(10);
-    private static final Duration DETAIL_TTL = Duration.ofMinutes(60);
+    private static final Duration NEARBY_TTL       = Duration.ofMinutes(10);
+    private static final Duration DETAIL_TTL        = Duration.ofMinutes(60);
+    private static final Duration SUMMARY_OK_TTL    = Duration.ofMinutes(60);
+    private static final Duration SUMMARY_FAIL_TTL  = Duration.ofMinutes(10);
     private static final int MAX_SIZE = 500;
 
     private record Entry(Object value, Instant expireAt) {
         boolean alive() { return Instant.now().isBefore(expireAt); }
     }
 
-    private final ConcurrentHashMap<String, Entry> nearbyCache = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, Entry> detailCache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Entry> nearbyCache  = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Entry> detailCache  = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Entry> summaryCache = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, String> nameByPlaceId = new ConcurrentHashMap<>();
 
     public String nearbyKey(double lat, double lng, int radiusM, List<Category> categories) {
@@ -56,6 +59,18 @@ public class RestaurantCache {
     public void putDetail(String placeId, RestaurantDetailDto dto) {
         evict(detailCache);
         detailCache.put(placeId, new Entry(dto, Instant.now().plus(DETAIL_TTL)));
+    }
+
+    public SummaryResponse getSummary(String placeId) {
+        var e = summaryCache.get(placeId);
+        if (e == null || !e.alive()) { summaryCache.remove(placeId); return null; }
+        return (SummaryResponse) e.value();
+    }
+
+    public void putSummary(String placeId, SummaryResponse dto) {
+        evict(summaryCache);
+        Duration ttl = "FAILED".equals(dto.status()) ? SUMMARY_FAIL_TTL : SUMMARY_OK_TTL;
+        summaryCache.put(placeId, new Entry(dto, Instant.now().plus(ttl)));
     }
 
     public void putNames(List<RestaurantPicker.Candidate> candidates) {

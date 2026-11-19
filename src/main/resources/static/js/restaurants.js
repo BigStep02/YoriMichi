@@ -173,24 +173,12 @@ async function openDetail(p) {
     </div>`;
   const wrap = mountSheet('가게 정보', body, { footer });
 
-  let d = null;
-  try {
-    d = MOCK ? await mockDetail() : await api(`/api/restaurants/${encodeURIComponent(p.placeId)}`, { auth: false });
-  } catch { d = null; }
+  const detailP = MOCK ? mockDetail() : api(`/api/restaurants/${encodeURIComponent(p.placeId)}`, { auth: false }).catch(() => null);
+  const summaryP = MOCK ? mockSummary() : api(`/api/restaurants/${encodeURIComponent(p.placeId)}/summary`, { auth: false }).catch(() => null);
+
+  const d = await detailP;
   if (!wrap.isConnected) return;
-
-  const aiEl = wrap.querySelector('[data-ai]');
-  const s = d?.aiSummary;
-  if (s && (s.pros?.length || s.cons?.length || s.menus?.length)) {
-    const row = (label, cls, items) => items?.length
-      ? `<div class="ai-row ${cls}"><span class="ai-k">${label}</span><span>${items.map(esc).join(', ')}</span></div>` : '';
-    aiEl.querySelector('.ai-body').innerHTML =
-      row('좋아요', 'pro', s.pros) + row('참고', 'con', s.cons) + row('추천 메뉴', 'menu', s.menus);
-  } else {
-    aiEl.remove();
-  }
   if (d?.nameKo && d.nameKo !== p.name) wrap.querySelector('[data-name-ko]').textContent = d.nameKo;
-
   const reviews = (d?.reviews || []).slice(0, 2);
   wrap.querySelector('[data-reviews]').innerHTML = reviews.length ? `
     <div class="rv-head">최근 리뷰</div>
@@ -203,6 +191,46 @@ async function openDetail(p) {
         </div>
         <p class="rv-text">${esc(r.text)}</p>
       </div>`).join('')}` : '';
+
+  const s = await summaryP;
+  if (!wrap.isConnected) return;
+  applySheetSummary(wrap, p.placeId, s, s?.reviewsUri || p.googleMapsUri);
+}
+
+async function applySheetSummary(wrap, placeId, s, fallbackLink) {
+  const aiEl = wrap.querySelector('[data-ai]');
+  if (!aiEl) return;
+
+  if (s?.status === 'OK' && (s.pros?.length || s.cons?.length || s.menus?.length)) {
+    const row = (label, cls, items) => items?.length
+      ? `<div class="ai-row ${cls}"><span class="ai-k">${label}</span><span>${items.map(esc).join(', ')}</span></div>` : '';
+    const attr = s.reviewsUri
+      ? `<p class="ai-attr">Google 리뷰 요약 기반 · ${esc(s.reviewSummaryDisclosure || '')} · <a href="${esc(s.reviewsUri)}" target="_blank" rel="noopener">리뷰 보기 ↗</a></p>` : '';
+    const fullText = s.fullKo || s.reviewSummaryText;
+    const orig = fullText
+      ? `<details class="ai-orig"><summary>요약 전문 보기</summary><p>${esc(fullText)}</p><p class="ai-attr">Google 리뷰 요약을 한국어로 번역했어요${s.reviewSummaryFlagUri ? ` · <a href="${esc(s.reviewSummaryFlagUri)}" target="_blank" rel="noopener" class="ai-flag">신고</a>` : ''}</p></details>` : '';
+    aiEl.querySelector('.ai-body').innerHTML =
+      row('좋아요', 'pro', s.pros) + row('참고', 'con', s.cons) + row('추천 메뉴', 'menu', s.menus) + attr + orig;
+  } else if (s?.status === 'NO_SOURCE') {
+    aiEl.querySelector('.ai-body').innerHTML = `
+      <p class="ai-muted">리뷰 데이터가 없어요</p>
+      <a href="${esc(fallbackLink)}" class="btn-ghost" target="_blank" rel="noopener">구글 지도에서 리뷰 보기 ↗</a>`;
+  } else if (s?.status === 'FAILED') {
+    aiEl.querySelector('.ai-body').innerHTML = `
+      <p class="ai-muted">AI 요약을 불러오지 못했어요</p>
+      <div class="ai-actions">
+        <button type="button" class="btn-ghost" data-ai-retry>다시 시도</button>
+        <a href="${esc(fallbackLink)}" class="btn-ghost" target="_blank" rel="noopener">구글 지도에서 리뷰 보기 ↗</a>
+      </div>`;
+    aiEl.querySelector('[data-ai-retry]').addEventListener('click', async () => {
+      aiEl.querySelector('.ai-body').innerHTML = '<div class="sk-line"></div><div class="sk-line short"></div>';
+      const retryS = MOCK ? await mockSummary()
+        : await api(`/api/restaurants/${encodeURIComponent(placeId)}/summary`, { auth: false }).catch(() => null);
+      applySheetSummary(wrap, placeId, retryS, fallbackLink);
+    });
+  } else {
+    aiEl.remove();
+  }
 }
 
 // ---------- 가짜 데이터 (?mock=1) ----------
@@ -225,7 +253,20 @@ async function mockDetail() {
   await new Promise(r => setTimeout(r, 600));
   return {
     nameKo: '이치란 도톤보리점 본관',
-    aiSummary: { pros: ['진한 돈코츠 국물', '1인석이라 혼밥 편함'], cons: ['저녁엔 대기 30분 이상'], menus: ['돈코츠 라멘', '카에다마'] },
     reviews: [{ author: 'Minji K.', rating: 5, relativeTime: '2주 전', text: '혼자 먹기 정말 편했어요. 주문 종이에 체크하는 방식이라 일본어 몰라도 괜찮아요.' }],
+  };
+}
+async function mockSummary() {
+  await new Promise(r => setTimeout(r, 900));
+  return {
+    status: 'OK',
+    pros: ['진한 돈코츠 국물', '1인석이라 혼밥 편함'],
+    cons: ['저녁엔 대기 30분 이상'],
+    menus: ['돈코츠 라멘', '카에다마'],
+    fullKo: '손님들은 진한 돈코츠 육수와 칸막이가 있는 1인 좌석 구조를 높이 평가합니다. 매운맛과 면 익힘을 직접 선택할 수 있는 점도 인기 요소입니다. 저녁 시간대에는 대기가 30분을 넘는 경우도 있습니다.',
+    reviewSummaryText: 'Diners praise the rich tonkotsu broth and the solo dining setup with privacy screens. The customizable spice level and noodle firmness are highlights. Evening waits can exceed 30 minutes.',
+    reviewSummaryDisclosure: 'Gemini로 요약됨',
+    reviewsUri: 'https://www.google.com/maps/place/ichiran+dotonbori',
+    reviewSummaryFlagUri: 'https://www.google.com/local/content/rap/report',
   };
 }

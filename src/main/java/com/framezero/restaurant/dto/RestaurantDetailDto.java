@@ -15,6 +15,9 @@ public record RestaurantDetailDto(
         String googleMapsUri,
         String websiteUri,
         List<ReviewDto> reviews,
-        AiSummaryDto aiSummary,
-        String attribution
+        String attribution,
+        String reviewSummaryText,
+        String reviewSummaryDisclosure,
+        String reviewsUri,
+        String reviewSummaryFlagUri
 ) {}

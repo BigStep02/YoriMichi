@@ -4,7 +4,13 @@ import com.framezero.common.GeoUtils;
 import com.framezero.restaurant.cache.RestaurantCache;
 import com.framezero.restaurant.client.GeminiClient;
 import com.framezero.restaurant.client.PlacesClient;
-import com.framezero.restaurant.dto.*;
+import com.framezero.restaurant.dto.AiSummaryDto;
+import com.framezero.restaurant.dto.DrawResponse;
+import com.framezero.restaurant.dto.NearbyResponse;
+import com.framezero.restaurant.dto.RestaurantDetailDto;
+import com.framezero.restaurant.dto.RestaurantPickDto;
+import com.framezero.restaurant.dto.ReviewDto;
+import com.framezero.restaurant.dto.SummaryResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -90,7 +96,9 @@ public class RestaurantService {
         }
 
         List<ReviewDto> reviews = buildReviews(detail);
-        AiSummaryDto aiSummary = geminiClient.summarize(reviews);
+
+        var rs = detail.reviewSummary();
+        String googleSummaryText = (rs != null && rs.text() != null) ? rs.text().text() : null;
 
         // 뽑기에서 받은 일본어 이름이 있으면 name에, 한국어 displayName은 nameKo에
         String jaName = cache.getName(placeId);
@@ -107,12 +115,68 @@ public class RestaurantService {
                 detail.regularOpeningHours() != null ? detail.regularOpeningHours().weekdayDescriptions() : null,
                 detail.googleMapsUri(), detail.websiteUri(),
                 reviews.stream().limit(3).toList(),
-                aiSummary,
-                "Google 지도"
+                "Google 지도",
+                googleSummaryText,
+                (rs != null && rs.disclosureText() != null) ? rs.disclosureText().text() : null,
+                rs != null ? rs.reviewsUri() : null,
+                rs != null ? rs.flagContentUri() : null
         );
-
         cache.putDetail(placeId, dto);
         return dto;
+    }
+
+    public SummaryResponse summary(String placeId) {
+        SummaryResponse cached = cache.getSummary(placeId);
+        if (cached != null) return cached;
+
+        com.framezero.restaurant.client.response.PlaceDetailResult detail;
+        try {
+            detail = placesClient.getPlace(placeId);
+        } catch (Exception e) {
+            var failed = new SummaryResponse("FAILED", null, null, null, null, null, null, null, null);
+            cache.putSummary(placeId, failed);
+            return failed;
+        }
+
+        if (detail == null) {
+            var failed = new SummaryResponse("FAILED", null, null, null, null, null, null, null, null);
+            cache.putSummary(placeId, failed);
+            return failed;
+        }
+
+        var rs = detail.reviewSummary();
+        String googleSummaryText = (rs != null && rs.text() != null) ? rs.text().text() : null;
+        List<ReviewDto> reviews = buildReviews(detail);
+
+        if ((googleSummaryText == null || googleSummaryText.isBlank()) && reviews.isEmpty()) {
+            var noSource = new SummaryResponse("NO_SOURCE", null, null, null, null, null, null,
+                    rs != null ? rs.reviewsUri() : null, null);
+            cache.putSummary(placeId, noSource);
+            return noSource;
+        }
+
+        AiSummaryDto aiSummary = (googleSummaryText != null && !googleSummaryText.isBlank())
+                ? geminiClient.summarizeFromGoogleSummary(googleSummaryText)
+                : geminiClient.summarize(reviews);
+
+        if (aiSummary == null) {
+            var failed = new SummaryResponse("FAILED", null, null, null, null,
+                    googleSummaryText,
+                    (rs != null && rs.disclosureText() != null) ? rs.disclosureText().text() : null,
+                    rs != null ? rs.reviewsUri() : null,
+                    rs != null ? rs.flagContentUri() : null);
+            cache.putSummary(placeId, failed);
+            return failed;
+        }
+
+        var ok = new SummaryResponse("OK",
+                aiSummary.pros(), aiSummary.cons(), aiSummary.menus(), aiSummary.fullKo(),
+                googleSummaryText,
+                (rs != null && rs.disclosureText() != null) ? rs.disclosureText().text() : null,
+                rs != null ? rs.reviewsUri() : null,
+                rs != null ? rs.flagContentUri() : null);
+        cache.putSummary(placeId, ok);
+        return ok;
     }
 
     // ---- private helpers ----
