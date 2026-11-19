@@ -222,10 +222,12 @@ async function applySheetSummary(wrap, placeId, s, fallbackLink) {
         <button type="button" class="btn-ghost" data-ai-retry>다시 시도</button>
         <a href="${esc(fallbackLink)}" class="btn-ghost" target="_blank" rel="noopener">구글 지도에서 리뷰 보기 ↗</a>
       </div>`;
-    aiEl.querySelector('[data-ai-retry]').addEventListener('click', async () => {
-      aiEl.querySelector('.ai-body').innerHTML = '<div class="sk-line"></div><div class="sk-line short"></div>';
+    aiEl.querySelector('[data-ai-retry]').addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      btn.textContent = '불러오는 중…';
+      btn.disabled = true;
       const retryS = MOCK ? await mockSummary()
-        : await api(`/api/restaurants/${encodeURIComponent(placeId)}/summary`, { auth: false }).catch(() => null);
+        : await api(`/api/restaurants/${encodeURIComponent(placeId)}/summary?retry=true`, { auth: false }).catch(() => null);
       applySheetSummary(wrap, placeId, retryS, fallbackLink);
     });
   } else {

@@ -149,9 +149,20 @@ public class RestaurantService {
         return dto;
     }
 
-    public SummaryResponse summary(String placeId) {
+    public SummaryResponse summary(String placeId, boolean retry) {
         SummaryResponse cached = cache.getSummary(placeId);
-        if (cached != null) return cached;
+
+        if (!retry) {
+            if (cached != null) return cached;
+        } else {
+            // OK·NO_SOURCE 캐시는 재시도 불필요, 그대로 반환
+            if (cached != null && !"FAILED".equals(cached.status())) return cached;
+            // 20초 쿨다운 체크
+            if (!cache.isRetryAllowed(placeId)) {
+                return new SummaryResponse("FAILED", null, null, null, null, null, null, null, null);
+            }
+            cache.markRetried(placeId);
+        }
 
         com.framezero.restaurant.client.response.PlaceDetailResult detail;
         try {

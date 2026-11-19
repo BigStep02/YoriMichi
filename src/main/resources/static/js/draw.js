@@ -213,9 +213,10 @@ async function loadDetailData(pick) {
   }
 }
 
-async function loadSummaryData(pick) {
+async function loadSummaryData(pick, retry = false) {
+  const url = `/api/restaurants/${encodeURIComponent(pick.placeId)}/summary${retry ? '?retry=true' : ''}`;
   try {
-    return MOCK ? await mockSummary() : await api(`/api/restaurants/${encodeURIComponent(pick.placeId)}/summary`, { auth: false });
+    return MOCK ? await mockSummary() : await api(url, { auth: false });
   } catch {
     return null;
   }
@@ -276,9 +277,11 @@ async function applySummary(pick, mySeq, summaryPromise) {
         <button type="button" class="btn-ghost" data-ai-retry>다시 시도</button>
         <a href="${esc(fallbackLink)}" class="btn-ghost" target="_blank" rel="noopener">구글 지도에서 리뷰 보기 ↗</a>
       </div>`;
-    aiEl.querySelector('[data-ai-retry]').addEventListener('click', () => {
-      aiEl.querySelector('.ai-body').innerHTML = '<div class="sk-line"></div><div class="sk-line short"></div>';
-      applySummary(pick, mySeq, loadSummaryData(pick));
+    aiEl.querySelector('[data-ai-retry]').addEventListener('click', (e) => {
+      const btn = e.currentTarget;
+      btn.textContent = '불러오는 중…';
+      btn.disabled = true;
+      applySummary(pick, mySeq, loadSummaryData(pick, true));
     });
   } else {
     aiEl.remove();

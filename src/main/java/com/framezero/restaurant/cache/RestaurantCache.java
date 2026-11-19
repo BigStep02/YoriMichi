@@ -16,20 +16,22 @@ import java.util.stream.Collectors;
 @Component
 public class RestaurantCache {
 
-    private static final Duration NEARBY_TTL       = Duration.ofMinutes(10);
-    private static final Duration DETAIL_TTL        = Duration.ofMinutes(60);
-    private static final Duration SUMMARY_OK_TTL    = Duration.ofMinutes(60);
-    private static final Duration SUMMARY_FAIL_TTL  = Duration.ofMinutes(10);
+    private static final Duration NEARBY_TTL        = Duration.ofMinutes(10);
+    private static final Duration DETAIL_TTL         = Duration.ofMinutes(60);
+    private static final Duration SUMMARY_OK_TTL     = Duration.ofMinutes(60);
+    private static final Duration SUMMARY_FAIL_TTL   = Duration.ofMinutes(10);
+    private static final Duration RETRY_COOLDOWN_TTL = Duration.ofSeconds(20);
     private static final int MAX_SIZE = 500;
 
     private record Entry(Object value, Instant expireAt) {
         boolean alive() { return Instant.now().isBefore(expireAt); }
     }
 
-    private final ConcurrentHashMap<String, Entry> nearbyCache  = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, Entry> detailCache  = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, Entry> summaryCache = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, String> nameByPlaceId = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Entry> nearbyCache        = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Entry> detailCache        = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Entry> summaryCache       = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Entry> retryCooldownCache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, String> nameByPlaceId     = new ConcurrentHashMap<>();
 
     public String nearbyKey(double lat, double lng, int radiusM, List<Category> categories) {
         String catKey = categories.stream()
@@ -71,6 +73,15 @@ public class RestaurantCache {
         evict(summaryCache);
         Duration ttl = "FAILED".equals(dto.status()) ? SUMMARY_FAIL_TTL : SUMMARY_OK_TTL;
         summaryCache.put(placeId, new Entry(dto, Instant.now().plus(ttl)));
+    }
+
+    public boolean isRetryAllowed(String placeId) {
+        var e = retryCooldownCache.get(placeId);
+        return e == null || !e.alive();
+    }
+
+    public void markRetried(String placeId) {
+        retryCooldownCache.put(placeId, new Entry(Boolean.TRUE, Instant.now().plus(RETRY_COOLDOWN_TTL)));
     }
 
     public void putNames(List<RestaurantPicker.Candidate> candidates) {

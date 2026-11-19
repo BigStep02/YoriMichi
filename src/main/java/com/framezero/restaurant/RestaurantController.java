@@ -115,7 +115,8 @@ public class RestaurantController {
     public SummaryResponse summary(
             @PathVariable
             @Pattern(regexp = "^[A-Za-z0-9_-]{10,300}$", message = "placeId 형식이 올바르지 않습니다")
-            String placeId) {
-        return restaurantService.summary(placeId);
+            String placeId,
+            @RequestParam(defaultValue = "false") boolean retry) {
+        return restaurantService.summary(placeId, retry);
     }
 }
