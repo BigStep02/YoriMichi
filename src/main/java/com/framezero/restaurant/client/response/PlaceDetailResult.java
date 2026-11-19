@@ -14,5 +14,6 @@ public record PlaceDetailResult(
         RegularOpeningHours regularOpeningHours,
         String googleMapsUri,
         String websiteUri,
-        List<PlaceReview> reviews
+        List<PlaceReview> reviews,
+        ReviewSummary reviewSummary
 ) {}

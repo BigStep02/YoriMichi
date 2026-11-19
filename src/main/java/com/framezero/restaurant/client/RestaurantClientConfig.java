@@ -27,7 +27,7 @@ public class RestaurantClientConfig {
                 .connectTimeout(Duration.ofSeconds(3))
                 .build();
         var factory = new JdkClientHttpRequestFactory(httpClient);
-        factory.setReadTimeout(Duration.ofSeconds(10));
+        factory.setReadTimeout(Duration.ofSeconds(8));
         return RestClient.builder().requestFactory(factory).build();
     }
 }
