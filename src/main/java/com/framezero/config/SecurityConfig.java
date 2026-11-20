@@ -49,7 +49,7 @@ public class SecurityConfig {
                         // 정적 프론트 리소스 (src/main/resources/static)
                         .requestMatchers(HttpMethod.GET,
                                 "/", "/index.html", "/*.html",
-                                "/css/**", "/js/**", "/images/**",
+                                "/css/**", "/js/**", "/images/**", "/fonts/**",
                                 "/favicon.ico", "/manifest.json", "/sw.js"
                         ).permitAll()
                         .requestMatchers(
