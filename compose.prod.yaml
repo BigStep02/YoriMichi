@@ -1,0 +1,50 @@
+# 서버(EC2)용: Oracle DB + Spring 앱 + Caddy(HTTPS)
+# 실행: docker compose -f compose.prod.yaml up -d --build
+# 비밀값은 같은 폴더의 .env 에만 넣음 (.env 는 git 에 안 올라감, 예시는 .env.example)
+services:
+  oracle:
+    image: gvenzl/oracle-free:slim
+    environment:
+      ORACLE_PASSWORD: ${ORACLE_PASSWORD}
+      APP_USER: framezero
+      APP_USER_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - oracle-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 15s
+      timeout: 10s
+      retries: 30
+      start_period: 90s
+    restart: unless-stopped
+
+  app:
+    build: .
+    env_file: .env
+    environment:
+      DB_URL: jdbc:oracle:thin:@oracle:1521/FREEPDB1
+      DB_USERNAME: framezero
+    depends_on:
+      oracle:
+        condition: service_healthy   # DB 준비 끝난 뒤에 Spring 시작 (ORA-12514 방지)
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - app
+    restart: unless-stopped
+
+volumes:
+  oracle-data:
+  caddy-data:
+  caddy-config:

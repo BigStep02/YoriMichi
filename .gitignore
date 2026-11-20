@@ -49,3 +49,4 @@ out/
 ### Local memory ###
 memory/
 .DS_Store
+!.env.example
