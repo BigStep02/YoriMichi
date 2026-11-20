@@ -1499,7 +1499,7 @@ export function createHanabiStage(canvas, opts = {}) {
         buzz(4);
       }
       prevHop = hop;
-      if (!calm) {   // 카메라가 실 끝을 살짝 따라감 (멀미 안 나게 35%만)
+      {   // 카메라가 실 끝을 살짝 따라감 (동작 줄이기여도 뽑기 연출은 유지)
         follow.set(...P.rouletteLook).lerp(fate.head, .45);
         look.lerp(follow, .18);
       }
@@ -1510,7 +1510,7 @@ export function createHanabiStage(canvas, opts = {}) {
     tl.to(r, { s: H + C, duration: .8, ease: 'power2.inOut', onUpdate: () => fate.show(Math.max(0, H - .9), r.s) }, tAt)
       .call(() => buzz([10, 40, 10]), null, tAt)
       .to(look, { x: () => chosenHome.x * .6, y: () => chosenHome.y, z: () => chosenHome.z, duration: calm ? 1.6 : 1.1, ease: 'power2.inOut' }, tAt);
-    if (!calm) tl.to(camera.position, { x: () => chosenHome.x * .35, y: 2.6, z: () => chosenHome.z + 7, duration: 1.4, ease: 'power2.inOut' }, tAt + .1);
+    tl.to(camera.position, { x: () => chosenHome.x * .35, y: 2.6, z: () => chosenHome.z + 7, duration: 1.4, ease: 'power2.inOut' }, tAt + .1);
     // 당김: 등불이 실 쪽으로 끌려왔다가 제자리
     const tug = tAt + .85;
     tl.to(chosen.position, { z: () => chosenHome.z + .9, y: () => chosenHome.y - .15, duration: .16, ease: 'power2.out' }, tug)
@@ -1538,7 +1538,7 @@ export function createHanabiStage(canvas, opts = {}) {
     tl.to(chosen.position, { y: 12, duration: 1.6, ease: 'power2.in', onUpdate: () => { lights[1].position.copy(chosen.position); emberAt(chosen.position); } }, lift)
       .call(() => { if (fateObj) fateObj.fade(.6); }, null, lift + .9)
       .to(look, { y: P.liftLook, duration: calm ? 2.2 : 1.7, ease: 'power2.inOut' }, lift);
-    if (!calm) tl.to(camera.position, { y: 3.4, duration: 1.7, ease: 'power2.inOut' }, lift);
+    tl.to(camera.position, { y: 3.4, duration: 1.7, ease: 'power2.inOut' }, lift);
 
     // 5) 터지면서 불꽃이 '縁' 글자를 씀 → 결과
     const boom = lift + 1.6;
@@ -1587,7 +1587,7 @@ export function createHanabiStage(canvas, opts = {}) {
     street.forEach((l) => { gsap.killTweensOf(l.userData); l.userData.lit = .5; });
     lights.forEach((l) => { gsap.killTweensOf(l); l.intensity = 0; });
     shells.forEach((sh) => { if (sh.target) sh.hold = Math.min(sh.hold, sh.age); });
-    if (!calm) camera.position.set(chosenHome.x * .35, 3.4, chosenHome.z + 7);
+    camera.position.set(chosenHome.x * .35, 3.4, chosenHome.z + 7);
     look.set(chosenHome.x * .6, P.finalLook, chosenHome.z);
     camera.lookAt(look);
     const o = new THREE.Vector3(look.x, portrait ? 12 : 11.5, chosenHome.z);
