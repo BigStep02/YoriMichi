@@ -51,12 +51,12 @@ export function createHanabiStage(canvas, opts = {}) {
   const P = portrait ? {
     sx: 2.25, wx: 3.3, bx: 4.1,
     camHome: [0, 1.9, 10.5], lookHome: [0, .5, -10],
-    rouletteCam: [0, 2.3, 13], rouletteLook: [0, 1.4, -12],
+    rouletteCam: [0, 2.5, 9.5], rouletteLook: [0, 4.4, -8],
     liftLook: 10.6, finalLook: 10.5, glyphW: 3.3, introGlyph: [0, 9.2, -16], introW: 6.2,
   } : {
     sx: 3.3, wx: 4.6, bx: 5.2,
     camHome: [0, 1.7, 8], lookHome: [0, 4.2, -10],
-    rouletteCam: [0, 3.2, 10], rouletteLook: [0, 2.6, -12],
+    rouletteCam: [0, 3, 8.5], rouletteLook: [0, 3.8, -10],
     liftLook: 11, finalLook: 9.5, glyphW: 5.2, introGlyph: [0, 13.4, -16], introW: 8,
   };
   if (SCENE === 'ema') { P.camHome = [0, 1.7, portrait ? 1.6 : 1.2]; P.lookHome = [0, portrait ? 3.15 : 2.6, -4]; P.introGlyph = [0, 5.6, -10]; P.introW = portrait ? 3 : 5; }
@@ -747,6 +747,7 @@ export function createHanabiStage(canvas, opts = {}) {
   function clearThread() {
     for (const m of [thread, threadGlow]) if (m) { scene.remove(m); m.geometry.dispose(); m.material.dispose(); }
     thread = threadGlow = null;
+    clearFate();
   }
   function makeThread(from, to) {
     clearThread();
@@ -764,6 +765,68 @@ export function createHanabiStage(canvas, opts = {}) {
     threadGlow = new THREE.Mesh(new THREE.TubeGeometry(curve, SEG, .11, RAD, false), new THREE.MeshBasicMaterial({ color: '#FF3B3B', transparent: true, opacity: .3, blending: THREE.AdditiveBlending, depthWrite: false }));
     for (const m of [thread, threadGlow]) { m.geometry.setDrawRange(0, 0); scene.add(m); }
     return { set(p) { const n = Math.floor(SEG * p) * RAD * 6; thread.geometry.setDrawRange(0, n); threadGlow.geometry.setDrawRange(0, n); } };
+  }
+
+  // 縁の糸: 등불 사이를 뛰는 실 (홉 단위로 그리는 범위를 조절)
+  let fateObj = null;
+  function clearFate() {
+    if (!fateObj) return;
+    for (const m of fateObj.meshes) { scene.remove(m); m.geometry.dispose(); m.material.dispose(); }
+    fateObj = null;
+  }
+  function makeFateThread(hops, knotAt) {
+    clearFate();
+    const PER = 28, dense = [];
+    for (let i = 0; i < hops.length - 1; i++) {
+      const A = hops[i], B = hops[i + 1];
+      const lift = .9 + A.distanceTo(B) * .12;
+      const M = A.clone().lerp(B, .5); M.y += lift; M.x += (Math.random() - .5) * .8;
+      for (let k = 0; k < PER; k++) {
+        const u = k / PER, iu = 1 - u;
+        dense.push(new THREE.Vector3(
+          iu * iu * A.x + 2 * iu * u * M.x + u * u * B.x,
+          iu * iu * A.y + 2 * iu * u * M.y + u * u * B.y,
+          iu * iu * A.z + 2 * iu * u * M.z + u * u * B.z));
+      }
+    }
+    const last = hops[hops.length - 1];
+    dense.push(last.clone());
+    // 매듭: 고른 등불을 두 바퀴 감음
+    const COILN = 40, coil = 1.2;
+    for (let k = 1; k <= COILN; k++) {
+      const a = Math.PI / 2 + k / COILN * Math.PI * 4, rr = .6;
+      dense.push(new THREE.Vector3(knotAt.x + Math.cos(a) * rr, knotAt.y - .5 + k / COILN * .7, knotAt.z + Math.sin(a) * rr));
+    }
+    const hopsN = hops.length - 1, total = hopsN + coil, nD = dense.length - 1;
+    const sToIdx = (s) => s <= hopsN ? s * PER : hopsN * PER + (s - hopsN) / coil * COILN;
+    const curve = new (class extends THREE.Curve {
+      getPoint(t, out = new THREE.Vector3()) { const f = t * nD, i = Math.min(nD - 1, Math.floor(f)); return out.copy(dense[i]).lerp(dense[i + 1], f - i); }
+      getPointAt(u, out) { return this.getPoint(u, out); }
+    })();
+    const SEG = nD * 2, RAD = 6;
+    const core = new THREE.Mesh(new THREE.TubeGeometry(curve, SEG, .022, RAD, false), new THREE.MeshBasicMaterial({ color: '#FF2E3A', transparent: true }));
+    const glow = new THREE.Mesh(new THREE.TubeGeometry(curve, SEG, .06, RAD, false), new THREE.MeshBasicMaterial({ color: '#FF4A3A', transparent: true, opacity: .26, blending: THREE.AdditiveBlending, depthWrite: false }));
+    const bead = new THREE.Sprite(new THREE.SpriteMaterial({ map: GLOW, color: '#FFB08A', transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+    bead.scale.setScalar(.9);
+    for (const m of [core, glow, bead]) scene.add(m);
+    core.geometry.setDrawRange(0, 0); glow.geometry.setDrawRange(0, 0);
+    const head = new THREE.Vector3();
+    fateObj = {
+      meshes: [core, glow, bead], coil, head,
+      show(s0, s1) {
+        const i0 = Math.floor(sToIdx(s0) / nD * SEG), i1 = Math.ceil(sToIdx(s1) / nD * SEG);
+        for (const m of [core, glow]) m.geometry.setDrawRange(i0 * RAD * 6, Math.max(0, i1 - i0) * RAD * 6);
+        curve.getPoint(Math.min(1, sToIdx(s1) / nD), head); bead.position.copy(head);
+        if (Math.random() < .5) emberAt(head);
+      },
+      flash() {
+        glow.material.opacity = 1; bead.scale.setScalar(2.2);
+        gsap.to(glow.material, { opacity: .26, duration: .6 });
+        gsap.to(bead.scale, { x: .6, y: .6, duration: .6 });
+      },
+      fade(d = .6) { gsap.to([core.material, glow.material, bead.material], { opacity: 0, duration: d }); },
+    };
+    return fateObj;
   }
 
   // ───────── loop ─────────
@@ -956,31 +1019,45 @@ export function createHanabiStage(canvas, opts = {}) {
       .to(look, { x: P.rouletteLook[0], y: P.rouletteLook[1], z: P.rouletteLook[2], duration: 1, ease: 'power2.inOut' }, 0)
       .to(street.map((l) => l.userData), { lit: .18, duration: .6 }, .1);
 
-    // 1) 룰렛: 불빛이 등불 사이를 뛰다 점점 느려지며 하나에 멈춤 (= 우연)
-    const r = { s: 0 }; let prev = null;
-    tl.to(r, { s: STEPS - 1, duration: 3, ease: 'power3.out', onUpdate: () => {
-      const l = seq[Math.round(r.s)];
-      if (l === prev) return;
-      if (prev) gsap.to(prev.userData, { lit: .18, duration: .25 });
-      l.userData.lit = 1.7; prev = l;
-      lights[0].position.copy(l.position); lights[0].intensity = 7;
-      buzz(4);
+    // 1) 縁の糸: 붉은 실 끝이 등불 사이를 뛰어다니다 점점 느려지며 하나를 고름 (= 우연)
+    const hopPts = [new THREE.Vector3(0, .3, camera.position.z - 3)];
+    for (const l of seq) hopPts.push(l.position.clone().add(new THREE.Vector3(0, -.1, .75)));
+    const fate = makeFateThread(hopPts, chosenHome);
+    const H = seq.length, C = fate.coil;
+    const r = { s: 0 }; let prevHop = -1;
+    const follow = new THREE.Vector3();
+    const TAIL = 1.6;   // 보이는 실 꼬리 길이 (홉 단위)
+    tl.to(r, { s: H, duration: 3.4, ease: 'power4.out', onUpdate: () => {
+      fate.show(Math.max(0, r.s - TAIL), r.s);
+      const hop = Math.floor(r.s + .02);
+      if (hop !== prevHop && hop >= 1) {
+        const l = seq[hop - 1];
+        if (prevHop >= 1) gsap.to(seq[prevHop - 1].userData, { lit: .18, duration: .35 });
+        l.userData.lit = 1.8;
+        lights[0].position.copy(l.position); lights[0].intensity = 7;
+        buzz(4);
+      }
+      prevHop = hop;
+      if (!calm) {   // 카메라가 실 끝을 살짝 따라감 (멀미 안 나게 35%만)
+        follow.set(...P.rouletteLook).lerp(fate.head, .45);
+        look.lerp(follow, .18);
+      }
     } }, .7);
 
-    // 2) 붉은 실이 나에게서 뻗어 나가 그 등불을 감음 (= 인연)
-    const tAt = 3.9;
-    tl.call(() => {
-      const from = new THREE.Vector3(0, .25, camera.position.z - 2.5);
-      const th = makeThread(from, chosenHome.clone());
-      const o = { p: 0 };
-      gsap.to(o, { p: 1, duration: 1.3 / 1.7, ease: 'power2.inOut', onUpdate: () => th.set(o.p) });
-      buzz([10, 40, 10]);
-    }, null, tAt)
-      .to(look, { x: () => chosenHome.x * .6, y: () => chosenHome.y, z: () => chosenHome.z, duration: calm ? 2 : 1.3, ease: 'power2.inOut' }, tAt);
-    if (!calm) tl.to(camera.position, { x: () => chosenHome.x * .35, y: 2.6, z: () => chosenHome.z + 7, duration: 1.6, ease: 'power2.inOut' }, tAt + .2);
+    // 2) 실이 그 등불을 두 번 감고, 툭 당김 (= 인연)
+    const tAt = .7 + 3.4;
+    tl.to(r, { s: H + C, duration: .55, ease: 'power2.inOut', onUpdate: () => fate.show(Math.max(0, H - .9), r.s) }, tAt)
+      .call(() => buzz([10, 40, 10]), null, tAt)
+      .to(look, { x: () => chosenHome.x * .6, y: () => chosenHome.y, z: () => chosenHome.z, duration: calm ? 1.6 : 1.1, ease: 'power2.inOut' }, tAt);
+    if (!calm) tl.to(camera.position, { x: () => chosenHome.x * .35, y: 2.6, z: () => chosenHome.z + 7, duration: 1.4, ease: 'power2.inOut' }, tAt + .1);
+    // 당김: 등불이 실 쪽으로 끌려왔다가 제자리
+    const tug = tAt + .6;
+    tl.to(chosen.position, { z: () => chosenHome.z + .9, y: () => chosenHome.y - .15, duration: .16, ease: 'power2.out' }, tug)
+      .to(chosen.position, { z: () => chosenHome.z, y: () => chosenHome.y, duration: .7, ease: 'elastic.out(1, .45)' }, tug + .16)
+      .call(() => { fate.flash(); buzz(25); }, null, tug);
 
     // 3) 매듭: 등불이 맥박 치며 밝아짐
-    const knot = tAt + 1.35;
+    const knot = tug + .35;
     tl.call(() => { gsap.to(chosen.userData, { lit: 1.9, duration: .3 }); lights[1].position.copy(chosenHome); lights[1].intensity = 6; buzz(30); }, null, knot)
       .to(chosen.scale, { x: 1.12, y: 1.12, z: 1.12, duration: .18, yoyo: true, repeat: 3, ease: 'sine.inOut' }, knot)
       .to(street.map((l) => l.userData), { lit: .5, duration: .8 }, knot + .2);
@@ -998,7 +1075,7 @@ export function createHanabiStage(canvas, opts = {}) {
     const lift = gate + .05;
     tl.call(() => { if (tl) gsap.to(tl, { timeScale: 1, duration: .5, ease: 'power1.out' }); }, null, lift - .3);
     tl.to(chosen.position, { y: 12, duration: 1.6, ease: 'power2.in', onUpdate: () => { lights[1].position.copy(chosen.position); emberAt(chosen.position); } }, lift)
-      .call(() => { if (thread) { thread.material.transparent = true; gsap.to([thread.material, threadGlow.material], { opacity: 0, duration: .6 }); } }, null, lift + .9)
+      .call(() => { if (fateObj) fateObj.fade(.6); }, null, lift + .9)
       .to(look, { y: P.liftLook, duration: calm ? 2.2 : 1.7, ease: 'power2.inOut' }, lift);
     if (!calm) tl.to(camera.position, { y: 3.4, duration: 1.7, ease: 'power2.inOut' }, lift);
 
