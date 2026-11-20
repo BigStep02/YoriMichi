@@ -20,6 +20,7 @@ services:
 
   app:
     build: .
+    image: yorimichi-app:latest   # update.sh 가 :previous 로 백업해 두고 실패 시 복구
     env_file: .env
     environment:
       DB_URL: jdbc:oracle:thin:@oracle:1521/FREEPDB1
