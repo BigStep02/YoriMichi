@@ -1,21 +1,28 @@
 /* YoriMichi 테스트용 기본 화면 스타일 */
 :root {
-  --navy: #1E2A4A;
-  --coral: #F2765C;
-  --lavender: #DDE4F6;
-  --lavender-2: #C7D2EE;
-  --coral-soft: #FDE6DF;
-  --coral-text: #C4492E;
-  --ivory: #FAF8F5;
-  --gray: #5F6577;
-  --white: #FFFFFF;
-  --line: #E6E2DC;
-  --danger-bg: #FDECEA;
-  --danger-text: #9B2C1F;
+  /* 祭り 밤 테마 — 남색 밤하늘, 등불 빨강, 금색, 아이보리 글자 */
+  --night: #070A1A;
+  --navy: #F5EFE6;                    /* 기본 글자색 (이름은 예전 그대로 둠) */
+  --fill: #E8462E;                    /* 선택됨·주요 버튼 채움색 (등불 빨강) */
+  --on-fill: #FFF7EE;                 /* 채움색 위 글자 */
+  --gold: #F2C14E;
+  --coral: #E8462E;
+  --lavender: rgba(255, 255, 255, 0.08);
+  --lavender-2: #3A3558;
+  --coral-soft: rgba(232, 70, 46, 0.18);
+  --coral-text: #FF8A72;
+  --ivory: rgba(255, 255, 255, 0.06);
+  --gray: #ABA5BE;
+  --white: rgba(22, 19, 46, 0.72);    /* 카드 표면 (반투명 유리) */
+  --line: rgba(245, 239, 230, 0.14);
+  --danger-bg: rgba(232, 70, 46, 0.15);
+  --danger-text: #FF9A86;
   --radius: 20px;
-  --shadow: 0 2px 10px rgba(30, 42, 74, 0.08);
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
   --font-kr: "Noto Sans KR", system-ui, -apple-system, sans-serif;
   --font-jp: "Noto Sans JP", "Noto Sans KR", system-ui, sans-serif;
+  --font-serif: "Zen Old Mincho", "Noto Serif JP", serif;
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -23,7 +30,7 @@
 html, body { margin: 0; padding: 0; }
 
 body {
-  background: var(--ivory);
+  background: var(--night);
   color: var(--navy);
   font-family: var(--font-kr);
   font-size: 16px;
@@ -132,7 +139,7 @@ a { color: inherit; }
   border: 1px solid var(--line);
   border-radius: 999px;
   padding: 6px;
-  box-shadow: 0 6px 20px rgba(30, 42, 74, 0.06);
+  box-shadow: none;
 }
 .chip {
   flex: 1;
@@ -205,7 +212,7 @@ a { color: inherit; }
   cursor: pointer;
   text-decoration: none;
 }
-.btn-primary { background: var(--navy); color: var(--white); }
+.btn-primary { background: var(--fill); color: var(--on-fill); }
 .btn-outline { background: var(--white); color: var(--navy); border: 1.5px solid var(--navy); }
 .btn-block { width: 100%; }
 .btn:disabled,
@@ -217,7 +224,7 @@ a { color: inherit; }
   padding: 2px 10px;
   border-radius: 999px;
   background: var(--coral);
-  color: var(--white);
+  color: var(--on-fill);
   font-size: 12px;
   white-space: nowrap;
   font-weight: 700;
@@ -305,7 +312,7 @@ a.card:active { transform: scale(0.99); }
   font-weight: 700;
   cursor: pointer;
 }
-.radius-tabs button[aria-pressed="true"] { background: var(--navy); color: var(--white); }
+.radius-tabs button[aria-pressed="true"] { background: var(--fill); color: var(--on-fill); }
 
 /* 스켈레톤 */
 .skeleton { background: var(--lavender); border-radius: var(--radius); padding: 18px; }
@@ -313,7 +320,7 @@ a.card:active { transform: scale(0.99); }
   height: 14px;
   border-radius: 8px;
   margin: 8px 0;
-  background: linear-gradient(90deg, #cfd7ee 25%, #e8ecf8 50%, #cfd7ee 75%);
+  background: linear-gradient(90deg, #1d1a38 25%, #2c2850 50%, #1d1a38 75%);
   background-size: 200% 100%;
   animation: shimmer 1.2s infinite;
 }
@@ -331,8 +338,8 @@ a.card:active { transform: scale(0.99); }
   width: 100%;
   border: 0;
   border-radius: var(--radius);
-  background: var(--navy);
-  color: var(--white);
+  background: var(--fill);
+  color: var(--on-fill);
   padding: 16px 18px;
   display: flex;
   align-items: center;
@@ -390,7 +397,7 @@ a.cat:hover { transform: translateY(-2px); }
 }
 .next-card + .next-card { margin-top: 10px; }
 .next-card > .icon { color: var(--gray); }
-.date-box { width: 54px; flex: none; text-align: center; border-radius: 14px; background: var(--navy); color: var(--white); padding: 8px 0 7px; line-height: 1.1; }
+.date-box { width: 54px; flex: none; text-align: center; border-radius: 14px; background: var(--fill); color: var(--on-fill); padding: 8px 0 7px; line-height: 1.1; }
 .date-box .m { font-size: 11px; opacity: 0.7; font-weight: 700; }
 .date-box .d { font-size: 20px; font-weight: 900; }
 .next-card.alt .date-box { background: var(--lavender); color: var(--navy); }
@@ -399,13 +406,13 @@ a.cat:hover { transform: translateY(-2px); }
 .next-card .ja { font-size: 12px; color: var(--gray); }
 .next-card .meta { font-size: 12px; color: var(--gray); margin-top: 2px; }
 .mini-badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 999px; background: var(--coral-soft); color: var(--coral-text); margin-right: 4px; }
-.skeleton-row { height: 84px; background: linear-gradient(90deg, #efebe5 25%, #f8f6f2 50%, #efebe5 75%); background-size: 200% 100%; animation: shimmer 1.2s infinite; border: 0; }
+.skeleton-row { height: 84px; background: linear-gradient(90deg, #1d1a38 25%, #2c2850 50%, #1d1a38 75%); background-size: 200% 100%; animation: shimmer 1.2s infinite; border: 0; }
 .empty-line { margin: 0; padding: 14px 4px; }
 
 /* ---------- 상세 ---------- */
 .hero {
-  background: var(--navy);
-  color: var(--white);
+  background: var(--fill);
+  color: var(--on-fill);
   border-radius: 0 0 var(--radius) var(--radius);
   padding: 20px 16px 28px;
   max-width: 480px;
@@ -413,10 +420,10 @@ a.cat:hover { transform: translateY(-2px); }
   position: relative;
   overflow: hidden;
 }
-.hero .back { color: #C9D0E4; }
+.hero .back { color: #ABA5BE; }
 .hero .lanterns { position: absolute; right: 12px; top: 12px; width: 120px; height: 120px; opacity: 0.95; }
 .hero h1 { font-size: 30px; font-weight: 800; line-height: 1.25; margin: 48px 0 4px; max-width: 75%; }
-.hero .name-ja { color: #C9D0E4; margin: 0; }
+.hero .name-ja { color: var(--gold); font-family: var(--font-serif); margin: 0; }
 .hero .badge { margin-top: 14px; }
 
 .info-list { list-style: none; padding: 0; margin: 20px 0; display: grid; gap: 10px; }
@@ -477,7 +484,7 @@ a.cat:hover { transform: translateY(-2px); }
   min-height: 40px;
 }
 .chips button small { font-weight: 500; color: var(--gray); margin-left: 2px; }
-.chips button[aria-checked="true"], .chips button[aria-pressed="true"] { background: var(--navy); border-color: var(--navy); color: var(--white); }
+.chips button[aria-checked="true"], .chips button[aria-pressed="true"] { background: var(--fill); border-color: var(--fill); color: var(--on-fill); }
 .opt-hint { font-size: 12px; font-weight: 500; color: var(--gray); margin-left: 6px; }
 .chips button[aria-checked="true"] small { color: rgba(255,255,255,0.7); }
 
@@ -536,7 +543,7 @@ a.cat:hover { transform: translateY(-2px); }
 .ai-flag { font-size: 10px; color: var(--gray); opacity: .6; }
 .ai-muted { font-size: 13px; color: var(--gray); margin: 4px 0 8px; }
 .ai-actions { display: grid; gap: 8px; }
-.sk-line { height: 12px; border-radius: 6px; background: linear-gradient(90deg, #cfd8ef 25%, #e6ebf8 50%, #cfd8ef 75%); background-size: 200% 100%; animation: shimmer 1.2s infinite; }
+.sk-line { height: 12px; border-radius: 6px; background: linear-gradient(90deg, #2a2645 25%, #3d3860 50%, #2a2645 75%); background-size: 200% 100%; animation: shimmer 1.2s infinite; }
 .sk-line.short { width: 60%; }
 
 .reviews:empty { display: none; }
@@ -553,7 +560,7 @@ a.cat:hover { transform: translateY(-2px); }
   min-height: 52px; border-radius: 16px; font: inherit; font-weight: 800; font-size: 16px;
   text-decoration: none; cursor: pointer;
 }
-.btn-primary { background: var(--coral); color: var(--white); border: 0; }
+.btn-primary { background: var(--coral); color: var(--on-fill); border: 0; }
 .btn-ghost { background: var(--white); color: var(--navy); border: 1.5px solid var(--navy); }
 .text-btn { display: block; margin: 12px auto 0; background: none; border: 0; font: inherit; font-size: 14px; color: var(--gray); text-decoration: underline; cursor: pointer; }
 .attribution { margin: 18px 0 0; text-align: center; font-size: 11.5px; color: var(--gray); }
@@ -562,7 +569,7 @@ a.cat:hover { transform: translateY(-2px); }
 .empty-state h2 { margin: 16px 0 6px; font-size: 20px; font-weight: 800; }
 
 /* ---------- 뽑기 힌트 ---------- */
-.hint-card { position: relative; background: var(--navy); color: var(--white); border-radius: 24px; padding: 26px 20px 20px; overflow: hidden; }
+.hint-card { position: relative; background: var(--fill); color: var(--on-fill); border-radius: 24px; padding: 26px 20px 20px; overflow: hidden; }
 .hint-seal { position: absolute; right: -18px; top: -22px; width: 104px; height: 104px; border-radius: 50%; background: var(--coral); opacity: 0.9; display: grid; place-items: center; padding: 20px 18px 0 0; }
 .hint-seal svg { animation: lamp-swing 1.4s ease-in-out infinite alternate; transform-origin: 50% 0; }
 .hint-title { margin: 0; font-size: 22px; max-width: 70%; line-height: 1.35; font-weight: 900; position: relative; }
@@ -581,10 +588,10 @@ a.cat:hover { transform: translateY(-2px); }
 /* ---------- 바텀 시트 (지역·날짜 선택) ---------- */
 body.sheet-open { overflow: hidden; }
 .sheet-wrap { position: fixed; inset: 0; z-index: 100; display: flex; align-items: flex-end; justify-content: center; }
-.sheet-dim { position: absolute; inset: 0; background: rgba(20, 28, 50, 0.45); opacity: 0; transition: opacity 0.2s; }
+.sheet-dim { position: absolute; inset: 0; background: rgba(3, 4, 12, 0.6); opacity: 0; transition: opacity 0.2s; }
 .sheet {
   position: relative; width: 100%; max-width: 480px; max-height: 86vh;
-  background: var(--ivory); border-radius: 24px 24px 0 0;
+  background: #14122C; border-radius: 24px 24px 0 0; border-top: 1px solid rgba(242,193,78,.25);
   display: flex; flex-direction: column;
   transform: translateY(100%); transition: transform 0.22s ease-out;
   box-shadow: 0 -10px 40px rgba(20, 28, 50, 0.18);
@@ -625,7 +632,7 @@ body.sheet-open { overflow: hidden; }
   font: inherit; font-size: 14px; font-weight: 700; color: var(--navy); cursor: pointer;
 }
 .city:hover { border-color: var(--navy); }
-.city.on { background: var(--navy); border-color: var(--navy); color: var(--white); }
+.city.on { background: var(--fill); border-color: var(--fill); color: var(--on-fill); }
 
 /* 날짜 */
 .preset-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
@@ -647,8 +654,8 @@ body.sheet-open { overflow: hidden; }
 .day:disabled { color: #C9CCD6; cursor: default; }
 .day.today::after { content: ""; position: absolute; left: 50%; bottom: 6px; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: var(--coral); }
 .day.in { background: var(--coral-soft); border-radius: 0; }
-.day.start, .day.end { background: var(--coral); color: var(--white); font-weight: 800; }
-.day.start.today::after, .day.end.today::after { background: var(--white); }
+.day.start, .day.end { background: var(--coral); color: var(--on-fill); font-weight: 800; }
+.day.start.today::after, .day.end.today::after { background: var(--on-fill); }
 .day:not(:disabled):not(.start):not(.end):hover { background: var(--ivory); }
 .range-sum { font-size: 14px; font-weight: 700; text-align: center; margin-bottom: 10px; }
 .sheet-ok { width: 100%; }
@@ -661,7 +668,7 @@ body.sheet-open { overflow: hidden; }
 .list-tools { display: flex; gap: 8px; justify-content: space-between; margin-top: 12px; flex-wrap: wrap; }
 .seg { display: inline-flex; background: var(--white); border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
 .seg button { border: 0; background: transparent; font: inherit; font-size: 13.5px; font-weight: 700; color: var(--gray); padding: 7px 13px; border-radius: 999px; cursor: pointer; }
-.seg button[aria-checked="true"] { background: var(--navy); color: var(--white); }
+.seg button[aria-checked="true"] { background: var(--fill); color: var(--on-fill); }
 .switch-row.compact { margin-top: 12px; padding: 10px 14px; font-size: 14px; }
 .list-count { margin: 16px 2px 8px; font-size: 13px; font-weight: 700; }
 .r-item {
@@ -673,7 +680,7 @@ body.sheet-open { overflow: hidden; }
 .r-item:hover { border-color: var(--lavender-2); }
 .r-item.skeleton-row { height: 82px; cursor: default; }
 .r-rank { flex: none; width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; font-size: 13px; font-weight: 900; background: var(--lavender); }
-.r-rank.top { background: var(--coral); color: var(--white); }
+.r-rank.top { background: var(--coral); color: var(--on-fill); }
 .r-main { flex: 1; min-width: 0; display: grid; gap: 2px; }
 .r-title { font-size: 16px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .r-sub { font-size: 12.5px; color: var(--gray); display: flex; gap: 8px; align-items: center; }
@@ -695,7 +702,7 @@ body.sheet-open { overflow: hidden; }
 .f-item.later .date-box { background: var(--lavender); color: var(--navy); }
 .f-main { flex: 1; min-width: 0; }
 .f-top { display: flex; gap: 6px; align-items: center; margin-bottom: 4px; }
-.b-live { font-size: 11px; font-weight: 800; background: var(--coral); color: var(--white); padding: 2px 8px; border-radius: 999px; }
+.b-live { font-size: 11px; font-weight: 800; background: var(--coral); color: var(--on-fill); padding: 2px 8px; border-radius: 999px; }
 .b-d { font-size: 11px; font-weight: 800; background: var(--coral-soft); color: var(--coral-text); padding: 2px 8px; border-radius: 999px; }
 .f-name { font-size: 17px; font-weight: 900; line-height: 1.3; }
 .f-ja { font-size: 12.5px; color: var(--gray); }
@@ -706,7 +713,7 @@ body.sheet-open { overflow: hidden; }
 .f-empty span { font-size: 13px; color: var(--gray); }
 .f-widen { margin: 12px 2px 0; font-size: 13px; color: var(--coral-text); font-weight: 700; }
 
-.f-hero { position: relative; overflow: hidden; background: var(--navy); color: var(--white); padding: 14px 20px 26px; max-width: 480px; margin: 0 auto; }
+.f-hero { position: relative; overflow: hidden; background: var(--fill); color: var(--on-fill); padding: 14px 20px 26px; max-width: 480px; margin: 0 auto; }
 @media (min-width: 481px) { .f-hero { border-radius: 0 0 28px 28px; } }
 .back.on-dark { color: rgba(255,255,255,0.75); }
 .f-hero-lamp { position: absolute; right: -6px; top: 40px; width: 92px; height: 128px; animation: lamp-swing 1.6s ease-in-out infinite alternate; transform-origin: 50% 0; }
@@ -733,7 +740,7 @@ body.sheet-open { overflow: hidden; }
   z-index: 90; max-width: 520px; margin: 0 auto;
   display: flex; align-items: center; gap: 12px;
   padding: 12px 12px 12px 14px; border-radius: 18px;
-  background: var(--white); box-shadow: 0 6px 24px rgba(30, 42, 74, 0.18);
+  background: #14122C; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4); border: 1px solid rgba(242,193,78,.25);
   font-family: var(--font-kr);
 }
 .pwa-banner img { width: 40px; height: 40px; border-radius: 10px; flex: none; }
@@ -741,7 +748,7 @@ body.sheet-open { overflow: hidden; }
 .pwa-text strong { font-size: 14px; color: var(--navy); }
 .pwa-text span { font-size: 12px; color: var(--gray); line-height: 1.4; }
 .pwa-action { border: 0; border-radius: 999px; padding: 8px 16px; font-weight: 700; font-size: 14px;
-  background: var(--navy); color: var(--white); flex: none; }
+  background: var(--fill); color: var(--on-fill); flex: none; }
 .pwa-close { border: 0; background: none; font-size: 22px; line-height: 1; color: var(--gray); padding: 4px 6px; flex: none; }
 
 /* PWA(홈 화면 앱)로 열었을 때 상태 표시줄과 겹치지 않게 */
@@ -749,3 +756,391 @@ html.is-app body { padding-top: env(safe-area-inset-top); }
 
 /* 카드 설명이 화살표와 겹치지 않게 */
 .cat .desc { padding-right: 30px; }
+
+/* ════════════════════════════════════════
+   draw 페이지 — hanabi 3D 연출 (body.hanabi 일 때만)
+   WebGL 미지원 기기는 기존 화면 그대로 유지됨
+   ════════════════════════════════════════ */
+
+/* ── 야경 색상 ── */
+body.hanabi {
+  background: #070A1A;
+  color: #F5EFE6;
+}
+body.hanabi .muted { color: #ABA5BE; }
+body.hanabi .attribution { color: #ABA5BE; }
+body.hanabi .back { color: #ABA5BE; }
+body.hanabi .draw-title { color: #F5EFE6; }
+body.hanabi .draw-sub { color: #ABA5BE; }
+body.hanabi .opt-label { color: #F2C14E; letter-spacing: .02em; }
+body.hanabi .opt-hint { color: #ABA5BE; }
+body.hanabi .loading-title { color: #F5EFE6; }
+body.hanabi .result-kicker { color: #F2C14E; }
+
+/* 기본: 캔버스·플래시는 숨김 (layout에 영향 주지 않도록) */
+#hanabi-stage, #hanabi-flash { display: none; }
+
+/* ── 3D 캔버스 ── */
+body.hanabi #hanabi-stage {
+  display: block;
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+/* ── 플래시 오버레이 ── */
+body.hanabi #hanabi-flash {
+  display: block;
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0;
+  mix-blend-mode: screen;
+  background: radial-gradient(circle at 50% 42%, #FFF1D6, #FF6A3D 40%, rgba(232, 70, 46, 0) 75%);
+}
+
+/* ── 건너뛰기 버튼 ── */
+body.hanabi #hanabi-skip {
+  position: fixed;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  height: 44px;
+  padding: 0 24px;
+  border-radius: 999px;
+  border: 0;
+  background: rgba(10, 10, 30, .78);
+  color: #F5EFE6;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  z-index: 9;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  white-space: nowrap;
+}
+
+/* ── UI 레이어를 3D 위로 ── */
+body.hanabi main.container {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── 연출 중: UI 전부 숨김 (3D 만 보임) ── */
+body.hanabi-playing #step-form,
+body.hanabi-playing #step-loading,
+body.hanabi-playing #step-result {
+  display: none !important;
+}
+
+/* ── 조건 선택 화면 — 반투명 유리 카드 ── */
+body.hanabi #step-form {
+  background: rgba(18, 16, 40, .78);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(242, 193, 78, .4);
+  border-radius: 22px;
+  padding: 20px 16px;
+  margin-top: 12px;
+}
+
+body.hanabi .chips button {
+  background: rgba(255, 255, 255, .07);
+  border-color: rgba(255, 255, 255, .2);
+  color: #F5EFE6;
+}
+body.hanabi .chips button small { color: #ABA5BE; }
+body.hanabi .chips button[aria-checked="true"],
+body.hanabi .chips button[aria-pressed="true"] {
+  background: #E8462E;
+  border-color: #E8462E;
+  color: #F5EFE6;
+}
+body.hanabi .chips button[aria-checked="true"] small,
+body.hanabi .chips button[aria-pressed="true"] small { color: rgba(255,255,255,.75); }
+
+body.hanabi .switch-row {
+  background: rgba(255, 255, 255, .07);
+  border-color: rgba(255, 255, 255, .18);
+  color: #F5EFE6;
+}
+body.hanabi .switch { background: rgba(255,255,255,.25); }
+body.hanabi .switch-row input:checked + .switch { background: #E8462E; }
+
+body.hanabi .cta {
+  background: rgba(242, 193, 78, .92);
+  color: #0D0A1E;
+}
+body.hanabi .cta-text span { color: rgba(13,10,30,.65); }
+
+/* ── 결과 화면 — 하단 정렬 (상단 하늘에 불꽃 글자가 보이도록) ──
+   :not([hidden]) 로 hidden 속성과 display:flex 충돌 방지 */
+body.hanabi #step-result:not([hidden]) {
+  display: block;
+  padding-bottom: 20px;
+}
+
+/* ── 결과 카드 — 반투명 유리 카드 ── */
+body.hanabi .result-card {
+  background: rgba(18, 16, 40, .78);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(242, 193, 78, .4);
+  border-radius: 22px;
+  color: #F5EFE6;
+}
+body.hanabi .r-name { color: #F5EFE6; }
+body.hanabi .r-name-ko { color: #ABA5BE; }
+body.hanabi .r-stats { color: #F5EFE6; }
+body.hanabi .r-stats .dot { color: rgba(255,255,255,.25); }
+body.hanabi .star { color: #F2C14E; }
+body.hanabi .type-chip { background: rgba(255,255,255,.12); color: #F5EFE6; }
+body.hanabi .open-badge { background: rgba(46,158,98,.25); color: #6BE0A8; }
+body.hanabi .why { background: rgba(255,255,255,.07); color: #ABA5BE; }
+body.hanabi .why .icon { color: #E8462E; }
+
+body.hanabi .ai-box { background: rgba(255,255,255,.07); }
+body.hanabi .ai-head { color: #F5EFE6; }
+body.hanabi .ai-tag { background: rgba(255,255,255,.12); color: #ABA5BE; }
+body.hanabi .ai-body { color: #F5EFE6; }
+body.hanabi .ai-attr { color: #ABA5BE; }
+body.hanabi .ai-attr a { color: #ABA5BE; }
+body.hanabi .ai-muted { color: #ABA5BE; }
+body.hanabi .ai-orig { color: #ABA5BE; }
+body.hanabi .sk-line { background: linear-gradient(90deg, #2a2645 25%, #3d3860 50%, #2a2645 75%); background-size: 200% 100%; }
+
+body.hanabi .rv-head { color: #F5EFE6; }
+body.hanabi .rv { border-top-color: rgba(255,255,255,.12); }
+body.hanabi .rv-meta { color: #F5EFE6; }
+body.hanabi .rv-text { color: #ABA5BE; }
+
+body.hanabi .btn-primary { background: #E8462E; color: #F5EFE6; }
+body.hanabi .btn-ghost { background: rgba(255,255,255,.07); color: #F5EFE6; border-color: rgba(255,255,255,.3); }
+body.hanabi .btn-sub { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.18); color: #F5EFE6; }
+body.hanabi .text-btn { color: #ABA5BE; }
+
+/* empty / error 상태도 야경 색조 */
+body.hanabi .empty-state h2 { color: #F5EFE6; }
+/* ════════════════════════════════════════
+   홈 — 3D 축제 거리 배경 (body.hanabi-home 일 때만)
+   WebGL 안 되는 기기는 위의 기존 홈 그대로
+   ════════════════════════════════════════ */
+.night-hero, .hanabi-shade { display: none; }
+
+body.hanabi-home { background: #070A1A; color: #F5EFE6; }
+body.hanabi-home #hanabi-stage { display: block; position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; }
+body.hanabi-home .hanabi-shade {
+  display: block; position: fixed; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(180deg, rgba(7,10,26,0) 35%, rgba(7,10,26,.55) 75%, rgba(7,10,26,.85) 100%);
+}
+body.hanabi-home main.container { position: relative; z-index: 2; }
+
+/* 헤더: 투명 → 스크롤하면 유리 */
+body.hanabi-home .app-header {
+  position: sticky; top: 0; z-index: 6; max-width: none;
+  padding-left: max(16px, calc((100% - 448px) / 2)); padding-right: max(16px, calc((100% - 448px) / 2));
+  transition: background .3s;
+}
+body.hanabi-home .app-header.scrolled {
+  background: rgba(7,10,26,.72);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(242,193,78,.15);
+}
+body.hanabi-home .app-header .brand { color: #F5EFE6; font-family: 'Zen Old Mincho', serif; text-shadow: 0 2px 12px rgba(0,0,0,.7); }
+body.hanabi-home .app-header .brand small { color: #F2C14E; }
+body.hanabi-home .app-header .user,
+body.hanabi-home .app-header .user .nick,
+body.hanabi-home .link-btn { color: #F5EFE6; }
+body.hanabi-home .icon-btn { color: #F5EFE6; background: rgba(10,12,30,.45); border: 1px solid rgba(245,239,230,.25); }
+
+/* 첫 화면: 위쪽은 하늘(불꽃 글자), 문구는 아래쪽 */
+body.hanabi-home .home-hero {
+  min-height: 46svh; margin: 0; padding: 0 0 18px;
+  display: flex; flex-direction: column; justify-content: flex-end;
+}
+body.hanabi-home .home-hero-art,
+body.hanabi-home .home-hero > .jp,
+body.hanabi-home .home-hero > p { display: none; }
+body.hanabi-home .home-hero > h1 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+body.hanabi-home .night-hero { display: block; }
+body.hanabi-home .night-hero .kicker { margin: 0 0 10px; font-family: 'Zen Old Mincho', serif; color: #F2C14E; letter-spacing: .35em; font-size: 13px; }
+body.hanabi-home .night-title {
+  margin: 0; font-family: 'Zen Old Mincho', serif; font-weight: 900; font-size: 32px; line-height: 1.3;
+  color: #F5EFE6; text-shadow: 0 4px 24px rgba(0,0,0,.7);
+}
+body.hanabi-home .night-lead { margin: 12px 0 0; color: #D8D2E4; font-size: 15px; line-height: 1.6; text-shadow: 0 2px 12px rgba(0,0,0,.8); }
+
+/* 위치·날짜 바: 유리 */
+body.hanabi-home .search-bar .row {
+  background: rgba(16,14,36,.66); border-color: rgba(245,239,230,.18); box-shadow: none;
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+}
+body.hanabi-home .chip { color: #F5EFE6; }
+body.hanabi-home .chip + .chip { border-left-color: rgba(245,239,230,.18); }
+body.hanabi-home .chip:hover, body.hanabi-home .chip[aria-expanded="true"] { background: rgba(255,255,255,.08); }
+body.hanabi-home .chip > .icon:first-child { color: #F2C14E; }
+body.hanabi-home .search-bar .loc-note { color: #ABA5BE; }
+
+/* 오늘의 우연 잇기: 빨간 카드 + 빛이 흐름 */
+body.hanabi-home .cta {
+  position: relative; overflow: hidden; color: #FFF7EE;
+  background: linear-gradient(135deg, rgba(232,70,46,.94), rgba(176,38,28,.94));
+  box-shadow: 0 14px 40px rgba(232,70,46,.45);
+  border-radius: 20px;
+}
+body.hanabi-home .cta::after {
+  content: ""; position: absolute; inset: -40%; pointer-events: none;
+  background: radial-gradient(circle at 30% 30%, rgba(255,220,170,.35), transparent 40%);
+  animation: hanabi-shine 4s ease-in-out infinite;
+}
+@keyframes hanabi-shine { 0%,100% { transform: translate(-10%,-10%); } 50% { transform: translate(20%,10%); } }
+body.hanabi-home .cta > * { position: relative; z-index: 1; }
+body.hanabi-home .cta-text b { font-family: 'Zen Old Mincho', serif; font-weight: 900; font-size: 19px; }
+body.hanabi-home .cta-text span { color: rgba(255,247,238,.88); opacity: 1; }
+body.hanabi-home .cta-icon { background: rgba(255,255,255,.16); }
+
+/* 둘러보기 타일 · 축제 카드: 유리 */
+body.hanabi-home .cat,
+body.hanabi-home .next-card {
+  background: rgba(16,14,36,.66); color: #F5EFE6;
+  border: 1px solid rgba(242,193,78,.32);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+}
+body.hanabi-home .cat .cat-icon { color: #F2C14E; }
+body.hanabi-home .cat .desc,
+body.hanabi-home .next-card .ja,
+body.hanabi-home .next-card .meta,
+body.hanabi-home .next-card > .icon,
+body.hanabi-home .muted { color: #B5AFC6; }
+body.hanabi-home .next-card .ja { color: #F2C14E; font-family: 'Zen Old Mincho', serif; }
+body.hanabi-home .sec-title h2 { color: #F5EFE6; font-family: 'Zen Old Mincho', serif; font-size: 19px; }
+body.hanabi-home .sec-title a { color: #F2C14E; }
+body.hanabi-home .mini-badge { background: rgba(232,70,46,.25); color: #FF9A86; }
+
+/* 축제 날짜 상자 → 작은 등불 */
+body.hanabi-home .date-box,
+body.hanabi-home .next-card.alt .date-box {
+  position: relative; width: 52px; padding: 10px 0 9px; border-radius: 26px / 30px; color: #1A0A05;
+  background: repeating-linear-gradient(180deg, #F05A34 0 7px, #C93E22 7px 8px);
+  box-shadow: 0 0 22px rgba(232,70,46,.55);
+}
+body.hanabi-home .date-box::before,
+body.hanabi-home .date-box::after { content: ""; position: absolute; left: 14px; right: 14px; height: 5px; background: #1A100B; border-radius: 2px; }
+body.hanabi-home .date-box::before { top: -3px; }
+body.hanabi-home .date-box::after { bottom: -3px; }
+body.hanabi-home .date-box .m { opacity: .85; }
+body.hanabi-home .date-box .d { font-family: 'Zen Old Mincho', serif; }
+body.hanabi-home .skeleton-row { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.1); }
+
+/* ════════════════════════════════════════
+   폰(세로 화면) 배치 — 위쪽은 3D 무대, 아래쪽은 내용
+   ════════════════════════════════════════ */
+
+/* 공통: 유리 카드를 더 투명하게 → 뒤의 등불·불꽃이 비침 */
+body.hanabi #step-form,
+body.hanabi .result-card {
+  background: linear-gradient(180deg, rgba(16,14,36,.38), rgba(16,14,36,.62));
+  backdrop-filter: blur(6px) saturate(1.2);
+  -webkit-backdrop-filter: blur(6px) saturate(1.2);
+  box-shadow: 0 20px 60px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
+}
+body.hanabi-home .cat,
+body.hanabi-home .next-card,
+body.hanabi-home .search-bar .row {
+  background: linear-gradient(180deg, rgba(16,14,36,.42), rgba(16,14,36,.66));
+  backdrop-filter: blur(6px) saturate(1.2);
+  -webkit-backdrop-filter: blur(6px) saturate(1.2);
+}
+
+/* 뽑기 화면 위치·날짜 바도 밤 테마로 (흰 바 → 유리) */
+body.hanabi .search-bar .row {
+  background: rgba(255,255,255,.06); border-color: rgba(245,239,230,.18); box-shadow: none;
+}
+body.hanabi .chip { color: #F5EFE6; }
+body.hanabi .chip + .chip { border-left-color: rgba(245,239,230,.18); }
+body.hanabi .chip:hover, body.hanabi .chip[aria-expanded="true"] { background: rgba(255,255,255,.08); }
+body.hanabi .chip > .icon:first-child { color: #F2C14E; }
+body.hanabi .search-bar .loc-note { color: #ABA5BE; }
+
+@media (max-aspect-ratio: 3/4) {
+  /* 홈: 화면 위쪽 절반은 등불 거리와 하늘 글자 자리 */
+  body.hanabi-home .home-hero { min-height: 62svh; }
+  body.hanabi-home .night-title { font-size: 28px; }
+  body.hanabi-home .night-lead { font-size: 14px; }
+  body.hanabi-home .hanabi-shade {
+    background: linear-gradient(180deg, rgba(7,10,26,.35) 0%, rgba(7,10,26,0) 14%, rgba(7,10,26,0) 46%, rgba(7,10,26,.6) 70%, rgba(7,10,26,.88) 100%);
+  }
+
+
+  body.hanabi #step-result:not([hidden]) { display: block; min-height: 0; padding-top: 0; }
+}
+
+/* ════════════════════════════════════════
+   축제 목록·상세·주변 맛집·로그인 — 페이지별 3D 무대 (body.hanabi-bg)
+   ════════════════════════════════════════ */
+body.hanabi-bg #hanabi-stage { display: block; position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; }
+body.hanabi-bg .hanabi-shade {
+  display: block; position: fixed; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(180deg, rgba(7,10,26,.2) 0%, rgba(7,10,26,.15) 30%, rgba(7,10,26,.62) 62%, rgba(7,10,26,.82) 100%);
+}
+body.hanabi-bg main.container { position: relative; z-index: 2; }
+
+/* 헤더: 투명 → 스크롤하면 유리 (모든 3D 페이지 공통) */
+body.hanabi-bg .app-header,
+body.hanabi .app-header {
+  position: sticky; top: 0; z-index: 6; max-width: none;
+  padding-left: max(16px, calc((100% - 448px) / 2)); padding-right: max(16px, calc((100% - 448px) / 2));
+  transition: background .3s;
+}
+body.hanabi-bg .app-header.scrolled,
+body.hanabi .app-header.scrolled {
+  background: rgba(7,10,26,.72);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(242,193,78,.15);
+}
+.app-header .brand { font-family: var(--font-serif); }
+.app-header .brand small { color: var(--gold); }
+.icon-btn { background: rgba(10,12,30,.45); border: 1px solid rgba(245,239,230,.25); }
+
+/* 페이지 제목은 명조체 + 그림자 (3D 위에서 잘 읽히게) */
+body.hanabi-bg h1, body.hanabi-bg .page-title { font-family: var(--font-serif); text-shadow: 0 3px 18px rgba(0,0,0,.7); }
+
+/* 폰: 위쪽은 3D 무대가 보이도록 약간 띄움 */
+@media (max-aspect-ratio: 3/4) {
+  body.hanabi-bg[data-page="festivals"] main.container { padding-top: 14svh; }
+}
+
+/* 축제 상세: 빨간 상단 박스 대신 신사 무대 위에 바로 제목 */
+body.hanabi-bg .f-hero { position: relative; z-index: 2; background: transparent; color: #F5EFE6; padding-bottom: 18px; }
+body.hanabi-bg .f-hero-lamp { display: none; }
+body.hanabi-bg .f-hero h1 { font-family: var(--font-serif); font-size: 30px; max-width: 100%; text-shadow: 0 3px 18px rgba(0,0,0,.8); }
+body.hanabi-bg .f-hero-kicker { color: var(--gold); text-shadow: 0 2px 10px rgba(0,0,0,.8); }
+body.hanabi-bg .f-hero-ja { color: var(--gold); font-family: var(--font-serif); font-size: 16px; }
+body.hanabi-bg .f-hero-chips span { background: rgba(16,14,36,.55); border: 1px solid rgba(242,193,78,.3); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+
+
+/* 페이지 전환: 이전 화면이 멈춰 보이지 않게 부드럽게 겹쳐 넘어감 (지원 브라우저만) */
+@view-transition { navigation: auto; }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .28s; }
+
+/* 3D 캔버스는 준비되면 어둠 속에서 서서히 켜짐 */
+#hanabi-stage { opacity: 0; transition: opacity .9s ease; }
+#hanabi-stage.ready { opacity: 1; }
+
+/* 뽑기 결과: 縁 글자가 흩어지면서 가게 카드가 흐릿 → 선명하게 스르륵 올라옴 */
+@keyframes hanabi-result-in {
+  0%   { opacity: 0; transform: translateY(28px) scale(.98); filter: blur(10px); }
+  60%  { opacity: 1; filter: blur(1px); }
+  100% { opacity: 1; transform: none; filter: blur(0); }
+}
+body.hanabi #step-result:not([hidden]) > * { animation: hanabi-result-in 1.5s cubic-bezier(.2,.7,.2,1) both; }
+body.hanabi #step-result:not([hidden]) > *:nth-child(2) { animation-delay: .25s; }
+body.hanabi #step-result:not([hidden]) > *:nth-child(3) { animation-delay: .45s; }
+body.hanabi #step-result:not([hidden]) > *:nth-child(n+4) { animation-delay: .6s; }
+@media (prefers-reduced-motion: reduce) {
+  body.hanabi #step-result:not([hidden]) > * { animation-duration: .8s; }
+}

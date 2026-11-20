@@ -6,17 +6,24 @@
   <title>근처 축제 · YoriMichi</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;800;900&family=Zen+Old+Mincho:wght@700;900&display=swap" rel="stylesheet" media="print" onload="this.media=\'all\'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;800;900&family=Zen+Old+Mincho:wght@700;900&display=swap" rel="stylesheet"></noscript>
   <link rel="stylesheet" href="/css/app.css">
+  <script type="importmap">
+  {"imports":{"three":"/js/vendor/three/three.module.min.js","three/addons/":"/js/vendor/three/addons/"}}
+  </script>
+  <script src="/js/vendor/gsap/gsap.min.js" defer></script>
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#FAF8F5">
+  <meta name="theme-color" content="#070A1A">
   <link rel="icon" type="image/png" href="/images/icons/favicon-64.png">
   <link rel="apple-touch-icon" href="/images/icons/apple-touch-icon.png">
   <meta name="apple-mobile-web-app-title" content="YoriMichi">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
 </head>
-<body>
+<body class="hanabi-bg" data-page="festivals">
+  <canvas id="hanabi-stage" data-scene="yatai" aria-hidden="true"></canvas>
+  <div class="hanabi-shade" aria-hidden="true"></div>
   <header id="app-header"></header>
   <main class="container">
     <a class="back" href="/" id="back-link">홈으로</a>
@@ -38,6 +45,7 @@
     <div id="results" aria-live="polite"></div>
   </main>
   <script type="module" src="/js/festivals.js"></script>
+  <script type="module" src="/js/night-bg.js"></script>
   <script type="module" src="/js/pwa.js"></script>
 </body>
 </html>

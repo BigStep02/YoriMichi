@@ -47,6 +47,9 @@ function renderError(message) {
 
 function render(f) {
   document.title = `${f.name} · YoriMichi`;
+  // 3D 신사 배경 하늘에 축제 이름을 불꽃 글자로 (일본어 이름이 짧을 때만)
+  const skyName = (f.nameJa || '').replace(/\s+/g, '');
+  if (skyName && [...skyName].length <= 6) window.dispatchEvent(new CustomEvent('yori:glyph', { detail: skyName }));
   const [, em, ed] = f.endDate.split('-').map(Number);
   const kicker = f.ongoing ? `진행 중 · ${em}월 ${ed}일까지`
     : f.dDay < 0 ? '종료된 일정' : `${dDayLabel(f.dDay, f.ongoing)} · ${fullDate(f.startDate)} 시작`;

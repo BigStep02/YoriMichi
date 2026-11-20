@@ -5,6 +5,7 @@ import { api } from './api.js';
 import { renderHeader } from './header.js';
 import { mountSearchBar } from './searchbar.js';
 import { icons, esc } from './icons.js';
+import { createHanabiStage, webglAvailable } from './hanabi/hanabi-stage.js';
 
 renderHeader();
 document.getElementById('back-link').insertAdjacentHTML('afterbegin', icons.back());
@@ -12,7 +13,7 @@ document.querySelectorAll('[data-icon]').forEach(el => { el.innerHTML = icons[el
 
 const params = new URLSearchParams(location.search);
 const MOCK = params.get('mock') === '1';
-const MIN_LOADING_MS = 1300; // 너무 빨리 끝나면 "뽑는" 느낌이 안 나서 최소 시간 유지
+const MIN_LOADING_MS = 1300; // 너무 빨리 끝나면 "뽑는" 느낌이 안 나서 최소 시간 유지 (non-stage 경로만)
 
 const steps = {
   form: document.getElementById('step-form'),
@@ -25,6 +26,39 @@ const opts = { category: ['ALL'], radiusM: '800', maxPrice: '', openNow: true };
 let loc = null;
 let excluded = []; // 이번 조건에서 이미 뽑힌 곳 (다시 뽑기용)
 let drawSeq = 0;
+
+// ── Hanabi stage ──
+let stage = null;
+let skipRequested = false;
+let stageReleased = false;
+
+const canvas = document.getElementById('hanabi-stage');
+const skipBtn = document.getElementById('hanabi-skip');
+
+// 동작 줄이기 켜진 기기 → 차분한 모드 (3D는 보이고, 카메라 이동·진동만 끔)
+const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+if (webglAvailable()) {
+  document.body.classList.add('hanabi');
+  // 페이지 내용을 먼저 그리고, 3D는 그다음 프레임에 준비 (전환 중 멈춤 방지)
+  requestAnimationFrame(() => setTimeout(() => {
+    try {
+      stage = createHanabiStage(canvas, { calm });
+      stage.introGlyph('寄り道');
+    } catch (_) {
+      stage = null;
+    }
+  }, 0));
+}
+
+skipBtn.addEventListener('click', () => {
+  if (!stage) return;
+  if (stageReleased) {
+    stage.release(); // 이미 호출됐으면 no-op
+    stage.skip();
+  } else {
+    skipRequested = true;
+  }
+});
 
 // ---------- 조건 ----------
 // 종류: 여러 개 선택. '아무거나'는 단독, 다 끄면 '아무거나'로 돌아감
@@ -77,9 +111,8 @@ document.querySelector('[data-draw]').addEventListener('click', () => draw());
 async function draw() {
   if (!loc && !MOCK) return;
   const mySeq = ++drawSeq;
-  show('loading');
-  const sub = document.querySelector('[data-loading-sub]');
-  sub.textContent = '평점과 리뷰 수를 함께 보고 있어요';
+  skipRequested = false;
+  stageReleased = false;
 
   const q = new URLSearchParams({
     lat: (loc?.lat ?? 34.6687).toFixed(6),
@@ -91,34 +124,101 @@ async function draw() {
   if (opts.maxPrice) q.set('maxPrice', opts.maxPrice);
   if (excluded.length) q.set('exclude', excluded.join(','));
 
-  const started = Date.now();
-  let data, error;
-  try {
-    data = MOCK ? mockDraw() : await api(`/api/restaurants/draw?${q}`, { auth: false });
-  } catch (e) {
-    error = e;
+  if (stage) {
+    // ── stage 경로: API 호출과 연출 동시 시작 ──
+    document.body.classList.add('hanabi-playing');
+
+    // burst 객체: onBurst 콜백이 API 결과를 참조할 수 있도록 공유
+    const burst = { data: null, detailPromise: null, summaryPromise: null };
+
+    stage.play({
+      onSkippable: (on) => { skipBtn.hidden = !on; },
+      flash: () => { window.gsap.fromTo('#hanabi-flash', { opacity: .9 }, { opacity: 0, duration: .8 }); },
+      onBurst: () => {
+        if (mySeq !== drawSeq || !burst.data) return;
+        document.body.classList.remove('hanabi-playing');
+        skipBtn.hidden = true;
+        renderResult(burst.data);
+        resultEl.querySelector('.result-card')?.classList.add('reveal');
+        applyDetail(burst.data.pick, mySeq, burst.detailPromise);
+        applySummary(burst.data.pick, mySeq, burst.summaryPromise);
+        show('result');
+      },
+    });
+
+    let data, error;
+    try {
+      data = MOCK ? mockDraw() : await api(`/api/restaurants/draw?${q}`, { auth: false });
+    } catch (e) {
+      error = e;
+    }
+
+    if (mySeq !== drawSeq) return;
+
+    if (error) {
+      stage.abort();
+      document.body.classList.remove('hanabi-playing');
+      skipBtn.hidden = true;
+      renderError(error);
+      return;
+    }
+    if (!data?.pick) {
+      stage.abort();
+      document.body.classList.remove('hanabi-playing');
+      skipBtn.hidden = true;
+      renderEmpty();
+      return;
+    }
+
+    excluded.push(data.pick.placeId);
+    if (excluded.length > 20) excluded = excluded.slice(-20);
+
+    burst.detailPromise = loadDetailData(data.pick);
+    burst.summaryPromise = burst.detailPromise.then(() => loadSummaryData(data.pick));
+    burst.data = data;
+
+    stageReleased = true;
+    stage.release();
+    if (skipRequested) {
+      skipRequested = false;
+      stage.skip();
+    }
+
+  } else {
+    // ── non-stage 경로: 기존 동작 그대로 ──
+    show('loading');
+    const sub = document.querySelector('[data-loading-sub]');
+    sub.textContent = '평점과 리뷰 수를 함께 보고 있어요';
+
+    const started = Date.now();
+    let data, error;
+    try {
+      data = MOCK ? mockDraw() : await api(`/api/restaurants/draw?${q}`, { auth: false });
+    } catch (e) {
+      error = e;
+    }
+    const wait = MIN_LOADING_MS - (Date.now() - started);
+    if (wait > 0) await new Promise(r => setTimeout(r, wait));
+    if (mySeq !== drawSeq) return;
+
+    if (error) return renderError(error);
+    if (!data?.pick) return renderEmpty();
+
+    excluded.push(data.pick.placeId);
+    if (excluded.length > 20) excluded = excluded.slice(-20);
+    const detailPromise = loadDetailData(data.pick);
+    const summaryPromise = detailPromise.then(() => loadSummaryData(data.pick));
+    renderHint(data, () => {
+      renderResult(data);
+      resultEl.querySelector('.result-card').classList.add('reveal');
+      applyDetail(data.pick, mySeq, detailPromise);
+      applySummary(data.pick, mySeq, summaryPromise);
+    });
+    show('result');
   }
-  const wait = MIN_LOADING_MS - (Date.now() - started);
-  if (wait > 0) await new Promise(r => setTimeout(r, wait));
-  if (mySeq !== drawSeq) return;
-
-  if (error) return renderError(error);
-  if (!data?.pick) return renderEmpty();
-
-  excluded.push(data.pick.placeId);
-  if (excluded.length > 20) excluded = excluded.slice(-20);
-  const detailPromise = loadDetailData(data.pick); // 힌트 보는 동안 미리 불러둠
-  const summaryPromise = detailPromise.then(() => loadSummaryData(data.pick));
-  renderHint(data, () => {
-    renderResult(data);
-    resultEl.querySelector('.result-card').classList.add('reveal');
-    applyDetail(data.pick, mySeq, detailPromise);
-    applySummary(data.pick, mySeq, summaryPromise);
-  });
-  show('result');
 }
 
-// ---------- 미리보기 (가게 이름 대신 조건만 먼저) ----------
+// ---------- 미리보기 (가게 이름 대신 조건만 먼저, non-stage 경로 전용) ----------
 function hintLantern() {
   return `<svg viewBox="0 0 40 56" width="40" height="56"><rect x="12" y="0" width="16" height="5" rx="2" fill="#1E2A4A"/><ellipse cx="20" cy="27" rx="17" ry="20" fill="#FAF8F5"/><path d="M4 20h32M3 27h34M4 34h32" stroke="#F2765C" stroke-width="1.6"/><rect x="12" y="46" width="16" height="5" rx="2" fill="#1E2A4A"/><line x1="20" y1="51" x2="20" y2="56" stroke="#1E2A4A" stroke-width="2"/></svg>`;
 }
@@ -202,7 +302,10 @@ function renderResult(data) {
     <p class="attribution">가게 정보·리뷰: Google 지도 · 리뷰 요약은 AI가 만든 참고용이에요</p>`;
 
   resultEl.querySelector('[data-redraw]').addEventListener('click', () => draw());
-  resultEl.querySelector('[data-change]').addEventListener('click', () => show('form'));
+  resultEl.querySelector('[data-change]').addEventListener('click', () => {
+    if (stage) stage.idle();
+    show('form');
+  });
 }
 
 async function loadDetailData(pick) {
@@ -302,7 +405,10 @@ function renderEmpty() {
     document.querySelector(`[data-opt="radiusM"] button[data-v="${next}"]`).click();
     draw();
   });
-  resultEl.querySelector('[data-change]').addEventListener('click', () => show('form'));
+  resultEl.querySelector('[data-change]').addEventListener('click', () => {
+    if (stage) stage.idle();
+    show('form');
+  });
   show('result');
 }
 
@@ -317,7 +423,10 @@ function renderError(e) {
       </div>
     </div>`;
   resultEl.querySelector('[data-retry]').addEventListener('click', () => draw());
-  resultEl.querySelector('[data-change]').addEventListener('click', () => show('form'));
+  resultEl.querySelector('[data-change]').addEventListener('click', () => {
+    if (stage) stage.idle();
+    show('form');
+  });
   show('result');
 }
 

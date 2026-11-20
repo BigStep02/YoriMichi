@@ -4,8 +4,54 @@ import { renderHeader } from './header.js';
 import { mountSearchBar } from './searchbar.js';
 import { todayTokyo, addDays, dDayLabel } from './dates.js';
 import { icons, esc } from './icons.js';
+import { createHanabiStage, webglAvailable } from './hanabi/hanabi-stage.js';
 
 renderHeader();
+initNightStreet();
+
+// ---------- 3D 축제 거리 배경 ----------
+function initNightStreet() {
+  // 홈 레이아웃은 항상 밤 테마. 3D는 WebGL 되는 기기에서만
+  document.body.classList.add('hanabi-home');
+  const header = document.getElementById('app-header');
+  let stage = null;
+  const onScroll = () => {
+    const max = document.documentElement.scrollHeight - innerHeight;
+    if (stage && max > 0) stage.setScroll(scrollY / max);   // 스크롤하면 카메라가 거리 안으로
+    header?.classList.toggle('scrolled', scrollY > 20);
+  };
+  addEventListener('scroll', onScroll, { passive: true });
+
+  const gsap = window.gsap;
+  if (gsap) {
+    // 첫 화면 문구는 차례로, 아래 카드는 보일 때 하나씩
+    gsap.from('.hanabi-home .rise', { opacity: 0, y: 24, duration: .9, stagger: .1, ease: 'power3.out', delay: .25 });
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (!e.isIntersecting) return;
+        gsap.to(e.target, { opacity: 1, y: 0, duration: .8, ease: 'power3.out' });
+        io.unobserve(e.target);
+      });
+    }, { threshold: .12 });
+    document.querySelectorAll('.hanabi-home .reveal').forEach((el) => { gsap.set(el, { opacity: 0, y: 36 }); io.observe(el); });
+  }
+
+  if (!webglAvailable() || !gsap) return;
+  // 동작 줄이기 켜진 기기 → 차분한 모드 (3D는 보이고, 카메라 흔들림·스크롤 이동·진동만 끔)
+  const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // 페이지 내용을 먼저 그리고, 3D는 그다음 프레임에 준비 (전환 중 멈춤 방지)
+  requestAnimationFrame(() => setTimeout(() => {
+    try {
+      stage = createHanabiStage(document.getElementById('hanabi-stage'), { calm });
+    } catch (e) {
+      console.warn('3D 배경을 켤 수 없어요', e);
+      return;
+    }
+    stage.ambient(true);                                  // 멀리서 풍등이 계속 떠오름
+    setTimeout(() => stage.introGlyph('寄り道'), 500);    // 하늘에 불꽃 글자
+    onScroll();
+  }, 0));
+}
 
 const ICON_CLASS = { dice: 'icon icon-lg', fork: 'icon cat-icon', lantern: 'icon cat-icon', arrowRight: 'icon' };
 document.querySelectorAll('[data-icon]').forEach(el => {

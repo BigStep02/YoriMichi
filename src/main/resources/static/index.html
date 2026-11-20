@@ -6,50 +6,45 @@
   <title>YoriMichi</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;800;900&family=Zen+Old+Mincho:wght@700;900&display=swap" rel="stylesheet" media="print" onload="this.media=\'all\'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;800;900&family=Zen+Old+Mincho:wght@700;900&display=swap" rel="stylesheet"></noscript>
   <link rel="stylesheet" href="/css/app.css">
+  <script type="importmap">
+  {"imports":{"three":"/js/vendor/three/three.module.min.js","three/addons/":"/js/vendor/three/addons/"}}
+  </script>
+  <script src="/js/vendor/gsap/gsap.min.js" defer></script>
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#FAF8F5">
+  <meta name="theme-color" content="#070A1A">
   <link rel="icon" type="image/png" href="/images/icons/favicon-64.png">
   <link rel="apple-touch-icon" href="/images/icons/apple-touch-icon.png">
   <meta name="apple-mobile-web-app-title" content="YoriMichi">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
 </head>
-<body>
+<body class="hanabi-home" data-page="index">
+  <canvas id="hanabi-stage" aria-hidden="true"></canvas>
+  <div class="hanabi-shade" aria-hidden="true"></div>
   <header id="app-header"></header>
   <main class="container">
 
     <section class="home-hero">
-      <!-- 해 + 등불 줄 + 산 (직접 그린 일러스트) -->
-      <svg class="home-hero-art" viewBox="0 0 250 270" aria-hidden="true">
-        <defs>
-          <linearGradient id="sun" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F59A82"/><stop offset="1" stop-color="#F2765C"/></linearGradient>
-          <g id="lamp"><rect x="-1.5" y="-6" width="3" height="5" fill="#1E2A4A"/><ellipse cx="0" cy="11" rx="12" ry="15" fill="#fff" stroke="#1E2A4A" stroke-width="2"/><path d="M-12 11h24" stroke="#F2765C" stroke-width="2"/><rect x="-5" y="25" width="10" height="3" fill="#1E2A4A"/></g>
-        </defs>
-        <circle cx="150" cy="120" r="88" fill="url(#sun)"/>
-        <path d="M0 270 L70 175 Q85 162 100 175 L150 215 L195 180 Q210 168 225 180 L250 200 L250 270Z" fill="#C7D2EE"/>
-        <path d="M20 270 L95 205 Q110 193 125 205 L210 270Z" fill="#DDE4F6"/>
-        <path d="M30 40 Q120 90 250 60" fill="none" stroke="#1E2A4A" stroke-width="1.5"/>
-        <use href="#lamp" transform="translate(62 58) scale(.92)"/>
-        <use href="#lamp" transform="translate(112 74)"/>
-        <use href="#lamp" transform="translate(168 76)"/>
-        <use href="#lamp" transform="translate(222 66) scale(.92)"/>
-      </svg>
+      <div class="night-hero">
+        <p class="kicker rise" lang="ja">偶然 · 縁</p>
+        <h2 class="night-title rise">계획에 없던 즐거움,<br>오늘의 우연으로.</h2>
+        <p class="night-lead rise">지금 서 있는 거리에서, 붉은 실이<br>가게 하나와 축제 하나를 이어줘요.</p>
+      </div>
       <h1>Yori<br>Michi</h1>
-      <span class="jp" lang="ja">よりみち</span>
-      <p>계획에 없던 즐거움,<br>지금 근처에서 골라 드려요.</p>
     </section>
 
-    <div id="search-bar"></div>
+    <div id="search-bar" class="rise"></div>
 
-    <a class="cta" href="/draw.html">
+    <a class="cta rise" href="/draw.html">
       <span class="cta-icon" data-icon="dice"></span>
-      <span class="cta-text"><b>오늘의 우연 뽑기</b><span>근처 맛집 한 곳을 랜덤으로</span></span>
+      <span class="cta-text"><b>오늘의 우연 잇기</b><span>붉은 실이 근처 가게 하나와 이어줘요</span></span>
       <span class="arrow" data-icon="arrowRight"></span>
     </a>
 
-    <div class="cats">
+    <div class="cats reveal">
       <a class="cat food" href="/restaurants.html">
         <span data-icon="fork"></span>
         <span class="name">주변 맛집</span>
@@ -64,11 +59,11 @@
       </a>
     </div>
 
-    <div class="sec-title">
+    <div class="sec-title reveal">
       <h2>곧 열리는 근처 축제</h2>
       <a id="festival-all" href="/festivals.html">전체 보기 →</a>
     </div>
-    <div id="upcoming" aria-live="polite"></div>
+    <div id="upcoming" class="reveal" aria-live="polite"></div>
 
   </main>
   <script type="module" src="/js/home.js"></script>
