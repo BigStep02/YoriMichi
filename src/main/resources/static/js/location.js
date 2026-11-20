@@ -58,7 +58,7 @@ export function getLocationMode() {
 
 /** 'geo' 또는 테스트 도시 key */
 export function setLocationChoice(value) {
-  try { localStorage.removeItem(DEV_KEY); sessionStorage.removeItem(DEV_KEY); } catch { /* noop */ }
+  try { localStorage.removeItem(DEV_KEY); sessionStorage.removeItem(DEV_KEY); sessionStorage.removeItem('lastGeo'); } catch { /* noop */ }
   if (value === 'geo') {
     write(MODE_KEY, 'geo');
   } else {
@@ -97,6 +97,7 @@ const DEV_KEY = 'devLocation';
 function applyUrlOverrides() {
   try {
     const p = new URLSearchParams(location.search);
+    if (p.has('devLat') || p.has('city')) sessionStorage.removeItem('lastGeo');
     if (p.get('devLat') === 'off') {
       localStorage.removeItem(DEV_KEY);
       sessionStorage.removeItem(DEV_KEY);
@@ -141,15 +142,43 @@ export async function getSearchLocation() {
   if (!window.isSecureContext) {
     return cityLocation('HTTPS가 아니라 현재 위치를 쓸 수 없어요');
   }
+  // 최근에 받은 위치가 있으면 재사용 → 로그인 갔다 오는 등 페이지를 옮겨도 권한 팝업이 다시 안 뜸
+  const cached = cachedGeo();
+  if (cached) return cached;
+
   try {
     const pos = await currentPosition();
     const { latitude: lat, longitude: lng } = pos.coords;
     if (inJapan(lat, lng)) {
+      saveGeo({ lat, lng, label: '현재 위치', source: 'geo' });
       return { lat, lng, label: '현재 위치', source: 'geo' };
     }
-    return cityLocation('현재 위치가 일본 밖이라 테스트 도시로 찾아요');
+    const r = cityLocation('현재 위치가 일본 밖이라 테스트 도시로 찾아요');
+    saveGeo(r);
+    return r;
   } catch (e) {
     const denied = e && e.code === 1;
-    return cityLocation(denied ? '위치 권한이 없어 테스트 도시로 찾아요' : '현재 위치를 못 가져와 테스트 도시로 찾아요');
+    const r = cityLocation(denied ? '위치 권한이 없어 테스트 도시로 찾아요' : '현재 위치를 못 가져와 테스트 도시로 찾아요');
+    if (denied) saveGeo(r); // 거부했으면 이번 접속 동안은 다시 묻지 않음
+    return r;
   }
+}
+
+// ── 위치 결과 캐시 (같은 탭/세션 동안, 최대 15분) ──
+//  iOS 사파리·카톡 인앱은 페이지를 새로 열 때마다 권한을 다시 물어봐서 결과를 잠깐 저장해 둠
+const GEO_CACHE_KEY = 'lastGeo';
+const GEO_CACHE_MS = 15 * 60 * 1000;
+function saveGeo(result) {
+  try { sessionStorage.setItem(GEO_CACHE_KEY, JSON.stringify({ ...result, t: Date.now() })); } catch { /* noop */ }
+}
+function cachedGeo() {
+  try {
+    const c = JSON.parse(sessionStorage.getItem(GEO_CACHE_KEY) || 'null');
+    if (!c || Date.now() - c.t > GEO_CACHE_MS) return null;
+    const { t, ...rest } = c;
+    return rest;
+  } catch { return null; }
+}
+export function clearGeoCache() {
+  try { sessionStorage.removeItem(GEO_CACHE_KEY); } catch { /* noop */ }
 }
