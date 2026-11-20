@@ -14,7 +14,11 @@ if (canvas && webglAvailable() && window.gsap) {
 function startStage() {
   try {
     const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    stage = createHanabiStage(canvas, { scene: canvas.dataset.scene || 'street', lite: true, calm });
+    // ?scene=ema 처럼 주소로 무대를 바꿔서 미리 볼 수 있음 (디자인 확인용)
+    const override = new URLSearchParams(location.search).get('scene');
+    const SCENES = ['street', 'yatai', 'shrine', 'alley', 'river', 'ema', 'goldfish', 'moon'];
+    const scene = SCENES.includes(override) ? override : (canvas.dataset.scene || 'street');
+    stage = createHanabiStage(canvas, { scene, lite: true, calm });
     if (canvas.dataset.glyph) setTimeout(() => stage.introGlyph(canvas.dataset.glyph), 800);
     if (pendingGlyph) { stage.introGlyph(pendingGlyph); pendingGlyph = null; }
     onScroll();

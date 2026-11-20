@@ -59,6 +59,9 @@ export function createHanabiStage(canvas, opts = {}) {
     rouletteCam: [0, 3.2, 10], rouletteLook: [0, 2.6, -12],
     liftLook: 11, finalLook: 9.5, glyphW: 5.2, introGlyph: [0, 13.4, -16], introW: 8,
   };
+  if (SCENE === 'ema') { P.camHome = [0, 1.7, portrait ? 1.6 : 1.2]; P.lookHome = [0, portrait ? 3.15 : 2.6, -4]; P.introGlyph = [0, 5.6, -10]; P.introW = portrait ? 3 : 5; }
+  if (SCENE === 'goldfish') { P.camHome = [0, portrait ? 12.5 : 9, portrait ? 3.2 : 2.4]; P.lookHome = [0, 0, -.3]; P.introGlyph = [0, 2.5, -1]; P.introW = portrait ? 3.2 : 5; }
+  if (SCENE === 'moon') { P.camHome = [0, 1.2, 10]; P.lookHome = [0, portrait ? 4.2 : 3.4, -20]; P.introGlyph = [0, 13, -40]; P.introW = portrait ? 8 : 12; }
   if (SCENE === 'river') { P.camHome = portrait ? [0, 1.6, 9] : [0, 1.4, 8]; P.lookHome = portrait ? [0, -1.6, -10] : [0, .6, -10]; }
   if (SCENE === 'shrine') { P.camHome = portrait ? [0, 1.7, 4] : [0, 1.7, 6]; P.lookHome = portrait ? [0, -1.4, -18] : [0, 2.6, -18]; P.introGlyph = portrait ? [0, 10.3, -24] : [0, 12.5, -24]; P.introW = portrait ? 5 : 7; }
   if (SCENE === 'yatai') { P.lookHome = portrait ? [0, -.4, -10] : [0, 3, -10]; }
@@ -484,6 +487,151 @@ export function createHanabiStage(canvas, opts = {}) {
     }
   }
 
+
+  // 로그인 후보 A: 엔무스비(縁結び) 신사 — 에마(소원 나무판) 걸이, 묶인 오미쿠지, 붉은 실
+  if (SCENE === 'ema') {
+    SKY_EVERY = 6000;
+    scene.fog.density = .06;
+    const wood = new THREE.MeshStandardMaterial({ color: '#6B4426', roughness: .7 });
+    const roofMat = new THREE.MeshStandardMaterial({ color: '#1A1414', roughness: .5, metalness: .3 });
+    const WISH = ['縁', '願', '結', '祈', '恋', '幸', '福', '絆', '夢', '叶'];
+    function emaTex(ch, seed) {
+      const r = rnd(seed);
+      return canvasTex(256, 200, (g, w, h) => {
+        g.fillStyle = '#E3C58F'; g.fillRect(0, 0, w, h);
+        for (let i = 0; i < 40; i++) { g.strokeStyle = `rgba(120,80,40,${.08 + r() * .1})`; g.beginPath(); const y = r() * h; g.moveTo(0, y); g.bezierCurveTo(w * .3, y + 6, w * .6, y - 6, w, y + r() * 4); g.stroke(); }
+        g.fillStyle = '#B3261A'; g.beginPath(); g.arc(w * .22, h * .3, 16, 0, 6.28); g.fill();
+        g.fillStyle = '#1A1210'; g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.font = '900 96px "Zen Old Mincho", serif'; g.fillText(ch, w * .58, h * .56);
+        g.font = '700 22px "Zen Old Mincho", serif'; g.fillText('令和八年', w * .2, h * .78);
+      });
+    }
+    // 오각형(집 모양) 나무판
+    const shape = new THREE.Shape();
+    shape.moveTo(-.3, -.2); shape.lineTo(.3, -.2); shape.lineTo(.3, .1); shape.lineTo(0, .24); shape.lineTo(-.3, .1); shape.lineTo(-.3, -.2);
+    const emaGeo = new THREE.ExtrudeGeometry(shape, { depth: .025, bevelEnabled: false });
+    emaGeo.computeBoundingBox();
+    { // UV 를 앞면 기준으로 다시 펴기
+      const pos = emaGeo.attributes.position, uv = emaGeo.attributes.uv;
+      for (let i = 0; i < pos.count; i++) uv.setXY(i, (pos.getX(i) + .3) / .6, (pos.getY(i) + .2) / .44);
+    }
+    const threadMat = new THREE.LineBasicMaterial({ color: '#E0302A' });
+    for (const [row, y] of [[0, 2.35], [1, 1.55], [2, .8]]) {
+      const beam = new THREE.Mesh(new THREE.BoxGeometry(9, .1, .1), wood); beam.position.set(0, y + .3, -4); scene.add(beam);
+      for (let i = 0; i < 16; i++) {
+        const x = -4.2 + i * .56 + (Math.random() - .5) * .12;
+        const mat = new THREE.MeshStandardMaterial({ map: emaTex(WISH[(i + row * 5) % WISH.length], i * 13 + row), roughness: .8 });
+        const plate = new THREE.Mesh(emaGeo, [mat, wood]);
+        plate.geometry.translate && 0;
+        const pivot = new THREE.Group(); pivot.position.set(x, y + .3, -4 + (i % 2) * .06);
+        plate.position.set(0, -.34, 0); plate.rotation.y = (Math.random() - .5) * .25;
+        pivot.add(plate);
+        const pts = [new THREE.Vector3(0, 0, .01), new THREE.Vector3(0, -.12, .01)];
+        pivot.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), threadMat));
+        scene.add(pivot);
+        swayers.push({ o: pivot, ph: Math.random() * 6.28, amp: .05 + Math.random() * .05, axis: 'z' });
+      }
+    }
+    for (const x of [-4.6, 4.6]) { const post = new THREE.Mesh(new THREE.BoxGeometry(.14, 3.2, .14), wood); post.position.set(x, 1.6, -4); scene.add(post); }
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(10, .12, 1.1), roofMat); roof.position.set(0, 3.0, -4); roof.rotation.x = -.15; scene.add(roof);
+    // 뒤쪽: 오미쿠지를 묶은 줄과 신사 건물, 등불
+    const paper = new THREE.MeshStandardMaterial({ color: '#F4EFE4', emissive: '#FFF1D8', emissiveIntensity: .25 });
+    for (let r = 0; r < 4; r++) for (let i = 0; i < 40; i++) {
+      const k = new THREE.Mesh(new THREE.BoxGeometry(.05, .14, .03), paper);
+      k.position.set(-5 + i * .25 + Math.random() * .1, 1.1 + r * .35, -8.5); k.rotation.z = (Math.random() - .5) * .6; scene.add(k);
+    }
+    const hall = new THREE.Mesh(new THREE.BoxGeometry(12, 4, 2), new THREE.MeshStandardMaterial({ color: '#2A0F0C', roughness: .8 })); hall.position.set(0, 2, -12); scene.add(hall);
+    const hallRoof = new THREE.Mesh(new THREE.ConeGeometry(8, 2, 4, 1), roofMat); hallRoof.position.set(0, 5, -12); hallRoof.rotation.y = Math.PI / 4; hallRoof.scale.z = .3; scene.add(hallRoof);
+    for (const x of [-3, -1, 1, 3]) { const l = makeLantern(PAPERS[(x + 4) % PAPERS.length], .5); l.position.set(x, 3.2, -10.8); scene.add(l); street.push(l); }
+    for (const z of [-2, -9]) { const pl = new THREE.PointLight('#FFB070', 8, 12, 1.6); pl.position.set(0, 2.6, z); scene.add(pl); }
+  }
+
+  // 로그인 후보 B: 금붕어 뜨기(金魚すくい) — 위에서 내려다본 빛나는 수조
+  const fishes = [], ripples = [];
+  let waterTex = null;
+  if (SCENE === 'goldfish') {
+    SKY_EVERY = 1e9; SCROLL_DEPTH = 0;
+    scene.fog.density = 0; ground.visible = false;
+    scene.background = new THREE.Color('#05070F');
+    waterTex = canvasTex(512, 512, (g, w, h) => {
+      const gr = g.createRadialGradient(w / 2, h / 2, 40, w / 2, h / 2, w * .7);
+      gr.addColorStop(0, '#16507F'); gr.addColorStop(1, '#061630'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+      g.strokeStyle = 'rgba(190,235,255,.10)'; g.lineWidth = 3;
+      for (let i = 0; i < 70; i++) { g.beginPath(); const x = Math.random() * w, y = Math.random() * h, r = 20 + Math.random() * 50; g.ellipse(x, y, r, r * .6, Math.random() * 3, 0, Math.PI * 1.3); g.stroke(); }
+    });
+    waterTex.wrapS = waterTex.wrapT = THREE.RepeatWrapping;
+    const PW = portrait ? 5.6 : 9, PH = portrait ? 9.6 : 6;
+    const water = new THREE.Mesh(new THREE.PlaneGeometry(PW, PH), new THREE.MeshBasicMaterial({ map: waterTex }));
+    water.rotation.x = -Math.PI / 2; scene.add(water);
+    const rimMat = new THREE.MeshStandardMaterial({ color: '#E8462E', roughness: .4, emissive: '#5A1208', emissiveIntensity: .5 });
+    for (const [w2, d2, x, z] of [[PW + .5, .25, 0, -PH / 2 - .12], [PW + .5, .25, 0, PH / 2 + .12], [.25, PH, -PW / 2 - .12, 0], [.25, PH, PW / 2 + .12, 0]]) {
+      const rim = new THREE.Mesh(new THREE.BoxGeometry(w2, .3, d2), rimMat); rim.position.set(x, .1, z); scene.add(rim);
+    }
+    const COL = ['#FF5A1F', '#FF7A2A', '#F2F2F2', '#E8222A', '#1A1A1A', '#FF9A3C'];
+    for (let i = 0; i < 26; i++) {
+      const g = new THREE.Group(), c = COL[i % COL.length];
+      const m = new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: .18, roughness: .4 });
+      const body = new THREE.Mesh(new THREE.SphereGeometry(.16, 14, 10), m); body.scale.set(1, .55, .6); g.add(body);
+      const tailGeo = new THREE.PlaneGeometry(.26, .22); tailGeo.translate(-.13, 0, 0);
+      const tail = new THREE.Mesh(tailGeo, new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: .3, transparent: true, opacity: .8, side: THREE.DoubleSide }));
+      tail.rotation.x = Math.PI / 2; tail.position.x = -.14; g.add(tail);
+      if (i % 4 === 2) { const spot = new THREE.Mesh(new THREE.SphereGeometry(.07, 8, 6), new THREE.MeshStandardMaterial({ color: '#E8222A' })); spot.position.set(.03, .06, 0); g.add(spot); }
+      g.position.y = .08; scene.add(g);
+      fishes.push({ g, tail, cx: (Math.random() - .5) * PW * .6, cz: (Math.random() - .5) * PH * .6, r: .6 + Math.random() * 1.4, sp: (.25 + Math.random() * .4) * (Math.random() < .5 ? 1 : -1), ph: Math.random() * 6.28, s: .8 + Math.random() * .6 });
+      g.scale.setScalar(fishes[fishes.length - 1].s * 1.6);
+    }
+    for (let i = 0; i < 6; i++) {
+      const ring = new THREE.Mesh(new THREE.RingGeometry(.9, 1, 48), new THREE.MeshBasicMaterial({ color: '#CFF2FF', transparent: true, opacity: 0, side: THREE.DoubleSide }));
+      ring.rotation.x = -Math.PI / 2; ring.position.y = .02; scene.add(ring);
+      ripples.push({ m: ring, t: Math.random() * 3, PW, PH });
+    }
+    // 수조 위에 비치는 등불 빛
+    for (const [x, z] of [[-1.5, -3], [1.6, 2.5], [0, -0.5]]) {
+      const h = new THREE.Sprite(new THREE.SpriteMaterial({ map: GLOW, color: '#FFB070', transparent: true, opacity: .35, blending: THREE.AdditiveBlending, depthWrite: false }));
+      h.position.set(x, .05, z); h.scale.setScalar(2.4); scene.add(h);
+    }
+    const poiTex = canvasTex(128, 128, (g) => { g.fillStyle = '#F2F2F2'; g.beginPath(); g.arc(64, 64, 58, 0, 6.28); g.fill(); g.strokeStyle = '#E8462E'; g.lineWidth = 10; g.stroke(); });
+    const poi = new THREE.Mesh(new THREE.CircleGeometry(.45, 32), new THREE.MeshBasicMaterial({ map: poiTex, transparent: true }));
+    poi.rotation.x = -Math.PI / 2; poi.position.set(PW / 2 - .7, .2, PH / 2 - .9); scene.add(poi);
+    const handle = new THREE.Mesh(new THREE.BoxGeometry(.9, .04, .12), new THREE.MeshStandardMaterial({ color: '#E8462E' })); handle.position.set(PW / 2 - .1, .2, PH / 2 - .5); handle.rotation.y = -.6; scene.add(handle);
+  }
+
+  // 로그인 후보 C: 보름달과 언덕 위 신사
+  const clouds = [];
+  if (SCENE === 'moon') {
+    SKY_EVERY = 1e9;
+    const moonTex = canvasTex(512, 512, (g, w, h) => {
+      const gr = g.createRadialGradient(w * .45, h * .42, 20, w / 2, h / 2, w / 2);
+      gr.addColorStop(0, '#FFF8E6'); gr.addColorStop(.8, '#F2DDAE'); gr.addColorStop(1, 'rgba(242,221,174,0)');
+      g.fillStyle = gr; g.beginPath(); g.arc(w / 2, h / 2, w / 2 - 4, 0, 6.28); g.fill();
+      for (let i = 0; i < 26; i++) { g.fillStyle = `rgba(190,160,110,${.08 + Math.random() * .12})`; g.beginPath(); g.arc(80 + Math.random() * 350, 80 + Math.random() * 350, 8 + Math.random() * 40, 0, 6.28); g.fill(); }
+    });
+    const moon = new THREE.Sprite(new THREE.SpriteMaterial({ map: moonTex, color: '#CFC3A6', fog: false }));
+    moon.position.set(portrait ? 2.5 : 7, portrait ? 17 : 13, -60); moon.scale.setScalar(portrait ? 9 : 11); scene.add(moon);
+    const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: GLOW, color: '#FFE2A8', transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+    halo.position.copy(moon.position); halo.scale.setScalar(portrait ? 22 : 26); halo.material.opacity = .3; scene.add(halo);
+    function ridge(z, height, color, seed) {
+      const r = rnd(seed), sh = new THREE.Shape(); sh.moveTo(-60, -5);
+      for (let x = -60; x <= 60; x += 2) sh.lineTo(x, height + Math.sin(x * .08 + seed) * height * .35 + r() * height * .25);
+      sh.lineTo(60, -5); sh.lineTo(-60, -5);
+      const m = new THREE.Mesh(new THREE.ShapeGeometry(sh), new THREE.MeshBasicMaterial({ color, fog: false })); m.position.z = z; scene.add(m);
+    }
+    ridge(-50, 6, '#141634', 3); ridge(-35, 4, '#0E0F26', 7); ridge(-22, 2.6, '#090A1A', 11);
+    // 언덕 위 도리이 실루엣
+    const sil = new THREE.MeshBasicMaterial({ color: '#05050C' });
+    const tg = new THREE.Group();
+    for (const x of [-.9, .9]) { const p2 = new THREE.Mesh(new THREE.BoxGeometry(.16, 2.2, .16), sil); p2.position.set(x, 1.1, 0); tg.add(p2); }
+    const k1 = new THREE.Mesh(new THREE.BoxGeometry(2.8, .16, .2), sil); k1.position.y = 2.25; tg.add(k1);
+    const k2 = new THREE.Mesh(new THREE.BoxGeometry(2.3, .1, .16), sil); k2.position.y = 1.85; tg.add(k2);
+    tg.position.set(portrait ? -.6 : -3, 3.6, -21.5); scene.add(tg);
+    const cloudTex = canvasTex(256, 128, (g, w, h) => { for (let i = 0; i < 14; i++) { const gr = g.createRadialGradient(40 + Math.random() * 176, 64 + (Math.random() - .5) * 30, 0, 128, 64, 70); gr.addColorStop(0, 'rgba(90,95,130,.25)'); gr.addColorStop(1, 'rgba(90,95,130,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, h); } });
+    for (let i = 0; i < 7; i++) {
+      const c = new THREE.Sprite(new THREE.SpriteMaterial({ map: cloudTex, transparent: true, opacity: .55, depthWrite: false, fog: false, toneMapped: false }));
+      c.position.set((Math.random() - .5) * 60, 10 + Math.random() * 10, -45 + Math.random() * 10); c.scale.set(22, 9, 1); scene.add(c);
+      clouds.push({ s: c, v: .004 + Math.random() * .006 });
+    }
+  }
+
   // 로그인: 강 위 등롱 띄우기(灯籠流し) — 잔잔한 물, 떠내려가는 등롱, 하늘로 오르는 풍등
   const drifters = [];
   if (SCENE === 'river') {
@@ -646,6 +794,22 @@ export function createHanabiStage(canvas, opts = {}) {
       u.mat.emissiveIntensity = .04 + u.lit * 1.7 * flick;
       u.glow.material.opacity = Math.min(1, u.lit) * .32 * flick;
     }
+    if (waterTex) { waterTex.offset.x = Math.sin(t * .05) * .05; waterTex.offset.y = t * .006; }
+    for (const f of fishes) {
+      const a = t * f.sp + f.ph;
+      const x = f.cx + Math.cos(a) * f.r, z = f.cz + Math.sin(a * 1.3) * f.r * .7;
+      const dx = x - f.g.position.x, dz = z - f.g.position.z;
+      if (dx || dz) f.g.rotation.y = Math.atan2(-dz, dx);
+      f.g.position.x = x; f.g.position.z = z;
+      f.tail.rotation.z = Math.sin(t * 9 + f.ph) * .5;
+    }
+    for (const r of ripples) {
+      r.t += dt;
+      const k = (r.t % 3.2) / 3.2;
+      if (k < dt / 3.2 * 1.5) r.m.position.set((Math.random() - .5) * r.PW * .8, .02, (Math.random() - .5) * r.PH * .8);
+      r.m.scale.setScalar(.1 + k * 1.4); r.m.material.opacity = (1 - k) * .45;
+    }
+    for (const c of clouds) { c.s.position.x += c.v; if (c.s.position.x > 34) c.s.position.x = -34; }
     for (const d of drifters) {
       d.position.z += d.userData.sp; d.position.y = .15 + Math.sin(t * 1.4 + d.userData.ph) * .04;
       d.rotation.y += .002;
@@ -939,7 +1103,7 @@ export function createHanabiStage(canvas, opts = {}) {
   // 시작 상태: 등불이 하나씩 켜진 대기 화면
   street.forEach((l, i) => gsap.to(l.userData, { lit: 1, duration: .6, delay: .3 + i * .05 }));
   startSky(SKY_EVERY);
-  if (SCENE === 'river') ambient(true);
+  if (SCENE === 'river' || SCENE === 'moon') ambient(true);
 
   return { play, release, skip, abort, idle, introGlyph, setScroll, ambient, destroy };
 }
