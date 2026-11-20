@@ -9,6 +9,13 @@ import { createHanabiStage, webglAvailable } from './hanabi/hanabi-stage.js';
 renderHeader();
 initNightStreet();
 
+// 페이지 전환 막이 걷힌 뒤 실행 (transition.js), 없으면 1.2초 뒤
+function onRevealed(fn) {
+  if (window.__yoriRevealed) { fn(); return; }
+  let ran = false; const go = () => { if (!ran) { ran = true; fn(); } };
+  addEventListener('yori:revealed', go, { once: true }); setTimeout(go, 1200);
+}
+
 // ---------- 3D 축제 거리 배경 ----------
 function initNightStreet() {
   // 홈 레이아웃은 항상 밤 테마. 3D는 WebGL 되는 기기에서만
@@ -25,7 +32,9 @@ function initNightStreet() {
   const gsap = window.gsap;
   if (gsap) {
     // 첫 화면 문구는 차례로, 아래 카드는 보일 때 하나씩
-    gsap.from('.hanabi-home .rise', { opacity: 0, y: 24, duration: .9, stagger: .1, ease: 'power3.out', delay: .25 });
+    // 화면이 밝아진 뒤에 차례로 올라오게 (전환 중에 반쯤 진행된 채로 보이지 않게)
+    gsap.set('.hanabi-home .rise', { opacity: 0, y: 24 });
+    onRevealed(() => gsap.to('.hanabi-home .rise', { opacity: 1, y: 0, duration: .9, stagger: .1, ease: 'power3.out', delay: .1 }));
     const io = new IntersectionObserver((entries) => {
       entries.forEach((e) => {
         if (!e.isIntersecting) return;
@@ -48,7 +57,7 @@ function initNightStreet() {
       return;
     }
     stage.ambient(true);                                  // 멀리서 풍등이 계속 떠오름
-    setTimeout(() => stage.introGlyph('寄り道'), 500);    // 하늘에 불꽃 글자
+    onRevealed(() => setTimeout(() => stage.introGlyph('寄り道'), 700));    // 하늘에 불꽃 글자 (화면이 밝아진 뒤)
     onScroll();
   }, 0));
 }

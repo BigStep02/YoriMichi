@@ -3,7 +3,7 @@
   const root = document.documentElement;
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let done = false;
-  const reveal = () => { if (done) return; done = true; requestAnimationFrame(() => root.classList.add('vt-in')); };
+  const reveal = () => { if (done) return; done = true; requestAnimationFrame(() => { root.classList.add('vt-in'); window.__yoriRevealed = true; dispatchEvent(new Event('yori:revealed')); }); };
   const c = document.getElementById('hanabi-stage');
   if (c && !c.classList.contains('ready')) {
     new MutationObserver((_, o) => { if (c.classList.contains('ready')) { o.disconnect(); reveal(); } })
