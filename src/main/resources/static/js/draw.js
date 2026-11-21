@@ -5,7 +5,8 @@ import { api } from './api.js';
 import { renderHeader } from './header.js';
 import { mountSearchBar } from './searchbar.js';
 import { icons, esc } from './icons.js';
-import { createHanabiStage, webglAvailable } from './hanabi/hanabi-stage.js';
+import { acquireStage, webglAvailable } from './hanabi/hanabi-stage.js';
+import { enableHSwipe } from './swipe.js';
 
 renderHeader();
 document.getElementById('back-link').insertAdjacentHTML('afterbegin', icons.back());
@@ -24,6 +25,16 @@ const resultEl = steps.result;
 
 const opts = { category: ['ALL'], radiusM: '800', maxPrice: '', openNow: true };
 let loc = null;
+// 결과 카드를 옆으로 쓸어 넘기면 다시 뽑기
+function swipeToRedraw() {
+  const card = resultEl.firstElementChild;
+  if (!card) return;
+  const fling = (dir) => () => card.animate(
+    [{ transform: 'translateX(0)', opacity: 1 }, { transform: `translateX(${dir * 70}%) rotate(${dir * 5}deg)`, opacity: 0 }],
+    { duration: 260, easing: 'ease-in', fill: 'forwards' }).onfinish = () => draw();
+  enableHSwipe(card, { follow: true, threshold: 70, onNext: fling(-1), onPrev: fling(1) });
+}
+
 let excluded = []; // 이번 조건에서 이미 뽑힌 곳 (다시 뽑기용)
 let drawSeq = 0;
 
@@ -42,8 +53,9 @@ if (webglAvailable()) {
   // 페이지 내용을 먼저 그리고, 3D는 그다음 프레임에 준비 (전환 중 멈춤 방지)
   requestAnimationFrame(() => setTimeout(() => {
     try {
-      stage = createHanabiStage(canvas, { calm });
-      stage.introGlyph('寄り道');
+      stage = acquireStage(canvas, { calm });
+      if (stage.firstVisit) stage.introGlyph('寄り道');
+      stage.idle();
     } catch (_) {
       stage = null;
     }
@@ -252,6 +264,7 @@ function renderHint(data, onReveal) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
   resultEl.querySelector('[data-redraw]').addEventListener('click', () => draw());
+  swipeToRedraw();
   resultEl.querySelector('[data-change]').addEventListener('click', () => show('form'));
 }
 
@@ -302,6 +315,7 @@ function renderResult(data) {
     <p class="attribution">가게 정보·리뷰: Google 지도 · 리뷰 요약은 AI가 만든 참고용이에요</p>`;
 
   resultEl.querySelector('[data-redraw]').addEventListener('click', () => draw());
+  swipeToRedraw();
   resultEl.querySelector('[data-change]').addEventListener('click', () => {
     if (stage) stage.idle();
     show('form');

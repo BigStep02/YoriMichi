@@ -4,7 +4,7 @@ import { renderHeader } from './header.js';
 import { mountSearchBar } from './searchbar.js';
 import { todayTokyo, addDays, dDayLabel } from './dates.js';
 import { icons, esc } from './icons.js';
-import { createHanabiStage, webglAvailable } from './hanabi/hanabi-stage.js';
+import { acquireStage, webglAvailable } from './hanabi/hanabi-stage.js';
 
 renderHeader();
 initNightStreet();
@@ -33,8 +33,9 @@ function initNightStreet() {
   if (gsap) {
     // 첫 화면 문구는 차례로, 아래 카드는 보일 때 하나씩
     // 화면이 밝아진 뒤에 차례로 올라오게 (전환 중에 반쯤 진행된 채로 보이지 않게)
-    gsap.set('.hanabi-home .rise', { opacity: 0, y: 24 });
-    onRevealed(() => gsap.to('.hanabi-home .rise', { opacity: 1, y: 0, duration: .9, stagger: .1, ease: 'power3.out', delay: .1 }));
+    const riseEls = gsap.utils.toArray('.hanabi-home .rise');   // 지금 잡아둠 (검색 바는 나중에 class가 바뀜)
+    gsap.set(riseEls, { opacity: 0, y: 24 });
+    onRevealed(() => gsap.to(riseEls, { opacity: 1, y: 0, duration: .9, stagger: .1, ease: 'power3.out', delay: .1 }));
     const io = new IntersectionObserver((entries) => {
       entries.forEach((e) => {
         if (!e.isIntersecting) return;
@@ -51,13 +52,13 @@ function initNightStreet() {
   // 페이지 내용을 먼저 그리고, 3D는 그다음 프레임에 준비 (전환 중 멈춤 방지)
   requestAnimationFrame(() => setTimeout(() => {
     try {
-      stage = createHanabiStage(document.getElementById('hanabi-stage'), { calm });
+      stage = acquireStage(document.getElementById('hanabi-stage'), { calm });
     } catch (e) {
       console.warn('3D 배경을 켤 수 없어요', e);
       return;
     }
     stage.ambient(true);                                  // 멀리서 풍등이 계속 떠오름
-    onRevealed(() => setTimeout(() => stage.introGlyph('寄り道'), 700));    // 하늘에 불꽃 글자 (화면이 밝아진 뒤)
+    if (stage.firstVisit) onRevealed(() => setTimeout(() => stage.introGlyph('寄り道'), 700));    // 하늘에 불꽃 글자 (화면이 밝아진 뒤)
     onScroll();
   }, 0));
 }

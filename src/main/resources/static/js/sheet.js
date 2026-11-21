@@ -2,6 +2,7 @@
 import { TEST_CITIES } from './location.js';
 import { todayTokyo, addDays } from './dates.js';
 import { esc } from './icons.js';
+import { enableSheetSwipe, enableHSwipe } from './swipe.js';
 
 let openSheet = null;
 
@@ -28,6 +29,7 @@ export function mountSheet(title, bodyHtml, { footer = '' } = {}) {
   document.addEventListener('keydown', onKey);
   const prevFocus = document.activeElement;
   openSheet = { wrap, onKey, prevFocus };
+  enableSheetSwipe(wrap, closeSheet);   // 아래로 쓸어내리면 닫힘
   setTimeout(() => wrap.querySelector('.sheet-x').focus(), 50);
   return wrap;
 }
@@ -139,6 +141,17 @@ export function openDateSheet({ from, to }, onPick) {
     $('[data-sum]').textContent = sum;
     $('[data-ok]').disabled = !end;
   };
+
+  // 달력 좌우로 쓸면 이전/다음 달 (살짝 미끄러지며 넘어감)
+  const slide = (step) => {
+    if ($(`[data-nav="${step}"]`).disabled) return;
+    const g = $('[data-grid]');
+    g.animate([{ transform: 'translateX(0)', opacity: 1 }, { transform: `translateX(${-step * 36}px)`, opacity: 0 }], { duration: 110, easing: 'ease-in' }).onfinish = () => {
+      view.setMonth(view.getMonth() + step); render();
+      g.animate([{ transform: `translateX(${step * 36}px)`, opacity: 0 }, { transform: 'translateX(0)', opacity: 1 }], { duration: 170, easing: 'ease-out' });
+    };
+  };
+  enableHSwipe($('.cal'), { onNext: () => slide(1), onPrev: () => slide(-1) });
 
   wrap.addEventListener('click', (e) => {
     const nav = e.target.closest('[data-nav]');

@@ -1110,10 +1110,6 @@ body.hanabi .app-header.scrolled {
 /* 페이지 제목은 명조체 + 그림자 (3D 위에서 잘 읽히게) */
 body.hanabi-bg h1, body.hanabi-bg .page-title { font-family: var(--font-serif); text-shadow: 0 3px 18px rgba(0,0,0,.7); }
 
-/* 폰: 위쪽은 3D 무대가 보이도록 약간 띄움 */
-@media (max-aspect-ratio: 3/4) {
-  body.hanabi-bg[data-page="festivals"] main.container { padding-top: 14svh; }
-}
 
 /* 축제 상세: 빨간 상단 박스 대신 신사 무대 위에 바로 제목 */
 body.hanabi-bg .f-hero { position: relative; z-index: 2; background: transparent; color: #F5EFE6; padding-bottom: 18px; }
@@ -1126,11 +1122,10 @@ body.hanabi-bg .f-hero-chips span { background: rgba(16,14,36,.55); border: 1px 
 
 /* 페이지 전환: 이전 화면이 멈춰 보이지 않게 부드럽게 겹쳐 넘어감 (지원 브라우저만) */
 html::after { content: ""; position: fixed; inset: 0; z-index: 2147483000; pointer-events: none; background: #05060E; opacity: 1; transition: opacity .5s ease; }
-html:not(.vt-in):not(.vt-out)::after { animation: vt-safety .01s 2.2s forwards; }   /* 스크립트가 실패해도 화면이 가려진 채로 남지 않게 */
+html:not(.vt-in):not(.vt-out)::after { animation: vt-safety .01s 4.5s forwards; }   /* 스크립트가 실패해도 화면이 가려진 채로 남지 않게 */
 @keyframes vt-safety { to { opacity: 0; } }
 html.vt-in::after { opacity: 0; }
 html.vt-out::after { opacity: 1; transition-duration: .2s; }
-#hanabi-stage { transition-duration: .5s !important; }
 
 /* 3D 캔버스는 준비되면 어둠 속에서 서서히 켜짐 */
 #hanabi-stage { opacity: 0; transition: opacity .9s ease; }
@@ -1279,3 +1274,22 @@ body[data-page="restaurants"] .r-meta .star { color: #F2C14E; font-weight: 700; 
 body[data-page="restaurants"] .r-meta .muted { color: rgba(246,236,221,.45); }
 body[data-page="restaurants"] .r-meta .sep { color: rgba(233,194,122,.35); }
 body[data-page="restaurants"] .r-chev { color: rgba(233,194,122,.55); }
+
+/* 앱처럼 이동: 내용은 살짝 가라앉듯 사라졌다 떠오르고, 장면이 바뀌는 순간만 먹빛 막이 스침 */
+body > *:not(#hanabi-stage) { transition: opacity .26s ease, transform .36s cubic-bezier(.2,.8,.2,1); }
+body.spa-out > *:not(#hanabi-stage) { opacity: 0; transform: translateY(10px); transition-duration: .2s, .2s; }
+#spa-veil { position: fixed; inset: 0; z-index: 2147482000; pointer-events: none; background: #05060E; opacity: 0; transition: opacity .38s ease; will-change: opacity; }
+#spa-veil.on { opacity: .9; transition-duration: .24s; }
+#hanabi-stage { transition: opacity .35s ease !important; }
+
+/* 상태바(시계·배터리) 자리: 헤더가 화면 맨 위(0)부터 시작하고, 상태바 높이만큼 안쪽 여백을 가짐
+   → 스크롤해도 헤더 위로 내용이 보일 틈이 없음 (앱 모드·사파리 모두) */
+:root { --safe-top: env(safe-area-inset-top, 0px); }
+html.is-app body:is(.hanabi-home, .hanabi-bg, .hanabi) { padding-top: 0; }
+:is(body.hanabi-home, body.hanabi-bg, body.hanabi) .app-header { top: 0; padding-top: calc(14px + var(--safe-top)); }
+:is(body.hanabi-home, body.hanabi-bg, body.hanabi) .app-header.scrolled { background: rgba(7,10,26,.94); }
+/* 홈 화면 앱: 상태바(시계·배터리) 자리는 화면 안쪽이라 고정 띠로 확실히 덮음 */
+html.is-app body::before {
+  content: ""; position: fixed; left: 0; right: 0; top: 0; height: env(safe-area-inset-top, 0px); z-index: 9; pointer-events: none;
+  background: #070A1A;
+}

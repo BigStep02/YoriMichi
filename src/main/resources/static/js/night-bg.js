@@ -1,6 +1,6 @@
 // 축제 목록·상세·주변 맛집·로그인 공용 3D 배경
 // <canvas id="hanabi-stage" data-scene="yatai|shrine|alley|river"> 를 찾아서 그 무대를 띄움
-import { createHanabiStage, webglAvailable } from './hanabi/hanabi-stage.js';
+import { acquireStage, webglAvailable } from './hanabi/hanabi-stage.js';
 
 const canvas = document.getElementById('hanabi-stage');
 let stage = null;
@@ -16,10 +16,10 @@ function startStage() {
     const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     // ?scene=ema 처럼 주소로 무대를 바꿔서 미리 볼 수 있음 (디자인 확인용)
     const override = new URLSearchParams(location.search).get('scene');
-    const SCENES = ['street', 'yatai', 'yagura', 'shrine', 'alley', 'river', 'ema', 'goldfish', 'moon'];
+    const SCENES = ['street', 'yatai', 'yagura', 'sando', 'shrine', 'alley', 'river', 'ema', 'goldfish', 'moon'];
     const scene = SCENES.includes(override) ? override : (canvas.dataset.scene || 'street');
-    stage = createHanabiStage(canvas, { scene, lite: true, calm });
-    if (canvas.dataset.glyph) setTimeout(() => stage.introGlyph(canvas.dataset.glyph), 800);
+    stage = acquireStage(canvas, { scene, lite: true, calm });
+    if (canvas.dataset.glyph && stage.firstVisit) setTimeout(() => stage.introGlyph(canvas.dataset.glyph), 800);
     if (pendingGlyph) { stage.introGlyph(pendingGlyph); pendingGlyph = null; }
     onScroll();
   } catch (e) {

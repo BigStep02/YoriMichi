@@ -12,7 +12,7 @@ const contentEl = document.getElementById('content');
 const id = new URLSearchParams(location.search).get('id');
 
 // 목록에서 왔으면 뒤로가기로 검색 조건 유지
-const backHref = document.referrer.includes('/festivals.html') ? 'javascript:history.back()' : '/festivals.html';
+const backHref = (window.__spaPrev || document.referrer).includes('/festivals.html') ? 'javascript:history.back()' : '/festivals.html';
 const backLink = `<a class="back on-dark" href="${backHref}">${icons.back()}축제 목록</a>`;
 const WD = ['일', '월', '화', '수', '목', '금', '토'];
 

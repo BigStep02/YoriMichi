@@ -34,7 +34,12 @@ export function createHanabiStage(canvas, opts = {}) {
   const lite = !!opts.lite;
   const buzz = (p) => { if (calm) return; try { navigator.vibrate && navigator.vibrate(p); } catch (_) {} };
   let renderer;
-  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+  // shared: 페이지를 옮겨도 같은 canvas·렌더러를 계속 씀 (router.js). WebGL을 새로 만들지 않아서 전환이 빠름
+  if (opts.shared && sharedRenderer && sharedCanvas === canvas) renderer = sharedRenderer;
+  else {
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+    if (opts.shared) { sharedRenderer = renderer; sharedCanvas = canvas; }
+  }
   const PR = Math.min(devicePixelRatio || 1, lite ? 1.75 : 2.5);
   renderer.setPixelRatio(PR);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -67,7 +72,7 @@ export function createHanabiStage(canvas, opts = {}) {
   if (SCENE === 'river') { P.camHome = portrait ? [0, 1.6, 9] : [0, 1.4, 8]; P.lookHome = portrait ? [0, -1.6, -10] : [0, .6, -10]; }
   if (SCENE === 'shrine') { P.camHome = portrait ? [0, 1.7, 4] : [0, 1.7, 6]; P.lookHome = portrait ? [0, -1.4, -18] : [0, 2.6, -18]; P.introGlyph = portrait ? [0, 10.3, -24] : [0, 12.5, -24]; P.introW = portrait ? 5 : 7; }
   if (SCENE === 'yatai') { P.camHome = portrait ? [0, 1.75, 9] : [0, 1.7, 8]; P.lookHome = portrait ? [0, 1.5, -10] : [0, 2.6, -10]; }
-  if (SCENE === 'sando') { P.camHome = portrait ? [0, 1.7, 9] : [0, 1.8, 10]; P.lookHome = portrait ? [0, 5.4, -20] : [0, 4.6, -20]; P.introGlyph = [0, 13, -34]; }
+  if (SCENE === 'sando') { P.camHome = portrait ? [0, 2.3, 2.5] : [0, 2, 7]; P.lookHome = portrait ? [0, 4.6, -20] : [0, 5.2, -20]; P.introGlyph = [0, 13, -34]; }
   if (SCENE === 'yagura') { P.camHome = portrait ? [0, 3.6, 10.5] : [0, 2.6, 8]; P.lookHome = portrait ? [0, -.6, -8] : [0, 2.6, -8]; }
   if (SCENE === 'alley') { P.lookHome = portrait ? [0, 1.2, -10] : [0, 3.4, -10]; }
   const CAM_HOME = new THREE.Vector3(...P.camHome);
@@ -1155,19 +1160,24 @@ export function createHanabiStage(canvas, opts = {}) {
     camera.updateMatrixWorld();
     const camRight = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
     const camUp = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion);
-    const pos = new Float32Array(n * 3), vel = new Float32Array(n * 3), tgt = new Float32Array(n * 3);
+    // 가운데서 터진 불꽃이 흩어지지 않고 바로 글자 획 자리로 피어남 (가운데 획부터 바깥 획 순서로)
+    const pos = new Float32Array(n * 3), vel = new Float32Array(n * 3), tgt = new Float32Array(n * 3), del = new Float32Array(n);
+    let maxD = .001;
+    for (let i = 0; i < n; i++) maxD = Math.max(maxD, Math.hypot(pts[i][0], pts[i][1]));
     for (let i = 0; i < n; i++) {
       pos[i * 3] = origin.x; pos[i * 3 + 1] = origin.y; pos[i * 3 + 2] = origin.z;
-      const u = Math.random() * 2 - 1, th = Math.random() * 6.283, r = Math.sqrt(1 - u * u), sp = .25 + Math.random() * .2;
-      vel[i * 3] = r * Math.cos(th) * sp; vel[i * 3 + 1] = u * sp; vel[i * 3 + 2] = r * Math.sin(th) * sp * .3;
-      const R = camRight, U = camUp, x = pts[i][0], y = pts[i][1];
+      const R = camRight, U = camUp, x = pts[i][0], y = pts[i][1], d = Math.hypot(x, y) || .001;
       tgt[i * 3] = origin.x + R.x * x + U.x * y; tgt[i * 3 + 1] = origin.y + R.y * x + U.y * y; tgt[i * 3 + 2] = origin.z + R.z * x + U.z * y;
+      // 바깥으로 살짝 부풀었다 자리 잡는 곡선 (터지는 느낌은 남기고 되돌아오는 느낌은 없앰)
+      const bl = .25 + Math.random() * .35, bx = x / d * bl, by = y / d * bl;
+      vel[i * 3] = R.x * bx + U.x * by; vel[i * 3 + 1] = R.y * bx + U.y * by; vel[i * 3 + 2] = R.z * bx + U.z * by + (Math.random() - .5) * .3;
+      del[i] = d / maxD * .3 + Math.random() * .07;
     }
     const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     const mat = new THREE.PointsMaterial({ map: GLOW, color, size: .32, transparent: true, opacity: 1, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
     const ptsObj = new THREE.Points(geo, mat); scene.add(ptsObj);
     const light = new THREE.PointLight(color, 4, 30, 1.5); light.position.copy(origin); scene.add(light);
-    shells.push({ pts: ptsObj, vel, target: tgt, hold, life: 1, light, age: 0 });
+    shells.push({ pts: ptsObj, vel, target: tgt, del, origin: origin.clone(), hold: hold + .3, life: 1, light, age: 0 });
   }
 
   // the red thread of fate
@@ -1268,13 +1278,14 @@ export function createHanabiStage(canvas, opts = {}) {
     camera.fov = camera.aspect < .7 ? 62 : 50;
     camera.updateProjectionMatrix();
   }
-  resize(); addEventListener('resize', resize);
+  resize(); if (!opts.shared) addEventListener('resize', resize);
   try { renderer.compile(scene, camera); } catch { /* noop */ }   // 셰이더 미리 준비 → 첫 프레임 끊김 줄이기
   if ('ResizeObserver' in window) new ResizeObserver(resize).observe(canvas);
 
   const clock = new THREE.Clock();
   let shown = false;
   let t = 0, idleCam = true, scrollTarget = 0, scrollEase = 0;
+  const camOff = { x: 0, y: 0, z: 0 };   // 페이지 들어오고 나갈 때 카메라가 앞으로 걸어가는 연출
   const tmp = new THREE.Vector3();
   function frame() {
     const dt = Math.min(clock.getDelta(), .05); t += dt;
@@ -1332,14 +1343,18 @@ export function createHanabiStage(canvas, opts = {}) {
       const sh = shells[s], p = sh.pts.geometry.attributes.position.array, v = sh.vel;
       sh.age += dt;
       if (sh.target) {
-        const tg = sh.target, a = sh.age;
-        for (let i = 0; i < v.length; i += 3) {
-          if (a < .35) { p[i] += v[i]; p[i + 1] += v[i + 1]; p[i + 2] += v[i + 2]; v[i] *= .9; v[i + 1] *= .9; v[i + 2] *= .9; }
-          else if (a < sh.hold) { p[i] += (tg[i] - p[i]) * .085; p[i + 1] += (tg[i + 1] - p[i + 1]) * .085; p[i + 2] += (tg[i + 2] - p[i + 2]) * .085; v[i] = (Math.random() - .5) * .01; v[i + 1] = 0; v[i + 2] = 0; }
-          else { v[i + 1] -= .0016; p[i] += v[i]; p[i + 1] += v[i + 1]; }
+        const tg = sh.target, a = sh.age, o = sh.origin;
+        if (a >= sh.hold && !sh.fall) { sh.fall = true; for (let i = 0; i < v.length; i += 3) { v[i] = (Math.random() - .5) * .01; v[i + 1] = 0; v[i + 2] = 0; } }
+        for (let i = 0, j = 0; i < v.length; i += 3, j++) {
+          if (!sh.fall) {
+            const u = Math.min(1, Math.max(0, (a - sh.del[j]) / .8)), e = 1 - (1 - u) ** 3, b = Math.sin(Math.PI * u) * (1 - u * .4);
+            p[i] = o.x + (tg[i] - o.x) * e + v[i] * b;
+            p[i + 1] = o.y + (tg[i + 1] - o.y) * e + v[i + 1] * b;
+            p[i + 2] = o.z + (tg[i + 2] - o.z) * e + v[i + 2] * b;
+          } else { v[i + 1] -= .0016; p[i] += v[i]; p[i + 1] += v[i + 1]; }
         }
         sh.life = a < sh.hold ? 1 : Math.max(0, 1 - (a - sh.hold) / 1.6);
-        sh.pts.material.opacity = sh.life * (a > .6 && a < sh.hold ? (.75 + .25 * Math.sin(a * 30 + Math.random())) : 1);
+        sh.pts.material.opacity = sh.life * (a > 1.2 && a < sh.hold ? (.8 + .2 * Math.sin(a * 24)) : 1);
         sh.light.intensity = a < sh.hold ? 4 : 0;
       } else {
         for (let i = 0; i < v.length; i += 3) {
@@ -1367,6 +1382,7 @@ export function createHanabiStage(canvas, opts = {}) {
       camera.position.z = CAM_HOME.z - dz;
       look.z = LOOK_HOME.z - dz;
       look.y = LOOK_HOME.y - (street1 ? scrollEase * 1.2 : 0);
+      camera.position.x += camOff.x; camera.position.y += camOff.y; camera.position.z += camOff.z; look.z += camOff.z * .6;
     }
     for (const c of crowd) {
       if (!calm) c.g.position.z += c.dir * c.v * dt;
@@ -1633,9 +1649,34 @@ export function createHanabiStage(canvas, opts = {}) {
   function setScroll(p) { if (calm) return; scrollTarget = Math.max(0, Math.min(1, p)); }
 
   function destroy() {
-    alive = false; cancelAnimationFrame(raf); stopSky();
+    alive = false; cancelAnimationFrame(raf); stopSky(); ambient(false);
     if (tl) tl.kill();
-    renderer.dispose();
+    if (!opts.shared) { renderer.dispose(); return; }
+    // 공유 렌더러는 남기고 이 무대의 자원만 정리
+    scene.traverse((o) => {
+      o.geometry?.dispose?.();
+      for (const m of [].concat(o.material || [])) { for (const v of Object.values(m)) if (v && v.isTexture) v.dispose(); m.dispose?.(); }
+    });
+    composer.dispose?.();
+  }
+  // 다른 페이지로 갈 때 잠깐 멈춤 / 돌아오면 이어서
+  let ambientWas = false;
+  function pause() {
+    if (!alive) return;
+    alive = false; cancelAnimationFrame(raf); stopSky();
+    ambientWas = !!floatTimer; ambient(false);
+  }
+  // 나갈 때: 카메라가 무대 안쪽으로 한 걸음 / 들어올 때: 조금 뒤에서 걸어 들어오며 자리 잡음
+  function leave() { gsap.killTweensOf(camOff); return gsap.to(camOff, { z: -2.4, y: -.1, duration: .34, ease: 'power2.in' }); }
+  function enter() { gsap.killTweensOf(camOff); Object.assign(camOff, { x: 0, y: .5, z: calm ? 1.2 : 3.4 }); gsap.to(camOff, { x: 0, y: 0, z: 0, duration: 1.1, ease: 'power3.out' }); }
+  function warm() { try { composer.render(); } catch { /* noop */ } }
+  function resume() {
+    if (alive) return;
+    if (tl) idle();
+    enter();
+    shown = false; alive = true; clock.getDelta(); resize();
+    startSky(SKY_EVERY); if (ambientWas) ambient(true);
+    raf = requestAnimationFrame(frame);
   }
 
   // 시작 상태: 등불이 하나씩 켜진 대기 화면
@@ -1643,5 +1684,54 @@ export function createHanabiStage(canvas, opts = {}) {
   startSky(SKY_EVERY);
   if (SCENE === 'river' || SCENE === 'moon') ambient(true);
 
-  return { play, release, skip, abort, idle, introGlyph, setScroll, ambient, destroy };
+  if (opts.enter) enter();
+  return { play, release, skip, abort, idle, introGlyph, setScroll, ambient, destroy, pause, resume, resize, leave, enter, warm };
 }
+
+// ───────── 무대 보관함: 페이지를 오가도 무대를 다시 만들지 않음 ─────────
+let sharedRenderer = null, sharedCanvas = null;
+const stageCache = new Map();   // key → { stage, canvas, visited }
+let currentStage = null;
+const MAX_STAGES = 6;
+const stageKey = (o) => [o.scene || 'street', o.calm ? 1 : 0, o.lite ? 1 : 0].join('|');
+function trim(keep) { for (const [k, e] of stageCache) { if (stageCache.size <= MAX_STAGES) break; if (e !== keep && e !== currentStage) { e.stage.destroy(); stageCache.delete(k); } } }
+/** 페이지마다 무대를 받아감. 미리 만들어둔 게 있으면 바로 이어서 재생, 없으면 새로 만듦 */
+export function acquireStage(canvas, opts = {}) {
+  const key = stageKey(opts);
+  if (currentStage && currentStage.key !== key) currentStage.stage.pause();
+  let entry = stageCache.get(key);
+  if (entry && entry.canvas === canvas) {
+    stageCache.delete(key); stageCache.set(key, entry);
+    if (currentStage !== entry) entry.stage.resume(); else entry.stage.enter();
+  } else {
+    canvas.classList.remove('ready');
+    entry = { key, canvas, stage: createHanabiStage(canvas, { ...opts, shared: true, enter: true }), visited: false };
+    stageCache.set(key, entry); trim(entry);
+  }
+  entry.stage.firstVisit = !entry.visited; entry.visited = true;
+  entry.stage.reused = !entry.stage.firstVisit;
+  currentStage = entry;
+  if (!warmStarted) { warmStarted = true; window.__yoriWarm = prewarm(canvas, opts.calm); }
+  return entry.stage;
+}
+/** 지금 무대가 '나가는' 연출 (router.js가 페이지 옮기기 직전에 부름) */
+export function leaveStage() { return currentStage?.stage.leave(); }
+/** 3D가 없는 페이지로 갈 때 */
+export function pauseStages() { if (currentStage) { currentStage.stage.pause(); currentStage = null; } }
+// 처음 들어올 때 다른 페이지 무대도 미리 만들어 둠 → 어느 페이지로 가도 끊기지 않음
+let warmStarted = false;
+function prewarm(canvas, calm) {
+  const list = [{ scene: 'street' }, { scene: 'sando', lite: true }, { scene: 'alley', lite: true }, { scene: 'shrine', lite: true }];
+  return list.reduce((p, o) => p.then(() => new Promise((res) => setTimeout(() => {
+    const opts = { ...o, calm }, key = stageKey(opts);
+    if (!stageCache.has(key)) {
+      try {
+        const st = createHanabiStage(canvas, { ...opts, shared: true });
+        st.pause(); st.warm();
+        stageCache.set(key, { key, canvas, stage: st, visited: false });
+      } catch (e) { console.warn('미리 만들기 실패', e); }
+    }
+    res();
+  }, 30))), Promise.resolve());
+}
+(window.__spaAddPersistent || ((t, ...a) => t.addEventListener(...a)))(window, 'resize', () => currentStage?.stage.resize());
