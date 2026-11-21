@@ -63,6 +63,7 @@ export function openLocationSheet(current, onPick) {
         </div>
       </div>`).join('')}`;
   const wrap = mountSheet('어디 근처에서 찾을까요?', body);
+  wrap.querySelector('.sheet').classList.add('sheet-loc');
   wrap.querySelector('.sheet-body').addEventListener('click', (e) => {
     const btn = e.target.closest('button[data-v]');
     if (!btn) return;
@@ -74,17 +75,22 @@ export function openLocationSheet(current, onPick) {
 
 // ---------- 날짜 ----------
 const WD = ['일', '월', '화', '수', '목', '금', '토'];
+// 달마다 옛 이름(和風月名) — 월 고르기 타일에 작게
+const WAFU = ['睦月', '如月', '弥生', '卯月', '皐月', '水無月', '文月', '葉月', '長月', '神無月', '霜月', '師走'];
+const SEASON = ['🎍', '🏮', '🌸', '🌸', '🎏', '☔', '🎋', '🎆', '🌕', '🍁', '🍁', '🔔'];
 const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const parse = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
 const label = (s) => { const d = parse(s); return `${d.getMonth() + 1}월 ${d.getDate()}일 (${WD[d.getDay()]})`; };
+const labelY = (s) => { const d = parse(s); return `${d.getFullYear()}년 ${label(s)}`; };
 
 export function openDateSheet({ from, to }, onPick) {
   const today = todayTokyo();
-  const max = addDays(today, 365);
+  const max = addDays(today, 730);            // 내년 계획까지 (2년)
   let start = from;
   let end = to;
   let picking = 'start';
   let view = parse(from); view.setDate(1);
+  let pick = null;                             // 'y' | 'm' | null
 
   const presets = (() => {
     const t = parse(today);
@@ -106,17 +112,61 @@ export function openDateSheet({ from, to }, onPick) {
     <div class="cal">
       <div class="cal-head">
         <button type="button" class="cal-nav" data-nav="-1" aria-label="이전 달">‹</button>
-        <strong data-month></strong>
+        <div class="cal-ym">
+          <button type="button" class="ym-btn" data-pick="y" aria-label="연도 고르기"><b data-y></b>년<i>▾</i></button>
+          <button type="button" class="ym-btn" data-pick="m" aria-label="월 고르기"><b data-m></b>월<small data-wafu></small><i>▾</i></button>
+        </div>
         <button type="button" class="cal-nav" data-nav="1" aria-label="다음 달">›</button>
       </div>
-      <div class="cal-wd">${WD.map((w, i) => `<span class="${i === 0 ? 'sun' : i === 6 ? 'sat' : ''}">${w}</span>`).join('')}</div>
-      <div class="cal-grid" data-grid></div>
+      <div class="cal-stage">
+        <div class="cal-days">
+          <div class="cal-wd">${WD.map((w, i) => `<span class="${i === 0 ? 'sun' : i === 6 ? 'sat' : ''}">${w}</span>`).join('')}</div>
+          <div class="cal-grid" data-grid></div>
+          <button type="button" class="cal-whole" data-whole>이 달 전체 고르기</button>
+        </div>
+        <div class="cal-pick" data-panel hidden></div>
+      </div>
     </div>`;
   const wrap = mountSheet('언제 여행하세요?', body, { footer });
+  wrap.querySelector('.sheet').classList.add('sheet-date');
   const $ = (s) => wrap.querySelector(s);
+  const minYM = today.slice(0, 7), maxYM = max.slice(0, 7);
+  const ymOf = (y, m) => `${y}-${String(m + 1).padStart(2, '0')}`;
+
+  const clampView = () => {
+    const k = ymOf(view.getFullYear(), view.getMonth());
+    if (k < minYM) view = parse(minYM + '-01');
+    if (k > maxYM) view = parse(maxYM + '-01');
+  };
+
+  const renderPick = () => {
+    const panel = $('[data-panel]');
+    panel.hidden = !pick;
+    wrap.querySelector('.cal').classList.toggle('picking', !!pick);
+    $('[data-pick="y"]').classList.toggle('on', pick === 'y');
+    $('[data-pick="m"]').classList.toggle('on', pick === 'm');
+    if (!pick) return;
+    if (pick === 'y') {
+      const y0 = +today.slice(0, 4), y1 = +max.slice(0, 4), cur = view.getFullYear();
+      let html = '<p class="pick-cap">몇 년에 떠나세요?</p><div class="pick-years">';
+      for (let y = y0; y <= y1; y++) html += `<button type="button" class="ema${y === cur ? ' on' : ''}" data-yv="${y}"><span class="ema-hole"></span><b>${y}</b><small>${y === y0 ? '올해' : y === y0 + 1 ? '내년' : '내후년'}</small></button>`;
+      panel.innerHTML = html + '</div>';
+    } else {
+      const y = view.getFullYear(), cur = view.getMonth();
+      let html = `<p class="pick-cap">${y}년, 몇 월에 떠나세요?</p><div class="pick-months">`;
+      for (let m = 0; m < 12; m++) {
+        const k = ymOf(y, m), off = k < minYM || k > maxYM;
+        html += `<button type="button" class="mon${m === cur ? ' on' : ''}" data-mv="${m}"${off ? ' disabled' : ''}><span class="mon-ic">${SEASON[m]}</span><b>${m + 1}월</b><small>${WAFU[m]}</small></button>`;
+      }
+      panel.innerHTML = html + '</div>';
+    }
+    panel.animate([{ opacity: 0, transform: 'translateY(8px) scale(.98)' }, { opacity: 1, transform: 'none' }], { duration: 180, easing: 'ease-out' });
+  };
 
   const render = () => {
-    $('[data-month]').textContent = `${view.getFullYear()}년 ${view.getMonth() + 1}월`;
+    $('[data-y]').textContent = view.getFullYear();
+    $('[data-m]').textContent = view.getMonth() + 1;
+    $('[data-wafu]').textContent = WAFU[view.getMonth()];
     const first = new Date(view);
     const lead = first.getDay();
     const days = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
@@ -134,17 +184,19 @@ export function openDateSheet({ from, to }, onPick) {
       html += `<button type="button" class="${cls}" data-d="${s}"${off ? ' disabled' : ''}>${d}</button>`;
     }
     $('[data-grid]').innerHTML = html;
-    const firstOfMonth = ymd(first);
-    $('[data-nav="-1"]').disabled = firstOfMonth <= today.slice(0, 8) + '01';
-    $('[data-nav="1"]').disabled = firstOfMonth >= max.slice(0, 8) + '01';
-    const sum = start === end ? label(start) : `${label(start)} → ${end ? label(end) : '종료일 선택'}`;
+    const k = ymOf(view.getFullYear(), view.getMonth());
+    $('[data-nav="-1"]').disabled = k <= minYM;
+    $('[data-nav="1"]').disabled = k >= maxYM;
+    const showY = (start && start.slice(0, 4) !== today.slice(0, 4)) || (end && end.slice(0, 4) !== today.slice(0, 4));
+    const L = showY ? labelY : label;
+    const sum = start === end ? L(start) : `${L(start)} → ${end ? L(end) : '종료일 선택'}`;
     $('[data-sum]').textContent = sum;
     $('[data-ok]').disabled = !end;
   };
 
   // 달력 좌우로 쓸면 이전/다음 달 (살짝 미끄러지며 넘어감)
   const slide = (step) => {
-    if ($(`[data-nav="${step}"]`).disabled) return;
+    if (pick || $(`[data-nav="${step}"]`).disabled) return;
     const g = $('[data-grid]');
     g.animate([{ transform: 'translateX(0)', opacity: 1 }, { transform: `translateX(${-step * 36}px)`, opacity: 0 }], { duration: 110, easing: 'ease-in' }).onfinish = () => {
       view.setMonth(view.getMonth() + step); render();
@@ -154,13 +206,23 @@ export function openDateSheet({ from, to }, onPick) {
   enableHSwipe($('.cal'), { onNext: () => slide(1), onPrev: () => slide(-1) });
 
   wrap.addEventListener('click', (e) => {
+    const pb = e.target.closest('[data-pick]');
+    if (pb) { pick = pick === pb.dataset.pick ? null : pb.dataset.pick; renderPick(); return; }
+    const yv = e.target.closest('[data-yv]');
+    if (yv) { view.setFullYear(+yv.dataset.yv); clampView(); render(); pick = 'm'; renderPick(); return; }  // 연도 고르면 바로 월 고르기로
+    const mv = e.target.closest('[data-mv]');
+    if (mv) { view.setMonth(+mv.dataset.mv); clampView(); pick = null; render(); renderPick(); return; }
     const nav = e.target.closest('[data-nav]');
-    if (nav) { view.setMonth(view.getMonth() + Number(nav.dataset.nav)); render(); return; }
+    if (nav) { view.setMonth(view.getMonth() + Number(nav.dataset.nav)); pick = null; render(); renderPick(); return; }
+    if (e.target.closest('[data-whole]')) {
+      const f = ymd(view), l = ymd(new Date(view.getFullYear(), view.getMonth() + 1, 0));
+      start = f < today ? today : f; end = l > max ? max : l; picking = 'start'; render(); return;
+    }
     const p = e.target.closest('[data-p]');
     if (p) {
       const pr = presets[p.dataset.p];
       start = pr.f; end = pr.t; picking = 'start';
-      view = parse(start); view.setDate(1); render(); return;
+      view = parse(start); view.setDate(1); pick = null; render(); renderPick(); return;
     }
     const day = e.target.closest('[data-d]');
     if (day) {

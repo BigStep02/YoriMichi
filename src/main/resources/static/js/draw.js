@@ -53,7 +53,7 @@ if (webglAvailable()) {
   // 페이지 내용을 먼저 그리고, 3D는 그다음 프레임에 준비 (전환 중 멈춤 방지)
   requestAnimationFrame(() => setTimeout(() => {
     try {
-      stage = acquireStage(canvas, { calm });
+      stage = acquireStage(canvas, { scene: 'pond', calm });
       if (stage.firstVisit) stage.introGlyph('寄り道');
       stage.idle();
     } catch (_) {

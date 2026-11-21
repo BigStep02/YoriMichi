@@ -57,6 +57,7 @@ function initNightStreet() {
       console.warn('3D 배경을 켤 수 없어요', e);
       return;
     }
+    if (!stage.firstVisit) stage.idle();   // 뽑기 화면과 같은 무대를 쓰므로, 뽑기 뒤 카메라·등불을 거리 모습으로 되돌림
     stage.ambient(true);                                  // 멀리서 풍등이 계속 떠오름
     if (stage.firstVisit) onRevealed(() => setTimeout(() => stage.introGlyph('寄り道'), 700));    // 하늘에 불꽃 글자 (화면이 밝아진 뒤)
     onScroll();
