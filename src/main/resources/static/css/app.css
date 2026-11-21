@@ -1293,3 +1293,142 @@ html.is-app body::before {
   content: ""; position: fixed; left: 0; right: 0; top: 0; height: env(safe-area-inset-top, 0px); z-index: 9; pointer-events: none;
   background: #070A1A;
 }
+/* 3D 배경 높이를 '주소창이 접힌 화면' 기준으로 고정 → 스크롤할 때 크기가 바뀌며 깜빡이지 않음 */
+#hanabi-stage { height: 100lvh !important; bottom: auto !important; }
+
+/* ===== 지역·날짜 바: 축제 노렌 느낌 (금테 + 붉은 띠 + 등불 아이콘) ===== */
+.search-bar .row {
+  position: relative; overflow: visible; padding: 6px; border-radius: 18px;
+  background: linear-gradient(180deg, rgba(30,24,52,.82), rgba(12,9,26,.88));
+  border: 1px solid rgba(242,193,78,.2); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 12px 30px rgba(0,0,0,.38);
+}
+.search-bar .row::before {
+  content: ""; position: absolute; left: 18px; right: 18px; top: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(242,193,78,.85) 30%, #FFE3A0 50%, rgba(242,193,78,.85) 70%, transparent);
+}
+.search-bar .row::after {
+  content: ""; position: absolute; left: 50%; top: -4px; width: 7px; height: 7px; margin-left: -3.5px; transform: rotate(45deg);
+  background: #F2C14E; box-shadow: 0 0 10px rgba(242,193,78,.7);
+}
+.search-bar .chip { gap: 10px; min-height: 56px; padding: 6px 10px; border-radius: 12px; }
+.search-bar .chip + .chip { border-left: 1px dashed rgba(242,193,78,.28); border-radius: 12px; }
+.search-bar .chip:hover { background: rgba(242,193,78,.06); }
+.chip-mon {
+  flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-style: normal;
+  background: radial-gradient(circle at 45% 35%, #FF9A62, #D8401E 62%, #8E1E0C); color: #FFF3E0;
+  box-shadow: 0 0 14px rgba(255,110,60,.45), inset 0 -3px 6px rgba(0,0,0,.25);
+}
+.search-bar .chip > .chip-mon .icon { color: #FFF3E0; width: 17px; height: 17px; }
+.chip-tx { display: grid; min-width: 0; text-align: left; line-height: 1.25; }
+.chip-tx small { font-size: 11px; font-weight: 800; color: var(--gold); letter-spacing: .04em; }
+.chip-tx small em { font-style: normal; font-family: var(--font-jp); font-weight: 700; opacity: .7; margin-left: 3px; }
+.chip-tx > span { font-size: 15px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ===== 바텀 시트: 청해파(青海波) 무늬 + 노렌 띠 + 도장 ===== */
+.sheet {
+  background-color: #15112C;
+  background-image:
+    radial-gradient(circle at 50% 100%, transparent 0 9px, rgba(242,193,78,.055) 9px 10px, transparent 10px 14px, rgba(242,193,78,.045) 14px 15px, transparent 15px),
+    radial-gradient(circle at 50% 100%, transparent 0 9px, rgba(242,193,78,.055) 9px 10px, transparent 10px 14px, rgba(242,193,78,.045) 14px 15px, transparent 15px);
+  background-size: 32px 16px; background-position: 0 0, 16px 8px;
+  border-top: 0; overflow: hidden;
+}
+.sheet::before {
+  content: ""; position: absolute; left: 24px; right: 24px; top: 0; height: 1px; z-index: 1;
+  background: linear-gradient(90deg, transparent, rgba(242,193,78,.8) 30%, #FFE3A0 50%, rgba(242,193,78,.8) 70%, transparent);
+}
+.sheet-grip { margin-top: 10px; background: rgba(242,193,78,.35); }
+.sheet-head h2 { display: flex; align-items: center; gap: 10px; }
+.sheet-date .sheet-head h2::before, .sheet-loc .sheet-head h2::before {
+  content: "日"; display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 7px;
+  background: #C8321F; color: #FFF3E0; font-family: var(--font-jp); font-size: 16px; font-weight: 700;
+  transform: rotate(-5deg); box-shadow: 0 0 0 2px rgba(255,243,224,.18) inset;
+}
+.sheet-loc .sheet-head h2::before { content: "所"; }
+.sheet-x { background: rgba(255,255,255,.08); color: var(--navy); }
+.sheet-foot { background: rgba(10,8,26,.94); border-top: 1px solid rgba(242,193,78,.18); }
+
+/* 날짜: 프리셋은 축제 표 */
+.preset { border: 1px solid rgba(242,193,78,.32); background: rgba(242,193,78,.06); color: #F6E3B4; }
+.preset:hover { border-color: var(--gold); background: rgba(242,193,78,.14); }
+.cal { position: relative; background: rgba(8,6,22,.62); border: 1px solid rgba(242,193,78,.18); border-radius: 20px; }
+.cal-ym { display: flex; gap: 6px; }
+.ym-btn {
+  border: 0; display: inline-flex; align-items: baseline; gap: 2px; padding: 7px 12px; border-radius: 12px; cursor: pointer;
+  background: rgba(255,255,255,.06); color: var(--navy); font: inherit; font-size: 14px; font-weight: 700;
+  transition: background .15s, box-shadow .15s;
+}
+.ym-btn b { font-size: 18px; font-weight: 900; }
+.ym-btn small { font-family: var(--font-jp); font-size: 11px; color: var(--gold); margin-left: 6px; }
+.ym-btn i { font-style: normal; font-size: 9px; opacity: .6; margin-left: 5px; }
+.ym-btn:hover { background: rgba(242,193,78,.12); }
+.ym-btn.on { background: radial-gradient(circle at 50% 40%, #FF8A50, #C8321F 75%); color: #FFF; box-shadow: 0 0 16px rgba(255,100,50,.45); }
+.ym-btn.on small { color: #FFE7B0; }
+.cal-nav { background: rgba(255,255,255,.06); }
+.cal-stage { position: relative; }
+.cal.picking .cal-days { visibility: hidden; }
+.cal-wd .sun, .day.sun { color: #FF8577; }
+.cal-wd .sat, .day.sat { color: #86A9FF; }
+.day:disabled { color: rgba(245,239,230,.18); }
+.day.today::after { background: var(--gold); }
+.day.in { background: rgba(242,193,78,.12); }
+.day.start, .day.end {
+  background: radial-gradient(circle at 50% 38%, #FF9058, #D33A1C 70%); color: #FFF; border-radius: 50%;
+  box-shadow: 0 0 14px rgba(255,100,50,.5);
+}
+.day.start:not(.end) { border-radius: 50% 0 0 50%; }
+.day.end:not(.start) { border-radius: 0 50% 50% 0; }
+.day:not(:disabled):not(.start):not(.end):hover { background: rgba(242,193,78,.1); }
+.cal-whole {
+  display: block; margin: 10px auto 2px; padding: 7px 16px; border-radius: 999px; cursor: pointer;
+  background: none; border: 1px dashed rgba(242,193,78,.45); color: var(--gold); font: inherit; font-size: 13px; font-weight: 700;
+}
+.cal-whole:hover { background: rgba(242,193,78,.1); }
+.cal-pick { position: absolute; inset: 0; overflow-y: auto; padding: 4px 2px; }
+.cal-pick[hidden] { display: none; }
+.pick-cap { margin: 4px 0 12px; text-align: center; font-size: 13px; font-weight: 800; color: var(--gold); }
+/* 연도: 에마(絵馬) 나무패 */
+.pick-years { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 12px; padding: 4px 6px; }
+.ema {
+  position: relative; display: grid; place-items: center; gap: 2px; padding: 30px 8px 16px; border: 0; cursor: pointer; font: inherit;
+  clip-path: polygon(50% 0, 100% 24%, 100% 100%, 0 100%, 0 24%);
+  background: linear-gradient(180deg, #E0B47A, #B9834C); color: #3A1E0C;
+  transition: transform .15s, filter .15s;
+}
+.ema::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, rgba(90,50,20,.08) 0 2px, transparent 2px 9px); pointer-events: none; }
+.ema-hole { position: absolute; top: 13px; width: 8px; height: 8px; border-radius: 50%; background: #3A1E0C; box-shadow: 0 -10px 0 -2px #C8321F; }
+.ema b { font-size: 24px; font-weight: 900; letter-spacing: .02em; }
+.ema small { font-size: 12px; font-weight: 800; opacity: .75; }
+.ema:hover { transform: translateY(-2px) rotate(-1deg); }
+.ema.on { background: linear-gradient(180deg, #FF8A50, #C8321F); color: #FFF; filter: drop-shadow(0 0 10px rgba(255,100,50,.6)); }
+.ema.on .ema-hole { background: #FFF3E0; }
+/* 월: 작은 제등 타일 + 옛 달 이름 */
+.pick-months { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; padding: 0 2px; }
+.mon {
+  display: grid; place-items: center; gap: 1px; padding: 9px 4px 8px; cursor: pointer; font: inherit; color: var(--navy);
+  border-radius: 18px / 24px; border: 1px solid rgba(242,193,78,.2);
+  background: radial-gradient(circle at 50% 35%, rgba(255,140,90,.16), rgba(255,255,255,.03) 70%);
+  transition: transform .15s, background .15s;
+}
+.mon-ic { font-size: 16px; line-height: 1.2; }
+.mon b { font-size: 15px; font-weight: 900; }
+.mon small { font-family: var(--font-jp); font-size: 10.5px; color: var(--gold); opacity: .85; }
+.mon:not(:disabled):hover { transform: translateY(-2px); background: radial-gradient(circle at 50% 35%, rgba(255,140,90,.3), rgba(255,255,255,.05) 70%); }
+.mon.on { background: radial-gradient(circle at 50% 38%, #FF9058, #C8321F 75%); color: #FFF; border-color: transparent; box-shadow: 0 0 16px rgba(255,100,50,.5); }
+.mon.on small { color: #FFE7B0; }
+.mon:disabled { opacity: .28; cursor: default; }
+
+/* 지역: 도장 지역명 + 나무패 도시 */
+.loc-geo { background: rgba(232,70,46,.07); border-color: rgba(242,193,78,.25); }
+.loc-geo.on { border-color: #E8462E; box-shadow: 0 0 18px rgba(232,70,46,.3); }
+.region-name {
+  display: inline-block; padding: 3px 10px; border-radius: 4px; background: #C8321F; color: #FFF3E0;
+  font-size: 12px; transform: rotate(-2deg); box-shadow: 0 0 0 2px rgba(255,243,224,.14) inset;
+}
+.city { background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.02)); border-color: rgba(242,193,78,.18); }
+.city:hover { border-color: var(--gold); }
+.city.on { background: radial-gradient(circle at 50% 38%, #FF9058, #C8321F 75%); border-color: transparent; color: #FFF; box-shadow: 0 0 14px rgba(255,100,50,.45); }
+
+/* 진행 중 날짜칸: 숫자 + 'O월까지' */
+body[data-page="festivals"] .f-item .date-box .u { font-size: 10px; font-weight: 700; color: rgba(246,236,221,.6); margin-top: 2px; white-space: nowrap; }

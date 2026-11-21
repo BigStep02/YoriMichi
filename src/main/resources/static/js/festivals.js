@@ -32,7 +32,7 @@ function skeleton() {
 function dateBox(f) {
   if (f.ongoing) {
     const [, em, ed] = f.endDate.split('-').map(Number);
-    return `<div class="date-box live"><div class="m">진행 중</div><div class="d">~${ed}</div></div>`;
+    return `<div class="date-box live"><div class="m">진행 중</div><div class="d">${ed}</div><div class="u">${em}월까지</div></div>`;
   }
   const [y, m, d] = f.startDate.split('-').map(Number);
   const yr = String(y) !== todayTokyo().slice(0, 4) ? `${String(y).slice(2)}년 ` : '';
