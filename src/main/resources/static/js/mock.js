@@ -4,8 +4,21 @@
 // - 켜져 있으면 왼쪽 아래 'MOCK · 끄기' 표시
 const KEY = 'yori-mock';          // sessionStorage: 탭 단위
 const KEY_DEVICE = 'yori-mock-app'; // localStorage: 기기 단위
+const KEY_DEV = 'yori-dev';          // 로그인한 계정이 개발자면 '1' (header.js가 /api/users/me 응답으로 갱신)
+
+/** 개발자 계정 여부 저장. 개발자가 아니게 되면 mock도 같이 끔 */
+export function setDev(on) {
+  try {
+    if (on) localStorage.setItem(KEY_DEV, '1');
+    else { localStorage.removeItem(KEY_DEV); localStorage.removeItem(KEY_DEVICE); sessionStorage.removeItem(KEY); document.getElementById('mock-badge')?.remove(); }
+  } catch {}
+}
+function isDev() {
+  try { return localStorage.getItem(KEY_DEV) === '1' && !!localStorage.getItem('token'); } catch { return false; }
+}
 
 export function isMock() {
+  if (!isDev()) return false;   // 개발자 계정으로 로그인했을 때만
   const p = new URLSearchParams(location.search).get('mock');
   try {
     if (p === '1') sessionStorage.setItem(KEY, '1');
@@ -33,7 +46,7 @@ if (isMock() && !document.getElementById('mock-badge')) {
 // 로고 5번 탭 → 토글 (router.js가 document 캡처에서 링크를 가로채므로 window 캡처에서 먼저 받음)
 let taps = 0, first = 0;
 window.addEventListener('click', (e) => {
-  if (!e.target.closest?.('.brand')) return;
+  if (!e.target.closest?.('.brand') || !isDev()) return;
   const now = Date.now();
   if (now - first > 2500) { taps = 0; first = now; }
   if (++taps < 5) return;

@@ -1,6 +1,7 @@
 // 공통 헤더: 서비스명 + 로그인 상태
 import { api, getToken, clearToken } from './api.js';
 import { esc, icons } from './icons.js';
+import { setDev } from './mock.js';
 
 export const APP_NAME = 'YoriMichi';
 
@@ -15,18 +16,21 @@ export async function renderHeader() {
     userBox.innerHTML = `<a class="icon-btn" href="/login.html" aria-label="로그인" title="로그인">${icons.user('icon icon-lg')}</a>`;
   };
 
-  if (!getToken()) return loginLink();
+  if (!getToken()) { setDev(false); return loginLink(); }
 
   try {
     const me = await api('/api/users/me');
+    setDev(!!me.developer);
     userBox.innerHTML = `<span class="nick">${esc(me.nickname)}</span>님
       <button type="button" class="link-btn" data-logout>로그아웃</button>`;
     userBox.querySelector('[data-logout]').addEventListener('click', () => {
       clearToken();
+      setDev(false);
       location.href = '/';
     });
   } catch {
     // 토큰 만료(401 → api.js에서 삭제) 또는 서버 오류
+    if (!getToken()) setDev(false);
     loginLink();
   }
 }

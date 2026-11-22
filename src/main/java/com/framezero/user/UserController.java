@@ -16,9 +16,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
 
     private final UserRepository userRepository;
+    private final java.util.Set<String> devEmails;
 
-    public UserController(UserRepository userRepository) {
+    public UserController(UserRepository userRepository,
+                          @org.springframework.beans.factory.annotation.Value("${app.dev-emails:}") String devEmails) {
         this.userRepository = userRepository;
+        this.devEmails = java.util.Arrays.stream(devEmails.split(","))
+                .map(String::trim).map(String::toLowerCase).filter(s -> !s.isEmpty())
+                .collect(java.util.stream.Collectors.toUnmodifiableSet());
     }
 
     @GetMapping("/me")
@@ -26,6 +31,7 @@ public class UserController {
     public UserResponse me(@AuthenticationPrincipal AuthUser authUser) {
         User user = userRepository.findById(authUser.id())
                 .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
-        return new UserResponse(user.getId(), user.getEmail(), user.getNickname(), user.getCreatedAt());
+        boolean developer = user.getEmail() != null && devEmails.contains(user.getEmail().toLowerCase());
+        return new UserResponse(user.getId(), user.getEmail(), user.getNickname(), user.getCreatedAt(), developer);
     }
 }

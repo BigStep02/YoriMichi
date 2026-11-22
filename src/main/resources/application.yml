@@ -45,6 +45,7 @@ gemini:
   fallback-models: ${GEMINI_FALLBACK_MODELS:}
 
 app:
+  dev-emails: ${APP_DEV_EMAILS:}   # 개발자 계정(쉼표로 여러 개) — 이 계정만 화면에서 mock 사용 가능
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:5173,http://localhost:3000,https://*.trycloudflare.com}
   places:
