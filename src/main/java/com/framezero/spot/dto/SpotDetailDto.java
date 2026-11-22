@@ -3,6 +3,7 @@ package com.framezero.spot.dto;
 import com.framezero.spot.SpotKind;
 
 import java.time.LocalDate;
+import java.util.List;
 
 public record SpotDetailDto(
         Long id,
@@ -23,5 +24,6 @@ public record SpotDetailDto(
         String googlePlaceId,
         String officialUrl,
         LocalDate verifiedAt,
-        String imageUrl
+        String imageUrl,
+        List<SeasonHoursDto> seasons
 ) {}

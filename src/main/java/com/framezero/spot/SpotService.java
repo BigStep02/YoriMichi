@@ -1,6 +1,7 @@
 package com.framezero.spot;
 
 import com.framezero.common.GeoUtils;
+import com.framezero.spot.dto.SeasonHoursDto;
 import com.framezero.spot.dto.SpotDetailDto;
 import com.framezero.spot.dto.SpotListResponse;
 import com.framezero.spot.dto.SpotSummaryDto;
@@ -10,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Clock;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Comparator;
@@ -62,13 +64,17 @@ public class SpotService {
         Spot s = spotRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("놀거리를 찾을 수 없습니다."));
         LocalDateTime now = LocalDateTime.now(clock);
+        List<SeasonHoursDto> seasons = s.getSeasons().stream()
+                .sorted(Comparator.comparing(SpotHours::getStartMd))
+                .map(h -> new SeasonHoursDto(md(h.getStartMd()) + "–" + md(h.getEndMd()), seasonLabel(s, h)))
+                .toList();
         return new SpotDetailDto(
                 s.getId(), s.getName(), s.getNameJa(), s.getKind(),
                 s.getPrefecture(), s.getCity(),
                 s.getLat().doubleValue(), s.getLng().doubleValue(),
-                s.isOpenAt(now), hoursLabel(s), s.getClosedDays(), s.getHoursNote(), s.getFeeNote(),
+                s.isOpenAt(now), hoursLabel(s, now.toLocalDate()), s.getClosedDays(), s.getHoursNote(), s.getFeeNote(),
                 s.getDescription(), s.getTips(), s.getGooglePlaceId(),
-                s.getOfficialUrl(), s.getVerifiedAt(), s.getImageUrl()
+                s.getOfficialUrl(), s.getVerifiedAt(), s.getImageUrl(), seasons
         );
     }
 
@@ -87,23 +93,41 @@ public class SpotService {
                 s.getId(), s.getName(), s.getNameJa(), s.getKind(),
                 s.getPrefecture(), s.getCity(), km,
                 s.getLat().doubleValue(), s.getLng().doubleValue(),
-                s.isOpenAt(now), hoursLabel(s), summary(s.getDescription()), s.getOfficialUrl()
+                s.isOpenAt(now), hoursLabel(s, now.toLocalDate()), summary(s.getDescription()), s.getOfficialUrl()
         );
     }
 
-    /** "24시간" / "9:00–17:00 · 월 휴무" / "날마다 다름" */
-    static String hoursLabel(Spot s) {
+    /** 그날 기준: "24시간" / "9:00–17:00 · 월 휴무" / "날마다 다름" / "오늘 휴무" */
+    static String hoursLabel(Spot s, LocalDate date) {
+        Spot.Effective e = s.effectiveOn(date);
+        if (e.closedAllDay()) return "오늘 휴무";
         String h = switch (s.getHoursKind()) {
             case ALWAYS -> "24시간";
             case VARIES -> "날마다 다름";
-            case FIXED -> s.getOpenTime() == null ? "운영시간 확인" : trim0(s.getOpenTime()) + "–" + trim0(s.getCloseTime());
+            case FIXED -> e.openTime() == null ? "운영시간 확인" : trim0(e.openTime()) + "–" + trim0(e.closeTime());
         };
-        if (s.getClosedDays() != null && !s.getClosedDays().isBlank()) {
-            StringBuilder d = new StringBuilder();
-            for (String c : s.getClosedDays().split(",")) d.append(DAY_KR.getOrDefault(c.trim().toUpperCase(), c.trim()));
-            h += " · " + d + " 휴무";
-        }
-        return h;
+        return h + closedLabel(e.closedDays());
+    }
+
+    private static String seasonLabel(Spot s, SpotHours h) {
+        if (h.isClosed()) return "휴무";
+        String open = h.getOpenTime() != null ? h.getOpenTime() : s.getOpenTime();
+        String close = h.getCloseTime() != null ? h.getCloseTime() : s.getCloseTime();
+        String t = (open == null || close == null) ? "운영" : trim0(open) + "–" + trim0(close);
+        if ("NONE".equals(h.getClosedDays())) return t + " · 무휴";
+        return t + closedLabel(h.getClosedDays() != null ? h.getClosedDays() : s.getClosedDays());
+    }
+
+    private static String closedLabel(String closedDays) {
+        if (closedDays == null || closedDays.isBlank()) return "";
+        StringBuilder d = new StringBuilder();
+        for (String c : closedDays.split(",")) d.append(DAY_KR.getOrDefault(c.trim().toUpperCase(), c.trim()));
+        return " · " + d + " 휴무";
+    }
+
+    /** "03-15" -> "3/15" */
+    private static String md(String mmdd) {
+        return Integer.parseInt(mmdd.substring(0, 2)) + "/" + Integer.parseInt(mmdd.substring(3));
     }
 
     private static String trim0(String hhmm) {
