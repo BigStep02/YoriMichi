@@ -9,6 +9,7 @@ import { acquireStage, webglAvailable } from './hanabi/hanabi-stage.js';
 import { enableHSwipe, enableGroupSwipe } from './swipe.js';
 import { kindLabel, kindIcon, openSpotSheet } from './spotsheet.js';
 import { openRestaurantSheet, typeChip, tabelogUrl } from './rsheet.js';
+import { openFestivalSheet } from './festsheet.js';
 
 renderHeader();
 document.getElementById('back-link').insertAdjacentHTML('afterbegin', icons.back());
@@ -330,6 +331,7 @@ function renderResult(data) {
   resultEl.querySelector('[data-redraw]').addEventListener('click', () => draw());
   resultEl.querySelector('[data-r-detail]').addEventListener('click', () => openRestaurantSheet(r));
   resultEl.querySelector('[data-spot-detail]')?.addEventListener('click', () => openSpotSheet(data.spot));
+  resultEl.querySelector('[data-fest-detail]')?.addEventListener('click', () => openFestivalSheet(data.festival));
   swipeToRedraw();
   resultEl.querySelector('[data-change]').addEventListener('click', () => {
     if (stage) stage.idle();
@@ -384,7 +386,7 @@ function renderFestivalStep(fest) {
         <div class="cx-chips">${chips}</div>
         ${fest.summary ? `<p class="cx-desc">${esc(fest.summary)}</p>` : ''}
         <div class="cx-actions">
-          <a class="dp-main" href="/festival.html?id=${encodeURIComponent(fest.id)}">축제 자세히 보기</a>
+          <button type="button" class="dp-main" data-fest-detail>축제 자세히 보기</button>
           ${fest.officialUrl ? `<a class="dp-ico" href="${esc(fest.officialUrl)}" target="_blank" rel="noopener" aria-label="공식 사이트" title="공식 사이트">↗</a>` : ''}
         </div>
       </div>
