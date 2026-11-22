@@ -5,11 +5,12 @@ import { renderHeader } from './header.js';
 import { mountSearchBar } from './searchbar.js';
 import { openRestaurantSheet as openDetail, priceLabel, walkLabel, typeChip } from './rsheet.js';
 import { icons, esc, dpLight } from './icons.js';
+import { isMock } from './mock.js';
 
 renderHeader();
 document.getElementById('back-link').insertAdjacentHTML('afterbegin', icons.back());
 
-const MOCK = new URLSearchParams(location.search).get('mock') === '1';
+const MOCK = isMock();
 const listEl = document.getElementById('list');
 const countEl = document.querySelector('[data-count]');
 

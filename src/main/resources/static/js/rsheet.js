@@ -2,8 +2,9 @@
 import { api } from './api.js';
 import { mountSheet } from './sheet.js';
 import { icons, esc } from './icons.js';
+import { isMock } from './mock.js';
 
-const MOCK = new URLSearchParams(location.search).get('mock') === '1';
+const MOCK = isMock();
 
 export function priceLabel(level) {
   if (level == null) return '';

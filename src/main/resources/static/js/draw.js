@@ -10,13 +10,14 @@ import { enableHSwipe, enableGroupSwipe } from './swipe.js';
 import { kindLabel, kindIcon, openSpotSheet } from './spotsheet.js';
 import { openRestaurantSheet, typeChip, tabelogUrl } from './rsheet.js';
 import { openFestivalSheet } from './festsheet.js';
+import { isMock } from './mock.js';
 
 renderHeader();
 document.getElementById('back-link').insertAdjacentHTML('afterbegin', icons.back());
 document.querySelectorAll('[data-icon]').forEach(el => { el.innerHTML = icons[el.dataset.icon]('icon icon-lg'); });
 
 const params = new URLSearchParams(location.search);
-const MOCK = params.get('mock') === '1';
+const MOCK = isMock();
 const MIN_LOADING_MS = 1300;
 
 
