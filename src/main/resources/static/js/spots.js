@@ -17,6 +17,9 @@ let kinds = ['ALL'];
 let loc = null;
 let seq = 0;
 let lastList = [];
+let allList = [];
+let openOnly = false;
+let lastData = null;
 let dpSeen = [];
 
 const listEl  = document.getElementById('list');
@@ -52,6 +55,14 @@ radiusButtons.forEach(btn => btn.addEventListener('click', () => {
   load();
 }));
 renderRadius();
+document.getElementById('open-only').addEventListener('change', (e) => { openOnly = e.target.checked; render(); });
+
+// 다른 화면에서 넘어온 경우: ?lat=&lng=&near=이름 → 그곳 기준으로 고정
+function fixedFromQuery(q) {
+  const la = Number(q.get('lat')), ln = Number(q.get('lng'));
+  if (!(q.has('lat') && q.has('lng') && la > 20 && la < 46 && ln > 122 && ln < 154)) return null;
+  return { lat: la, lng: ln, near: q.get('near') || '그곳' };
+}
 
 // ---------- 목록 ----------
 function item(s, i) {
@@ -97,8 +108,27 @@ async function load() {
     return;
   }
   if (mySeq !== seq) return;
-  lastList = data.spots || [];
+  lastData = data;
+  allList = data.spots || [];
+  render();
+}
 
+function render() {
+  const data = lastData;
+  if (!data) return;
+  lastList = openOnly ? allList.filter(s => s.openNow === true) : allList;
+  dpResult.hidden = true;
+  dpSeen = [];
+
+  if (openOnly && allList.length && !lastList.length) {
+    countEl.textContent = '';
+    listEl.innerHTML = `
+      <div class="empty-state">
+        <h2>지금 영업 중인 놀거리가 없어요</h2>
+        <p class="muted">'영업 중인 곳만'을 끄거나 범위를 넓혀 보세요.</p>
+      </div>`;
+    return;
+  }
   if (!lastList.length) {
     listEl.innerHTML = `
       <div class="empty-state">
@@ -108,7 +138,7 @@ async function load() {
     return;
   }
   countEl.textContent = (data.searchedRadiusKm > radiusKm ? `${radiusKm}km 안에 없어서 ${data.searchedRadiusKm}km까지 · ` : '')
-    + `${lastList.length}곳 · 가까운 순`;
+    + `${lastList.length}곳${openOnly ? ' · 영업 중' : ''} · 가까운 순`;
   listEl.innerHTML = lastList.map(item).join('');
 }
 
@@ -121,13 +151,14 @@ listEl.addEventListener('click', (e) => {
 dpBtn.addEventListener('click', () => drawOne());
 
 function drawOne() {
-  if (!lastList.length) {
-    dpResult.innerHTML = '<p class="muted dp-msg">뽑을 놀거리가 없어요. 범위나 위치를 바꿔 보세요.</p>';
+  const openList = lastList.filter(s => s.openNow === true);   // 뽑기는 지금 영업 중인 곳만
+  if (!openList.length) {
+    dpResult.innerHTML = `<p class="muted dp-msg">${lastList.length ? '지금 영업 중인 놀거리가 없어요. 범위를 넓혀 보세요.' : '뽑을 놀거리가 없어요. 범위나 위치를 바꿔 보세요.'}</p>`;
     dpResult.hidden = false;
     return;
   }
-  let pool = lastList.filter(s => !dpSeen.includes(s.id));
-  if (!pool.length) { dpSeen = []; pool = lastList; }
+  let pool = openList.filter(s => !dpSeen.includes(s.id));
+  if (!pool.length) { dpSeen = []; pool = openList; }
   const s = pool[Math.floor(Math.random() * pool.length)];
   dpSeen.push(s.id);
 
@@ -148,16 +179,27 @@ function drawOne() {
       <div class="dp-pick-actions">
         <button type="button" class="dp-main" data-dp-detail>자세히 보기</button>
         <a class="dp-ico" href="/restaurants.html?lat=${s.lat}&lng=${s.lng}&near=${encodeURIComponent(s.name)}" aria-label="근처 맛집" title="근처 맛집">${icons.fork('icon')}</a>
-        <button type="button" class="dp-ico" data-dp-swap aria-label="다시 뽑기" title="다시 뽑기">${icons.dice('icon')}</button>
+        <a class="dp-ico" href="/festivals.html?lat=${s.lat}&lng=${s.lng}&near=${encodeURIComponent(s.name)}" aria-label="근처 축제" title="근처 축제">${icons.lantern('icon')}</a>
       </div>
     </div>`;
   dpResult.hidden = false;
   dpLight();
+  dpBtn.textContent = '다시 뽑기';
   dpResult.querySelector('[data-dp-detail]').addEventListener('click', () => openSpotSheet(s));
-  dpResult.querySelector('[data-dp-swap]').addEventListener('click', () => drawOne());
 }
 
-mountSearchBar(document.getElementById('search-bar'), (state) => {
-  loc = state.loc;
+const fixed = fixedFromQuery(qp);
+if (fixed) {
+  loc = { lat: fixed.lat, lng: fixed.lng };
+  document.getElementById('search-bar').innerHTML = `
+    <div class="near-pill">
+      <span>📍 <b>${esc(fixed.near)}</b> 근처</span>
+      <a href="/spots.html">내 위치로 보기</a>
+    </div>`;
   load();
-}, { dates: false });
+} else {
+  mountSearchBar(document.getElementById('search-bar'), (state) => {
+    loc = state.loc;
+    load();
+  }, { dates: false });
+}

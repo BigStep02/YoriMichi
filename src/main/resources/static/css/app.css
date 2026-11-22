@@ -1820,3 +1820,8 @@ body.hanabi-home .cats .cat.spot .cat-icon { color: #7FE0C0; }
   transform-origin: top; animation: cx-thread .4s .15s ease-out both;
 }
 @media (prefers-reduced-motion: reduce) { .cx-steps > .cx-step:first-child::before { animation: none; } }
+
+/* 다른 화면에서 넘어와 위치가 고정된 경우: 위치 칩 숨김 (날짜만) */
+.search-bar.fixed-loc [data-open="loc"], .search-bar.fixed-loc [data-loc-note] { display: none; }
+.near-pill + .search-bar.fixed-loc { margin-top: 8px; }
+.dp-ico-txt { font-size: 18px; line-height: 1; }

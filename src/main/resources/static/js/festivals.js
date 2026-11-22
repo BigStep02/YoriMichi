@@ -101,11 +101,28 @@ async function load(state) {
     if (seq !== requestSeq) return;
     noticeEl.innerHTML = `<div class="f-empty"><b>잠깐 문제가 생겼어요</b><span>${esc(e.message)}</span></div>`;
     resultsEl.innerHTML = `<div class="r-actions"><button type="button" class="btn-ghost" data-retry>다시 시도</button></div>`;
-    resultsEl.querySelector('[data-retry]').addEventListener('click', () => load(bar.state));
+    resultsEl.querySelector('[data-retry]').addEventListener('click', () => onBar(bar.state));
   }
 }
 
-const bar = mountSearchBar(document.getElementById('search-bar'), load);
+
+// 다른 화면에서 넘어온 경우: ?lat=&lng=&near=이름 → 그곳 기준으로 고정
+function fixedFromQuery(q) {
+  const la = Number(q.get('lat')), ln = Number(q.get('lng'));
+  if (!(q.has('lat') && q.has('lng') && la > 20 && la < 46 && ln > 122 && ln < 154)) return null;
+  return { lat: la, lng: ln, near: q.get('near') || '그곳' };
+}
+const fixed = fixedFromQuery(params);
+const onBar = (st) => load(fixed ? { ...st, loc: { lat: fixed.lat, lng: fixed.lng } } : st);
+const bar = mountSearchBar(document.getElementById('search-bar'), onBar);
+if (fixed) {
+  document.getElementById('search-bar').classList.add('fixed-loc');
+  document.getElementById('search-bar').insertAdjacentHTML('beforebegin', `
+    <div class="near-pill">
+      <span>📍 <b>${esc(fixed.near)}</b> 근처 축제</span>
+      <a href="/festivals.html">내 위치로 보기</a>
+    </div>`);
+}
 skeleton();
 radiusButtons.forEach(btn => btn.addEventListener('click', () => {
   radiusKm = Number(btn.dataset.radius);
@@ -136,10 +153,10 @@ function drawOne() {
       <div class="dp-pick-actions">
         <a class="dp-main" href="/festival.html?id=${encodeURIComponent(f.id)}">축제 자세히 보기</a>
         <a class="dp-ico" href="/restaurants.html?lat=${f.lat}&lng=${f.lng}&near=${encodeURIComponent(f.name)}" aria-label="근처 맛집" title="근처 맛집">${icons.fork('icon')}</a>
-        <button type="button" class="dp-ico" data-dp-swap aria-label="다시 뽑기" title="다시 뽑기">${icons.dice('icon')}</button>
+        <a class="dp-ico dp-ico-txt" href="/spots.html?lat=${f.lat}&lng=${f.lng}&near=${encodeURIComponent(f.name)}" aria-label="근처 놀거리" title="근처 놀거리">⛩</a>
       </div>
     </div>`;
   dpResult.hidden = false;
   dpLight();
-  dpResult.querySelector('[data-dp-swap]').addEventListener('click', () => drawOne());
+  dpDrawBtn.textContent = '다시 뽑기';
 }

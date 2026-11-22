@@ -111,6 +111,7 @@ public class PlacesClient {
 
         var body = Map.of(
                 "includedTypes", Category.mergedTypes(categories),
+                "excludedPrimaryTypes", List.of("hotel", "lodging"),
                 "maxResultCount", 20,
                 "rankPreference", "POPULARITY",
                 "languageCode", "ja",
@@ -191,6 +192,7 @@ public class PlacesClient {
 
     private RestaurantPicker.Candidate toCandidate(PlaceResult p) {
         if (p.id() == null || p.location() == null) return null;
+        if (TypeLabelKo.isLodging(p.primaryType())) return null;   // 호텔·료칸은 맛집·명소 후보에서 제외
         return new RestaurantPicker.Candidate(
                 p.id(),
                 p.displayName() != null ? p.displayName().text() : null,

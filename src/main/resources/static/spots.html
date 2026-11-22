@@ -41,7 +41,7 @@
         <div class="dp-desc">
           <span class="dp-kicker" lang="ja">今日の縁</span>
           <b>놀거리 뽑기</b>
-          <span class="dp-sub">지금 목록의 놀거리 중 한 곳</span>
+          <span class="dp-sub">지금 영업 중인 놀거리 중 한 곳</span>
         </div>
         <button type="button" class="dp-btn" id="dp-draw-btn">뽑기</button>
       </div>
@@ -67,6 +67,12 @@
         <button type="button" role="radio" data-radius="30">30km</button>
       </div>
     </div>
+
+    <label class="switch-row compact">
+      <span>지금 영업 중인 곳만</span>
+      <input type="checkbox" id="open-only">
+      <span class="switch" aria-hidden="true"></span>
+    </label>
 
     <p class="list-count muted" id="count"></p>
     <div id="list" aria-live="polite"></div>
