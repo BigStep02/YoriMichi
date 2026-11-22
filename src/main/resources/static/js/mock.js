@@ -1,18 +1,45 @@
-// ?mock=1 로 한 번 들어가면 이 탭에서는 계속 가짜 데이터(구글 호출 0회). ?mock=0 이나 탭을 닫으면 해제
-const KEY = 'yori-mock';
+// mock(가짜 데이터, 구글 호출 0회) 켜기/끄기
+// - 주소에 ?mock=1 → 이 탭에서 유지 (?mock=0 이나 탭 닫으면 해제)
+// - 로고(YoriMichi)를 2.5초 안에 5번 탭 → 이 기기에 계속 유지 (홈 화면에 추가한 앱용). 다시 5번 탭하면 해제
+// - 켜져 있으면 왼쪽 아래 'MOCK · 끄기' 표시
+const KEY = 'yori-mock';          // sessionStorage: 탭 단위
+const KEY_DEVICE = 'yori-mock-app'; // localStorage: 기기 단위
+
 export function isMock() {
   const p = new URLSearchParams(location.search).get('mock');
   try {
     if (p === '1') sessionStorage.setItem(KEY, '1');
-    else if (p === '0') { sessionStorage.removeItem(KEY); document.getElementById('mock-badge')?.remove(); }
-    return sessionStorage.getItem(KEY) === '1';
+    else if (p === '0') { sessionStorage.removeItem(KEY); localStorage.removeItem(KEY_DEVICE); document.getElementById('mock-badge')?.remove(); }
+    return sessionStorage.getItem(KEY) === '1' || localStorage.getItem(KEY_DEVICE) === '1';
   } catch { return p === '1'; }
+}
+
+function setDevice(on) {
+  try {
+    if (on) localStorage.setItem(KEY_DEVICE, '1');
+    else { localStorage.removeItem(KEY_DEVICE); sessionStorage.removeItem(KEY); }
+  } catch {}
 }
 
 // 켜져 있으면 화면 구석에 작은 표시 (실제 데이터랑 헷갈리지 않게)
 if (isMock() && !document.getElementById('mock-badge')) {
   const b = document.createElement('a');
-  b.id = 'mock-badge'; b.href = location.pathname + '?mock=0'; b.target = '_top';   // 새로 불러와서 확실히 끔 b.textContent = 'MOCK · 끄기';
+  b.id = 'mock-badge'; b.href = location.pathname + '?mock=0'; b.target = '_top';   // 새로 불러와서 확실히 끔
+  b.textContent = 'MOCK · 끄기';
   b.style.cssText = 'position:fixed;left:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:9999;font:700 11px/1 sans-serif;padding:6px 9px;border-radius:999px;background:#F2C14E;color:#1A0A05;text-decoration:none;opacity:.85';
   document.documentElement.appendChild(b);
 }
+
+// 로고 5번 탭 → 토글 (router.js가 document 캡처에서 링크를 가로채므로 window 캡처에서 먼저 받음)
+let taps = 0, first = 0;
+window.addEventListener('click', (e) => {
+  if (!e.target.closest?.('.brand')) return;
+  const now = Date.now();
+  if (now - first > 2500) { taps = 0; first = now; }
+  if (++taps < 5) return;
+  taps = 0;
+  e.preventDefault(); e.stopPropagation();
+  const on = !isMock();
+  setDevice(on);
+  location.href = location.pathname + (on ? '' : '?mock=0');
+}, true);
