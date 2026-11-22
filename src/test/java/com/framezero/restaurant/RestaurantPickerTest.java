@@ -12,7 +12,7 @@ class RestaurantPickerTest {
     private final RestaurantPicker picker = new RestaurantPicker();
 
     private RestaurantPicker.Candidate c(String id, double rating, int count) {
-        return new RestaurantPicker.Candidate(id, "테스트 " + id, "식당", rating, count, null, true, 0, 0, "");
+        return new RestaurantPicker.Candidate(id, "테스트 " + id, "식당", rating, count, null, true, 0, 0, "", null);
     }
 
     // 리뷰 5개짜리 5.0점 vs 리뷰 3000개짜리 4.3점 — C가 낮으면 고리뷰 점포가 이김
@@ -37,7 +37,7 @@ class RestaurantPickerTest {
     @Test
     void filter_exclude_openNow_ratingCount() {
         var excluded = c("skip", 4.5, 500);
-        var closed   = new RestaurantPicker.Candidate("closed", "닫힘", "식당", 4.3, 200, null, false, 0, 0, "");
+        var closed   = new RestaurantPicker.Candidate("closed", "닫힘", "식당", 4.3, 200, null, false, 0, 0, "", null);
         var lowCount = c("low", 4.8, 9);   // ratingCount < 10
         var valid    = c("ok", 4.1, 100);
 
@@ -52,9 +52,9 @@ class RestaurantPickerTest {
     // maxPrice: null 가격 → 통과, 초과 가격 → 제외
     @Test
     void filter_maxPrice_nullPricePassesThrough() {
-        var expensive = new RestaurantPicker.Candidate("exp",  "비쌈",   "식당", 4.0, 100, 4,    true, 0, 0, "");
-        var noPrice   = new RestaurantPicker.Candidate("none", "가격미상","식당", 4.0, 100, null, true, 0, 0, "");
-        var cheap     = new RestaurantPicker.Candidate("cheap","저렴",   "식당", 4.0, 100, 1,    true, 0, 0, "");
+        var expensive = new RestaurantPicker.Candidate("exp",  "비쌈",   "식당", 4.0, 100, 4,    true, 0, 0, "", null);
+        var noPrice   = new RestaurantPicker.Candidate("none", "가격미상","식당", 4.0, 100, null, true, 0, 0, "", null);
+        var cheap     = new RestaurantPicker.Candidate("cheap","저렴",   "식당", 4.0, 100, 1,    true, 0, 0, "", null);
 
         var result = picker.pick(List.of(expensive, noPrice, cheap), false, 2, Set.of());
 
@@ -92,7 +92,7 @@ class RestaurantPickerTest {
     @Test
     void filter_publicMethod_sameResultAsPick() {
         var excluded = c("skip", 4.5, 500);
-        var closed   = new RestaurantPicker.Candidate("closed", "닫힘", "식당", 4.3, 200, null, false, 0, 0, "");
+        var closed   = new RestaurantPicker.Candidate("closed", "닫힘", "식당", 4.3, 200, null, false, 0, 0, "", null);
         var lowCount = c("low", 4.8, 9);
         var valid    = c("ok", 4.1, 100);
 

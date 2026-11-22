@@ -1,6 +1,6 @@
 // 앱처럼 페이지 이동: 3D 배경(canvas)은 그대로 두고 내용만 바꿔 끼움 → 3D를 다시 만들지 않아서 끊기지 않음
 // 실패하면 언제든 평소처럼 페이지를 새로 불러옴.
-const PAGES = new Set(['/', '/index.html', '/draw.html', '/festivals.html', '/festival.html', '/restaurants.html', '/login.html']);
+const PAGES = new Set(['/', '/index.html', '/draw.html', '/festivals.html', '/festival.html', '/restaurants.html', '/spots.html', '/login.html']);
 const SKIP_SCRIPTS = /\/js\/(router|pwa)\.js$/;   // 한 번만 실행하면 되는 것
 
 // ── 페이지마다 붙인 window/document 이벤트·반복 타이머를 기록해 두었다가 떠날 때 정리 ──

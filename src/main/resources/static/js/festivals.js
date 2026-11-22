@@ -4,7 +4,7 @@ import { renderHeader } from './header.js';
 import { mountSearchBar } from './searchbar.js';
 import { formatRange, dDayLabel, todayTokyo } from './dates.js';
 import { regionKo } from './regions.js';
-import { icons, esc } from './icons.js';
+import { icons, esc, dpLight } from './icons.js';
 
 renderHeader();
 document.getElementById('back-link').insertAdjacentHTML('afterbegin', icons.back());
@@ -18,6 +18,11 @@ const countEl = document.getElementById('count');
 const resultsEl = document.getElementById('results');
 const radiusButtons = document.querySelectorAll('[data-radius]');
 let requestSeq = 0;
+let currentLoc  = null;
+let lastList = [];
+let dpSeen = [];
+const dpResult = document.getElementById('dp-result');
+let lastFallback = false;
 
 function renderRadius() {
   radiusButtons.forEach(b => b.setAttribute('aria-checked', String(Number(b.dataset.radius) === radiusKm)));
@@ -64,6 +69,7 @@ function syncUrl({ from, to }) {
 
 async function load(state) {
   const { loc, from, to } = state;
+  currentLoc = loc;
   syncUrl(state);
   const seq = ++requestSeq;
   skeleton();
@@ -73,6 +79,8 @@ async function load(state) {
     const data = await api(`/api/festivals?${q}`);
     if (seq !== requestSeq) return;
     const list = data.festivals || [];
+    lastList = list; lastFallback = !!data.fallback;
+    dpSeen = []; dpResult.hidden = true;
 
     if (!list.length) {
       noticeEl.innerHTML = `<div class="f-empty"><b>🏮 근처 100km 안에 등록된 축제가 없어요</b><span>위치를 다른 도시로 바꿔 보세요</span></div>`;
@@ -105,3 +113,33 @@ radiusButtons.forEach(btn => btn.addEventListener('click', () => {
   bar.refresh();
 }));
 renderRadius();
+
+// ── 뽑기 패널: 지금 목록에서 축제 하나 ──
+const dpDrawBtn = document.getElementById('dp-draw-btn');
+
+dpDrawBtn?.addEventListener('click', () => drawOne());
+
+function drawOne() {
+  if (!lastList.length) {
+    dpResult.innerHTML = '<p class="muted dp-msg">뽑을 축제가 없어요. 위치나 날짜를 바꿔 보세요.</p>';
+    dpResult.hidden = false;
+    return;
+  }
+  let pool = lastList.filter(f => !dpSeen.includes(f.id));
+  if (!pool.length) { dpSeen = []; pool = lastList; }
+  const f = pool[Math.floor(Math.random() * pool.length)];
+  dpSeen.push(f.id);
+
+  dpResult.innerHTML = `
+    <div class="dp-pick">
+      ${card(f, lastFallback)}
+      <div class="dp-pick-actions">
+        <a class="dp-main" href="/festival.html?id=${encodeURIComponent(f.id)}">축제 자세히 보기</a>
+        <a class="dp-ico" href="/restaurants.html?lat=${f.lat}&lng=${f.lng}&near=${encodeURIComponent(f.name)}" aria-label="근처 맛집" title="근처 맛집">${icons.fork('icon')}</a>
+        <button type="button" class="dp-ico" data-dp-swap aria-label="다시 뽑기" title="다시 뽑기">${icons.dice('icon')}</button>
+      </div>
+    </div>`;
+  dpResult.hidden = false;
+  dpLight();
+  dpResult.querySelector('[data-dp-swap]').addEventListener('click', () => drawOne());
+}

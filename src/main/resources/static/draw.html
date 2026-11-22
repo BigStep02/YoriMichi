@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>오늘의 우연 뽑기 · YoriMichi</title>
+  <title>코스 뽑기 · YoriMichi</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;800;900&family=Zen+Old+Mincho:wght@700;900&display=swap" rel="stylesheet" media="print" onload="this.media=\'all\'">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;800;900&family=Zen+Old+Mincho:wght@700;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <noscript><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;800;900&family=Zen+Old+Mincho:wght@700;900&display=swap" rel="stylesheet"></noscript>
   <link rel="stylesheet" href="/css/app.css">
   <link rel="manifest" href="/manifest.json">
@@ -34,38 +34,60 @@
 
     <!-- 1) 조건 고르기 -->
     <section id="step-form">
-      <h1 class="draw-title">오늘의 우연 뽑기</h1>
-      <p class="muted draw-sub">조건만 고르면, 근처 괜찮은 곳 중 한 곳을 골라 드려요.</p>
+      <h1 class="draw-title">코스 뽑기</h1>
+      <p class="muted draw-sub">명소나 축제를 먼저 고르고, 근처 맛집을 연결해 드려요.</p>
 
       <div id="search-bar"></div>
 
       <div class="opt-group">
-        <div class="opt-label">뭐 먹을까 <small class="opt-hint">여러 개 고를 수 있어요</small></div>
-        <div class="chips" role="group" aria-label="종류 (여러 개 선택)" data-opt="category" data-multi>
-          <button type="button" data-v="ALL" aria-pressed="true">아무거나</button>
-          <button type="button" data-v="RAMEN" aria-pressed="false">라멘</button>
-          <button type="button" data-v="SUSHI" aria-pressed="false">스시</button>
-          <button type="button" data-v="IZAKAYA" aria-pressed="false">이자카야</button>
-          <button type="button" data-v="YAKINIKU" aria-pressed="false">야키니쿠</button>
-          <button type="button" data-v="YAKITORI" aria-pressed="false">야키토리</button>
-          <button type="button" data-v="TONKATSU" aria-pressed="false">돈카츠</button>
-          <button type="button" data-v="CURRY" aria-pressed="false">카레</button>
-          <button type="button" data-v="SEAFOOD" aria-pressed="false">해산물</button>
-          <button type="button" data-v="CAFE" aria-pressed="false">카페</button>
+        <div class="opt-label">코스 시작점</div>
+        <div class="course-preset-row" role="radiogroup" aria-label="코스 시작점" id="preset-group">
+          <button class="preset-btn" type="button" role="radio" data-v="SPOT_RESTAURANT" aria-checked="true">
+            <b>⛩ 명소 → 맛집</b>
+            <small>신사·공원·미술관 등</small>
+          </button>
+          <button class="preset-btn" type="button" role="radio" data-v="FESTIVAL_RESTAURANT" aria-checked="false">
+            <b>🏮 축제 → 맛집</b>
+            <small>근처 마쓰리·이벤트</small>
+          </button>
+        </div>
+      </div>
+
+      <div class="opt-group" id="kind-group">
+        <div class="opt-label">놀거리 종류 <small class="opt-hint">여러 개 고를 수 있어요</small></div>
+        <div class="chips cat-scroll" role="group" aria-label="놀거리 종류 (여러 개 선택)" data-opt="kinds" data-multi>
+          <button type="button" data-v="ALL" aria-pressed="true">전체</button>
+          <button type="button" data-v="SHRINE_TEMPLE" aria-pressed="false">⛩ 신사·절</button>
+          <button type="button" data-v="PARK_GARDEN" aria-pressed="false">🌸 공원·정원</button>
+          <button type="button" data-v="HISTORIC" aria-pressed="false">🏯 성·옛 거리</button>
+          <button type="button" data-v="MUSEUM" aria-pressed="false">🏛 박물관·미술관</button>
+          <button type="button" data-v="VIEWPOINT" aria-pressed="false">🌄 전망·경치</button>
+          <button type="button" data-v="MARKET" aria-pressed="false">🏮 시장</button>
+          <button type="button" data-v="AMUSEMENT" aria-pressed="false">🎡 유원지·수족관</button>
+          <button type="button" data-v="ONSEN" aria-pressed="false">♨ 온천</button>
         </div>
       </div>
 
       <div class="opt-group">
-        <div class="opt-label">얼마나 걸을까</div>
-        <div class="chips" role="radiogroup" aria-label="거리" data-opt="radiusM">
-          <button type="button" role="radio" data-v="400">5분 <small>400m</small></button>
-          <button type="button" role="radio" data-v="800" aria-checked="true">10분 <small>800m</small></button>
-          <button type="button" role="radio" data-v="1500">20분 <small>1.5km</small></button>
+        <div class="opt-label">명소 검색 범위</div>
+        <div class="chips" role="radiogroup" aria-label="범위" data-opt="radiusKm">
+          <button type="button" role="radio" data-v="5">5km</button>
+          <button type="button" role="radio" data-v="10" aria-checked="true">10km</button>
+          <button type="button" role="radio" data-v="20">20km</button>
         </div>
       </div>
 
       <div class="opt-group">
-        <div class="opt-label">예산</div>
+        <div class="opt-label">맛집은 명소에서</div>
+        <div class="chips" role="radiogroup" aria-label="맛집 거리" data-opt="restaurantRadiusM">
+          <button type="button" role="radio" data-v="400">도보 5분 <small>400m</small></button>
+          <button type="button" role="radio" data-v="800" aria-checked="true">도보 10분 <small>800m</small></button>
+          <button type="button" role="radio" data-v="1500">도보 20분 <small>1.5km</small></button>
+        </div>
+      </div>
+
+      <div class="opt-group">
+        <div class="opt-label">맛집 예산</div>
         <div class="chips" role="radiogroup" aria-label="예산" data-opt="maxPrice">
           <button type="button" role="radio" data-v="" aria-checked="true">상관없음</button>
           <button type="button" role="radio" data-v="1">¥ 저렴</button>
@@ -75,22 +97,22 @@
       </div>
 
       <label class="switch-row">
-        <span>지금 영업 중인 곳만</span>
+        <span>지금 영업 중인 맛집만</span>
         <input type="checkbox" data-opt="openNow" checked>
         <span class="switch" aria-hidden="true"></span>
       </label>
 
       <button type="button" class="cta draw-btn" data-draw>
-        <span class="cta-icon" data-icon="dice"></span>
-        <span class="cta-text"><b>뽑기</b><span>평점 좋은 곳 중에서 랜덤으로</span></span>
+        <span class="cta-icon" data-icon="route"></span>
+        <span class="cta-text"><b>코스 뽑기</b><span>명소/축제와 근처 맛집을 하나로</span></span>
       </button>
     </section>
 
     <!-- 2) 뽑는 중 -->
     <section id="step-loading" class="draw-loading" hidden aria-live="polite">
-      <div class="swing" data-illust></div>
-      <p class="loading-title">근처 가게를 둘러보는 중…</p>
-      <p class="muted" data-loading-sub>평점과 리뷰 수를 함께 보고 있어요</p>
+      <div class="multi-swing" data-illust></div>
+      <p class="loading-title">코스를 엮는 중…</p>
+      <p class="muted" data-loading-sub>근처 명소와 맛집을 연결하고 있어요</p>
     </section>
 
     <!-- 3) 결과 -->

@@ -64,7 +64,7 @@ function initNightStreet() {
   }, 0));
 }
 
-const ICON_CLASS = { dice: 'icon icon-lg', fork: 'icon cat-icon', lantern: 'icon cat-icon', arrowRight: 'icon' };
+const ICON_CLASS = { dice: 'icon icon-lg', fork: 'icon cat-icon', lantern: 'icon cat-icon', map: 'icon cat-icon', arrowRight: 'icon' };
 document.querySelectorAll('[data-icon]').forEach(el => {
   const name = el.dataset.icon;
   const wrapCls = el.className;

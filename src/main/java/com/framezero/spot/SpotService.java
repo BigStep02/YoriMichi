@@ -6,6 +6,7 @@ import com.framezero.spot.dto.SpotDetailDto;
 import com.framezero.spot.dto.SpotListResponse;
 import com.framezero.spot.dto.SpotSummaryDto;
 import jakarta.persistence.EntityNotFoundException;
+import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -56,7 +57,10 @@ public class SpotService {
     @Transactional(readOnly = true)
     public List<Spot> candidates(double lat, double lng, int radiusKm, Collection<SpotKind> kinds) {
         Collection<SpotKind> ks = (kinds == null || kinds.isEmpty()) ? EnumSet.allOf(SpotKind.class) : kinds;
-        return inRadius(lat, lng, radiusKm, ks);
+        List<Spot> spots = inRadius(lat, lng, radiusKm, ks);
+        // CourseService는 트랜잭션 밖에서 영업시간(seasons)을 계산함 → open-in-view=false라 여기서 미리 로딩
+        spots.forEach(s -> Hibernate.initialize(s.getSeasons()));
+        return spots;
     }
 
     @Transactional(readOnly = true)
@@ -98,7 +102,7 @@ public class SpotService {
     }
 
     /** 그날 기준: "24시간" / "9:00–17:00 · 월 휴무" / "날마다 다름" / "오늘 휴무" */
-    static String hoursLabel(Spot s, LocalDate date) {
+    public static String hoursLabel(Spot s, LocalDate date) {
         Spot.Effective e = s.effectiveOn(date);
         if (e.closedAllDay()) return "오늘 휴무";
         String h = switch (s.getHoursKind()) {

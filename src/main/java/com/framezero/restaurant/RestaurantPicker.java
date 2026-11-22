@@ -22,7 +22,8 @@ public class RestaurantPicker {
             Boolean openNow,
             double lat,
             double lng,
-            String googleMapsUri
+            String googleMapsUri,
+            String typeKo
     ) {}
 
     public record PickResult(

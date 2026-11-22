@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>주변 놀거리 · YoriMichi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;800;900&family=Zen+Old+Mincho:wght@700;900&display=swap" rel="stylesheet" media="print" onload="this.media=\'all\'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;800;900&family=Zen+Old+Mincho:wght@700;900&display=swap" rel="stylesheet"></noscript>
+  <link rel="stylesheet" href="/css/app.css">
+  <script type="importmap">
+  {"imports":{"three":"/js/vendor/three/three.module.min.js","three/addons/":"/js/vendor/three/addons/"}}
+  </script>
+  <script src="/js/vendor/gsap/gsap.min.js" defer></script>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#070A1A">
+  <link rel="icon" type="image/png" href="/images/icons/favicon-64.png">
+  <link rel="apple-touch-icon" href="/images/icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-title" content="YoriMichi">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <script type="speculationrules">{"prefetch":[{"source":"document","where":{"href_matches":"/*"},"eagerness":"moderate"}]}</script>
+  <script src="/js/transition.js" defer></script>
+  <script type="module" src="/js/router.js"></script>
+</head>
+<body class="hanabi-bg" data-page="spots">
+  <canvas id="hanabi-stage" data-scene="momiji" aria-hidden="true"></canvas>
+  <div class="hanabi-shade" aria-hidden="true"></div>
+  <header id="app-header"></header>
+  <main class="container">
+    <a class="back" href="/" id="back-link">홈으로</a>
+    <h1 class="draw-title">주변 놀거리</h1>
+    <p class="muted draw-sub">신사·공원·전망대·박물관을 가까운 순으로 보여 드려요.</p>
+
+    <div id="search-bar"></div>
+
+    <section class="draw-panel" id="draw-panel">
+      <div class="dp-idle">
+        <span class="dp-lantern" aria-hidden="true"><span lang="ja">遊</span></span>
+        <div class="dp-desc">
+          <span class="dp-kicker" lang="ja">今日の縁</span>
+          <b>놀거리 뽑기</b>
+          <span class="dp-sub">지금 목록의 놀거리 중 한 곳</span>
+        </div>
+        <button type="button" class="dp-btn" id="dp-draw-btn">뽑기</button>
+      </div>
+      <div class="dp-result" id="dp-result" hidden></div>
+    </section>
+
+    <div class="chips cat-scroll" role="group" aria-label="종류 (여러 개 선택)" data-multi>
+      <button type="button" data-v="ALL" aria-pressed="true">전체</button>
+      <button type="button" data-v="SHRINE_TEMPLE" aria-pressed="false">⛩ 신사·절</button>
+      <button type="button" data-v="PARK_GARDEN" aria-pressed="false">🌸 공원·정원</button>
+      <button type="button" data-v="HISTORIC" aria-pressed="false">🏯 성·옛 거리</button>
+      <button type="button" data-v="MUSEUM" aria-pressed="false">🏛 박물관·미술관</button>
+      <button type="button" data-v="VIEWPOINT" aria-pressed="false">🌄 전망·경치</button>
+      <button type="button" data-v="MARKET" aria-pressed="false">🏮 시장</button>
+      <button type="button" data-v="AMUSEMENT" aria-pressed="false">🎡 유원지·수족관</button>
+      <button type="button" data-v="ONSEN" aria-pressed="false">♨ 온천</button>
+    </div>
+
+    <div class="list-tools">
+      <div class="seg" role="radiogroup" aria-label="검색 반경">
+        <button type="button" role="radio" data-radius="5">5km</button>
+        <button type="button" role="radio" data-radius="10">10km</button>
+        <button type="button" role="radio" data-radius="30">30km</button>
+      </div>
+    </div>
+
+    <p class="list-count muted" id="count"></p>
+    <div id="list" aria-live="polite"></div>
+  </main>
+  <script type="module" src="/js/spots.js"></script>
+  <script type="module" src="/js/night-bg.js"></script>
+  <script type="module" src="/js/pwa.js"></script>
+</body>
+</html>

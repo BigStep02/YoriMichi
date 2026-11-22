@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 @Component
 public class RestaurantCache {
 
-    private static final Duration NEARBY_TTL        = Duration.ofMinutes(10);
+    private static final Duration NEARBY_TTL        = Duration.ofMinutes(30);
     private static final Duration DETAIL_TTL         = Duration.ofMinutes(60);
     private static final Duration SUMMARY_OK_TTL     = Duration.ofMinutes(60);
     private static final Duration SUMMARY_FAIL_TTL   = Duration.ofMinutes(10);

@@ -2,6 +2,7 @@ package com.framezero.restaurant.client;
 
 import com.framezero.restaurant.Category;
 import com.framezero.restaurant.RestaurantPicker;
+import com.framezero.restaurant.TypeLabelKo;
 import com.framezero.restaurant.client.response.NearbySearchResponse;
 import com.framezero.restaurant.client.response.PlaceDetailResult;
 import com.framezero.restaurant.client.response.PlaceResult;
@@ -34,7 +35,12 @@ public class PlacesClient {
     private static final String NEARBY_FIELD_MASK =
             "places.id,places.displayName,places.location,places.rating," +
             "places.userRatingCount,places.priceLevel,places.currentOpeningHours.openNow," +
-            "places.primaryTypeDisplayName,places.googleMapsUri";
+            "places.primaryTypeDisplayName,places.primaryType,places.googleMapsUri";
+
+    private static final List<String> SPOT_TYPES = List.of(
+            "tourist_attraction", "amusement_park", "aquarium", "art_gallery",
+            "museum", "park", "shrine", "temple", "historical_landmark", "zoo"
+    );
 
     private static final String DETAIL_FIELD_MASK =
             "id,displayName,formattedAddress,location,rating,userRatingCount,priceLevel," +
@@ -195,8 +201,49 @@ public class PlacesClient {
                 p.currentOpeningHours() != null ? p.currentOpeningHours().openNow() : null,
                 p.location().latitude() != null ? p.location().latitude() : 0.0,
                 p.location().longitude() != null ? p.location().longitude() : 0.0,
-                p.googleMapsUri()
+                p.googleMapsUri(),
+                TypeLabelKo.of(p.primaryType())
         );
+    }
+
+    /** 명소 보충용 Nearby 검색. API 키 없거나 실패 시 빈 목록 반환 (보충이므로 예외 발생 안 함). */
+    public List<RestaurantPicker.Candidate> searchNearbySpots(double lat, double lng, int radiusM) {
+        if (isKeyMissing()) return List.of();
+
+        var body = Map.of(
+                "includedTypes", SPOT_TYPES,
+                "maxResultCount", 20,
+                "rankPreference", "POPULARITY",
+                "languageCode", "ja",
+                "regionCode", "JP",
+                "locationRestriction", Map.of(
+                        "circle", Map.of(
+                                "center", Map.of("latitude", lat, "longitude", lng),
+                                "radius", (double) radiusM
+                        )
+                )
+        );
+
+        tickNearby();
+        try {
+            var response = restClient.post()
+                    .uri(NEARBY_URL)
+                    .header("X-Goog-Api-Key", apiKey)
+                    .header("X-Goog-FieldMask", NEARBY_FIELD_MASK)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(body)
+                    .retrieve()
+                    .body(NearbySearchResponse.class);
+
+            if (response == null || response.places() == null) return List.of();
+            return response.places().stream()
+                    .map(this::toCandidate)
+                    .filter(Objects::nonNull)
+                    .toList();
+        } catch (Exception e) {
+            log.warn("Places searchNearbySpots failed: {}", e.getMessage());
+            return List.of();
+        }
     }
 
     public static Integer parsePriceLevel(String level) {

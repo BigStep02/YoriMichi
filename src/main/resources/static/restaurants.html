@@ -35,6 +35,19 @@
 
     <div id="search-bar"></div>
 
+    <section class="draw-panel" id="draw-panel">
+      <div class="dp-idle">
+        <span class="dp-lantern" aria-hidden="true"><span lang="ja">食</span></span>
+        <div class="dp-desc">
+          <span class="dp-kicker" lang="ja">今日の縁</span>
+          <b>맛집 뽑기</b>
+          <span class="dp-sub">조건에 맞는 가게 중 한 곳</span>
+        </div>
+        <button type="button" class="dp-btn" id="dp-draw-btn">뽑기</button>
+      </div>
+      <div class="dp-result" id="dp-result" hidden></div>
+    </section>
+
     <div class="chips cat-scroll" role="group" aria-label="종류 (여러 개 선택)" data-opt="category" data-multi>
       <button type="button" data-v="ALL" aria-pressed="true">전체</button>
       <button type="button" data-v="RAMEN" aria-pressed="false">라멘</button>

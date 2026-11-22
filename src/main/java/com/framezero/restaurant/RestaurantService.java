@@ -231,7 +231,7 @@ public class RestaurantService {
                 c.placeId(), c.name(), c.typeLabel(),
                 c.rating(), c.ratingCount(), score,
                 c.priceLevel(), c.openNow(),
-                distMInt(lat, lng, c), c.lat(), c.lng(), c.googleMapsUri()
+                distMInt(lat, lng, c), c.lat(), c.lng(), c.googleMapsUri(), c.typeKo()
         );
     }
 

@@ -20,6 +20,34 @@ export const icons = {
   lantern: (c) => svg('<path d="M12 2v2"/><rect x="9" y="4" width="6" height="2" rx="1"/><path d="M8 6h8c1.5 2 2 4 2 6s-.5 4-2 6H8c-1.5-2-2-4-2-6s.5-4 2-6z"/><rect x="9" y="18" width="6" height="2" rx="1"/><path d="M12 20v2"/>', c),
 };
 
+/** 코스 뽑기 로딩용 연등 7개 (가로 스크롤 넓이에 꽉 참) */
+export function multiLanterns() {
+  const cfg = [
+    { x: 28,  d: 0,    t: 1.05, s: 0.82, f: '#E8462E' },
+    { x: 78,  d: 0.22, t: 1.30, s: 0.96, f: '#F2765C' },
+    { x: 128, d: 0.50, t: 1.10, s: 0.90, f: '#D83820' },
+    { x: 193, d: 0.08, t: 1.40, s: 1.08, f: '#F2765C' },
+    { x: 258, d: 0.35, t: 1.00, s: 0.90, f: '#E05030' },
+    { x: 308, d: 0.18, t: 1.25, s: 0.96, f: '#F2765C' },
+    { x: 357, d: 0.45, t: 1.15, s: 0.82, f: '#E8462E' },
+  ];
+  const lamp = ({ x, d, t, s, f }) => `
+    <g class="lamp" style="--dur:${t}s;--delay:${d}s" transform="translate(${x} 14)">
+      <g transform="scale(${s})">
+        <line x1="0" y1="0" x2="0" y2="8" stroke="#1E2A4A" stroke-width="1.5"/>
+        <rect x="-8" y="8" width="16" height="4" rx="1.5" fill="#1E2A4A"/>
+        <ellipse cx="0" cy="29" rx="15" ry="18" fill="${f}"/>
+        <path d="M-14 22h28M-15 29h30M-14 36h28" stroke="#fff" stroke-opacity=".28" stroke-width="1.2"/>
+        <rect x="-8" y="46" width="16" height="4" rx="1.5" fill="#1E2A4A"/>
+        <line x1="0" y1="50" x2="0" y2="58" stroke="${f}" stroke-width="2"/>
+      </g>
+    </g>`;
+  return `<svg viewBox="0 0 385 108" aria-hidden="true">
+    <path d="M0 12 Q193 38 385 12" stroke="#1E2A4A" stroke-width="1.5" fill="none"/>
+    ${cfg.map(lamp).join('')}
+  </svg>`;
+}
+
 /** 상세 화면 헤더용 등불 일러스트 */
 export const lanternIllustration = `
 <svg class="lanterns" viewBox="0 0 120 120" aria-hidden="true">
@@ -40,4 +68,14 @@ export function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, ch => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
   }[ch]));
+}
+
+/** 뽑기 패널: 결과가 나올 때 등불이 켜지는 연출 */
+export function dpLight() {
+  const panel = document.getElementById('draw-panel');
+  if (!panel) return;
+  panel.classList.add('is-drawn');
+  panel.classList.remove('lit');
+  void panel.offsetWidth;
+  panel.classList.add('lit');
 }

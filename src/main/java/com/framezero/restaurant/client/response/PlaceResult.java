@@ -9,5 +9,6 @@ public record PlaceResult(
         String priceLevel,
         OpeningHours currentOpeningHours,
         LocalizedText primaryTypeDisplayName,
-        String googleMapsUri
+        String googleMapsUri,
+        String primaryType
 ) {}

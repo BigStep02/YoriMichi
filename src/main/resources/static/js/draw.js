@@ -1,12 +1,14 @@
-// 오늘의 우연 뽑기: 조건 고르기 → 뽑는 중 → 결과
-// API: GET /api/restaurants/draw, GET /api/restaurants/{placeId}
-// 백엔드가 아직 없을 때는 주소에 ?mock=1 을 붙이면 가짜 데이터로 화면을 볼 수 있음
+// 코스 뽑기: 조건 고르기 → 뽑는 중 → 코스 카드 결과
+// API: GET /api/courses/draw?preset=SPOT_RESTAURANT|FESTIVAL_RESTAURANT
+// ?mock=1 로 가짜 데이터, ?empty=1 로 빈 결과 테스트
 import { api } from './api.js';
 import { renderHeader } from './header.js';
 import { mountSearchBar } from './searchbar.js';
-import { icons, esc } from './icons.js';
+import { icons, multiLanterns, esc } from './icons.js';
 import { acquireStage, webglAvailable } from './hanabi/hanabi-stage.js';
-import { enableHSwipe } from './swipe.js';
+import { enableHSwipe, enableGroupSwipe } from './swipe.js';
+import { kindLabel, kindIcon, openSpotSheet } from './spotsheet.js';
+import { openRestaurantSheet, typeChip, tabelogUrl } from './rsheet.js';
 
 renderHeader();
 document.getElementById('back-link').insertAdjacentHTML('afterbegin', icons.back());
@@ -14,71 +16,79 @@ document.querySelectorAll('[data-icon]').forEach(el => { el.innerHTML = icons[el
 
 const params = new URLSearchParams(location.search);
 const MOCK = params.get('mock') === '1';
-const MIN_LOADING_MS = 1300; // 너무 빨리 끝나면 "뽑는" 느낌이 안 나서 최소 시간 유지 (non-stage 경로만)
+const MIN_LOADING_MS = 1300;
+
 
 const steps = {
-  form: document.getElementById('step-form'),
+  form:    document.getElementById('step-form'),
   loading: document.getElementById('step-loading'),
-  result: document.getElementById('step-result'),
+  result:  document.getElementById('step-result'),
 };
 const resultEl = steps.result;
 
-const opts = { category: ['ALL'], radiusM: '800', maxPrice: '', openNow: true };
+const opts = {
+  preset: 'SPOT_RESTAURANT',
+  kinds: ['ALL'],
+  radiusKm: '10',
+  restaurantRadiusM: '800',
+  maxPrice: '',
+  openNow: true,
+};
 let loc = null;
-// 결과 카드를 옆으로 쓸어 넘기면 다시 뽑기
-function swipeToRedraw() {
-  const card = resultEl.firstElementChild;
-  if (!card) return;
-  const fling = (dir) => () => card.animate(
-    [{ transform: 'translateX(0)', opacity: 1 }, { transform: `translateX(${dir * 70}%) rotate(${dir * 5}deg)`, opacity: 0 }],
-    { duration: 260, easing: 'ease-in', fill: 'forwards' }).onfinish = () => draw();
-  enableHSwipe(card, { follow: true, threshold: 70, onNext: fling(-1), onPrev: fling(1) });
-}
-
-let excluded = []; // 이번 조건에서 이미 뽑힌 곳 (다시 뽑기용)
+let excluded = [];
 let drawSeq = 0;
+
+// ── 연등 로딩 일러스트 ──
+document.querySelector('[data-illust]').innerHTML = multiLanterns();
 
 // ── Hanabi stage ──
 let stage = null;
 let skipRequested = false;
 let stageReleased = false;
 
-const canvas = document.getElementById('hanabi-stage');
+const canvas  = document.getElementById('hanabi-stage');
 const skipBtn = document.getElementById('hanabi-skip');
-
-// 동작 줄이기 켜진 기기 → 차분한 모드 (3D는 보이고, 카메라 이동·진동만 끔)
 const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 if (webglAvailable()) {
   document.body.classList.add('hanabi');
-  // 페이지 내용을 먼저 그리고, 3D는 그다음 프레임에 준비 (전환 중 멈춤 방지)
   requestAnimationFrame(() => setTimeout(() => {
     try {
       stage = acquireStage(canvas, { scene: 'pond', calm });
       if (stage.firstVisit) stage.introGlyph('寄り道');
       stage.idle();
-    } catch (_) {
-      stage = null;
-    }
+    } catch (_) { stage = null; }
   }, 0));
 }
 
 skipBtn.addEventListener('click', () => {
   if (!stage) return;
-  if (stageReleased) {
-    stage.release(); // 이미 호출됐으면 no-op
-    stage.skip();
-  } else {
-    skipRequested = true;
-  }
+  if (stageReleased) { stage.release(); stage.skip(); }
+  else skipRequested = true;
 });
 
-// ---------- 조건 ----------
-// 종류: 여러 개 선택. '아무거나'는 단독, 다 끄면 '아무거나'로 돌아감
-const catGroup = document.querySelector('.chips[data-multi]');
-catGroup.addEventListener('click', (e) => {
+// ── 조건 이벤트 ──
+
+// 프리셋 선택
+document.getElementById('preset-group').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-v]');
+  if (!btn) return;
+  document.querySelectorAll('#preset-group [data-v]').forEach(b => b.setAttribute('aria-checked', String(b === btn)));
+  opts.preset = btn.dataset.v;
+  document.getElementById('kind-group').hidden = opts.preset !== 'SPOT_RESTAURANT';
+  excluded = [];
+  const sub = document.querySelector('[data-loading-sub]');
+  sub.textContent = opts.preset === 'FESTIVAL_RESTAURANT'
+    ? '근처 축제와 맛집을 연결하고 있어요'
+    : '근처 명소와 맛집을 연결하고 있어요';
+});
+
+// 놀거리 종류 멀티셀렉트
+const kindGroup = document.querySelector('.chips[data-multi]');
+kindGroup.addEventListener('click', (e) => {
   const btn = e.target.closest('button[data-v]');
   if (!btn) return;
-  const btns = [...catGroup.querySelectorAll('button')];
+  const btns = [...kindGroup.querySelectorAll('button')];
   const anyBtn = btns.find(b => b.dataset.v === 'ALL');
   if (btn === anyBtn) {
     btns.forEach(b => b.setAttribute('aria-pressed', String(b === anyBtn)));
@@ -87,10 +97,11 @@ catGroup.addEventListener('click', (e) => {
     const picked = btns.filter(b => b !== anyBtn && b.getAttribute('aria-pressed') === 'true');
     anyBtn.setAttribute('aria-pressed', String(picked.length === 0));
   }
-  opts.category = btns.filter(b => b.getAttribute('aria-pressed') === 'true').map(b => b.dataset.v);
+  opts.kinds = btns.filter(b => b.getAttribute('aria-pressed') === 'true').map(b => b.dataset.v);
   excluded = [];
 });
 
+// 단일 선택 칩
 document.querySelectorAll('.chips[data-opt]:not([data-multi])').forEach(group => {
   group.addEventListener('click', (e) => {
     const btn = e.target.closest('button[data-v]');
@@ -105,21 +116,32 @@ document.querySelector('[data-opt="openNow"]').addEventListener('change', (e) =>
   excluded = [];
 });
 
+enableGroupSwipe();
+
 mountSearchBar(document.getElementById('search-bar'), (state) => {
   loc = state.loc;
   excluded = [];
 }, { dates: false });
 
-// ---------- 화면 전환 ----------
+// ── 화면 전환 ──
 function show(name) {
   Object.entries(steps).forEach(([k, el]) => { el.hidden = k !== name; });
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-document.querySelector('[data-illust]').innerHTML = swingingLanterns();
 document.querySelector('[data-draw]').addEventListener('click', () => draw());
 
-// ---------- 뽑기 ----------
+function swipeToRedraw() {
+  const card = resultEl.firstElementChild;
+  if (!card) return;
+  const fling = (dir) => () => card.animate(
+    [{ transform: 'translateX(0)', opacity: 1 }, { transform: `translateX(${dir * 70}%) rotate(${dir * 5}deg)`, opacity: 0 }],
+    { duration: 260, easing: 'ease-in', fill: 'forwards' }
+  ).onfinish = () => draw();
+  enableHSwipe(card, { follow: true, threshold: 70, onNext: fling(-1), onPrev: fling(1) });
+}
+
+// ── 뽑기 ──
 async function draw() {
   if (!loc && !MOCK) return;
   const mySeq = ++drawSeq;
@@ -127,43 +149,39 @@ async function draw() {
   stageReleased = false;
 
   const q = new URLSearchParams({
-    lat: (loc?.lat ?? 34.6687).toFixed(6),
-    lng: (loc?.lng ?? 135.5013).toFixed(6),
-    radiusM: opts.radiusM,
-    category: opts.category.join(','),
-    openNow: String(opts.openNow),
+    lat:                (loc?.lat ?? 34.6937).toFixed(6),
+    lng:                (loc?.lng ?? 135.5023).toFixed(6),
+    radiusKm:           opts.radiusKm,
+    restaurantRadiusM:  opts.restaurantRadiusM,
+    preset:             opts.preset,
+    openNow:            String(opts.openNow),
   });
   if (opts.maxPrice) q.set('maxPrice', opts.maxPrice);
+  if (opts.preset === 'SPOT_RESTAURANT' && !opts.kinds.includes('ALL'))
+    q.set('kinds', opts.kinds.join(','));
   if (excluded.length) q.set('exclude', excluded.join(','));
 
   if (stage) {
-    // ── stage 경로: API 호출과 연출 동시 시작 ──
     document.body.classList.add('hanabi-playing');
-
-    // burst 객체: onBurst 콜백이 API 결과를 참조할 수 있도록 공유
-    const burst = { data: null, detailPromise: null, summaryPromise: null };
+    const burst = { data: null };
 
     stage.play({
       onSkippable: (on) => { skipBtn.hidden = !on; },
-      flash: () => { window.gsap.fromTo('#hanabi-flash', { opacity: .9 }, { opacity: 0, duration: .8 }); },
+      flash: () => { window.gsap?.fromTo('#hanabi-flash', { opacity: .9 }, { opacity: 0, duration: .8 }); },
       onBurst: () => {
         if (mySeq !== drawSeq || !burst.data) return;
         document.body.classList.remove('hanabi-playing');
         skipBtn.hidden = true;
         renderResult(burst.data);
-        resultEl.querySelector('.result-card')?.classList.add('reveal');
-        applyDetail(burst.data.pick, mySeq, burst.detailPromise);
-        applySummary(burst.data.pick, mySeq, burst.summaryPromise);
+        resultEl.querySelector('.course-card')?.classList.add('reveal');
         show('result');
       },
     });
 
     let data, error;
     try {
-      data = MOCK ? mockDraw() : await api(`/api/restaurants/draw?${q}`, { auth: false });
-    } catch (e) {
-      error = e;
-    }
+      data = MOCK ? mockCourseDraw() : await api(`/api/courses/draw?${q}`, { auth: false });
+    } catch (e) { error = e; }
 
     if (mySeq !== drawSeq) return;
 
@@ -174,147 +192,144 @@ async function draw() {
       renderError(error);
       return;
     }
-    if (!data?.pick) {
+    if (!hasResult(data)) {
       stage.abort();
       document.body.classList.remove('hanabi-playing');
       skipBtn.hidden = true;
-      renderEmpty();
+      renderEmpty(data?.reason);
       return;
     }
 
-    excluded.push(data.pick.placeId);
-    if (excluded.length > 20) excluded = excluded.slice(-20);
-
-    burst.detailPromise = loadDetailData(data.pick);
-    burst.summaryPromise = burst.detailPromise.then(() => loadSummaryData(data.pick));
+    trackExcluded(data);
     burst.data = data;
-
     stageReleased = true;
     stage.release();
-    if (skipRequested) {
-      skipRequested = false;
-      stage.skip();
-    }
+    if (skipRequested) { skipRequested = false; stage.skip(); }
 
   } else {
-    // ── non-stage 경로: 기존 동작 그대로 ──
     show('loading');
-    const sub = document.querySelector('[data-loading-sub]');
-    sub.textContent = '평점과 리뷰 수를 함께 보고 있어요';
+    document.querySelector('[data-loading-sub]').textContent = opts.preset === 'FESTIVAL_RESTAURANT'
+      ? '근처 축제와 맛집을 연결하고 있어요'
+      : '근처 명소와 맛집을 연결하고 있어요';
 
     const started = Date.now();
     let data, error;
     try {
-      data = MOCK ? mockDraw() : await api(`/api/restaurants/draw?${q}`, { auth: false });
-    } catch (e) {
-      error = e;
-    }
+      data = MOCK ? mockCourseDraw() : await api(`/api/courses/draw?${q}`, { auth: false });
+    } catch (e) { error = e; }
     const wait = MIN_LOADING_MS - (Date.now() - started);
     if (wait > 0) await new Promise(r => setTimeout(r, wait));
     if (mySeq !== drawSeq) return;
 
     if (error) return renderError(error);
-    if (!data?.pick) return renderEmpty();
+    if (!hasResult(data)) return renderEmpty(data?.reason);
 
-    excluded.push(data.pick.placeId);
-    if (excluded.length > 20) excluded = excluded.slice(-20);
-    const detailPromise = loadDetailData(data.pick);
-    const summaryPromise = detailPromise.then(() => loadSummaryData(data.pick));
-    renderHint(data, () => {
-      renderResult(data);
-      resultEl.querySelector('.result-card').classList.add('reveal');
-      applyDetail(data.pick, mySeq, detailPromise);
-      applySummary(data.pick, mySeq, summaryPromise);
-    });
+    trackExcluded(data);
+    renderResult(data);
+    resultEl.querySelector('.course-card')?.classList.add('reveal');
     show('result');
   }
 }
 
-// ---------- 미리보기 (가게 이름 대신 조건만 먼저, non-stage 경로 전용) ----------
-function hintLantern() {
-  return `<svg viewBox="0 0 40 56" width="40" height="56"><rect x="12" y="0" width="16" height="5" rx="2" fill="#1E2A4A"/><ellipse cx="20" cy="27" rx="17" ry="20" fill="#FAF8F5"/><path d="M4 20h32M3 27h34M4 34h32" stroke="#F2765C" stroke-width="1.6"/><rect x="12" y="46" width="16" height="5" rx="2" fill="#1E2A4A"/><line x1="20" y1="51" x2="20" y2="56" stroke="#1E2A4A" stroke-width="2"/></svg>`;
+function hasResult(data) {
+  return data?.restaurants?.length > 0 && (data.spot || data.festival);
 }
-function renderHint(data, onReveal) {
-  const p = data.pick;
-  const clues = [
-    p.typeLabel ? { k: '장르', v: `<span lang="ja">${esc(p.typeLabel)}</span>` } : null,
-    { k: '거리', v: walkLabel(p.distanceM) },
-    p.priceLevel != null ? { k: '가격대', v: priceLabel(p.priceLevel) } : null,
-    p.rating != null ? { k: '평점', v: `<span class="star">★ ${p.rating.toFixed(1)}</span> <span class="muted">· 리뷰 ${p.ratingCount.toLocaleString()}개</span>` } : null,
-  ].filter(Boolean);
-
-  resultEl.innerHTML = `
-    <p class="result-kicker">오늘의 우연</p>
-    <article class="hint-card">
-      <div class="hint-seal" aria-hidden="true">${hintLantern()}</div>
-      <h2 class="hint-title">오늘의 한 끼가 정해졌어요</h2>
-      <p class="muted hint-sub">근처 ${data.candidateCount}곳 중 보정 평점 상위 ${data.poolCount}곳에서 골랐어요. 조건이 마음에 들면 열어보세요</p>
-      <dl class="clues">
-        ${clues.map((c, i) => `<div class="clue" style="animation-delay:${0.15 + i * 0.18}s"><dt>${c.k}</dt><dd>${c.v}</dd></div>`).join('')}
-      </dl>
-    </article>
-    <div class="r-actions">
-      <button type="button" class="btn-primary" data-reveal>열어보기</button>
-      <button type="button" class="btn-ghost" data-redraw>${icons.dice('icon')} 별로예요, 다시 뽑기</button>
-    </div>
-    <button type="button" class="text-btn" data-change>조건 바꾸기</button>`;
-
-  resultEl.querySelector('[data-reveal]').addEventListener('click', () => {
-    onReveal();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  });
-  resultEl.querySelector('[data-redraw]').addEventListener('click', () => draw());
-  swipeToRedraw();
-  resultEl.querySelector('[data-change]').addEventListener('click', () => show('form'));
+function trackExcluded(data) {
+  const pid = data.restaurants?.[0]?.placeId;
+  if (pid) excluded.push(pid);
+  if (excluded.length > 20) excluded = excluded.slice(-20);
 }
 
-// ---------- 결과 ----------
+// ── 거리 표시 ──
+function distKmLabel(km) {
+  const m = Math.round(km * 1000);
+  const min = Math.max(1, Math.round(m / 80));
+  return `도보 ${min}분 · ${m >= 1000 ? km.toFixed(1) + 'km' : m + 'm'}`;
+}
+function distMLabel(m) {
+  const min = Math.max(1, Math.round(m / 80));
+  return `도보 ${min}분 · ${m >= 1000 ? (m / 1000).toFixed(1) + 'km' : m + 'm'}`;
+}
 function priceLabel(level) {
   if (level == null) return '';
   return level === 0 ? '무료' : '¥'.repeat(level);
 }
-function walkLabel(m) {
-  const min = Math.max(1, Math.round(m / 80)); // 도보 분속 80m
-  return `도보 ${min}분 · ${m >= 1000 ? (m / 1000).toFixed(1) + 'km' : m + 'm'}`;
+function dateRangeLabel(start, end) {
+  if (!start || !end) return null;
+  const s = new Date(start + 'T00:00:00'), e = new Date(end + 'T00:00:00');
+  return `${s.getMonth() + 1}/${s.getDate()} ~ ${e.getMonth() + 1}/${e.getDate()}`;
+}
+
+// ── 결과 렌더링: 등불 2개를 縁の糸로 잇는 코스 카드 ──
+function todayLabel() {
+  const d = new Date();
+  return `${d.getMonth() + 1}月${d.getDate()}日`;
 }
 
 function renderResult(data) {
-  const p = data.pick;
-  const stats = [
-    p.rating != null ? `<span class="star">★ ${p.rating.toFixed(1)}</span> <span class="muted">(${p.ratingCount.toLocaleString()})</span>` : '',
-    walkLabel(p.distanceM),
-    priceLabel(p.priceLevel),
-  ].filter(Boolean).join('<span class="dot">·</span>');
+  const r = data.restaurants[0];
+  const isSpot = data.preset !== 'FESTIVAL_RESTAURANT';
+  const step1Html = isSpot ? renderSpotStep(data.spot) : renderFestivalStep(data.festival);
+
+  const rTags = [
+    typeChip(r, 'cx-chip'),
+    r.rating != null ? `<span class="cx-chip star">★ ${r.rating.toFixed(1)} <small>(${r.ratingCount.toLocaleString()})</small></span>` : '',
+    r.priceLevel ? `<span class="cx-chip">${priceLabel(r.priceLevel)}</span>` : '',
+    r.openNow ? '<span class="cx-chip open">영업 중</span>' : '',
+  ].filter(Boolean).join('');
+
+  const pool = isSpot && data.spotDbCount
+    ? `<span>근처 놀거리 <b>${data.spotDbCount}곳</b> 중에서 엮음${data.spotSupplemented ? ' · 구글 지도 보충' : ''}</span>` : '<span>우연으로 엮은 코스</span>';
 
   resultEl.innerHTML = `
-    <p class="result-kicker">오늘의 우연은 여기</p>
-    <article class="result-card">
-      <div class="result-top">
-        ${p.typeLabel ? `<span class="type-chip" lang="ja">${esc(p.typeLabel)}</span>` : ''}
-        ${p.openNow ? '<span class="open-badge">영업 중</span>' : ''}
-      </div>
-      <h2 class="r-name" lang="ja">${esc(p.name)}</h2>
-      <p class="r-name-ko" data-name-ko></p>
-      <div class="r-stats">${stats}</div>
-      <p class="why">${icons.dice('icon')} 근처 ${data.candidateCount}곳 중 보정 평점 상위 ${data.poolCount}곳에서 무작위로 골랐어요</p>
+    <article class="cx" style="--cx-accent:${isSpot ? '#7FE0C0' : '#F2C14E'}">
+      <header class="cx-head">
+        <span class="cx-seal" lang="ja">縁</span>
+        <div class="cx-head-t">
+          <span class="cx-kicker" lang="ja">今日の縁 · ${todayLabel()}</span>
+          <b>오늘의 코스</b>
+        </div>
+        <span class="cx-count">2 STOPS</span>
+      </header>
 
-      <section class="ai-box" data-ai>
-        <div class="ai-head">리뷰 한눈에 <span class="ai-tag">AI 요약</span></div>
-        <div class="ai-body"><div class="sk-line"></div><div class="sk-line short"></div></div>
-      </section>
+      <ol class="cx-steps">
+        ${step1Html}
+        <li class="cx-thread" aria-hidden="true">
+          <span class="cx-thread-line"></span>
+          <span class="cx-thread-label">${icons.route('icon')} ${distMLabel(r.distanceM)}</span>
+        </li>
+        <li class="cx-step">
+          <span class="cx-node rest"><span lang="ja">弐</span></span>
+          <div class="cx-body">
+            <span class="cx-label">근처 맛집</span>
+            <h2 class="cx-name" lang="ja">${esc(r.name)}</h2>
+            <div class="cx-chips">${rTags}</div>
+            <div class="cx-actions">
+              <button type="button" class="dp-main" data-r-detail>가게 공개 · AI 요약</button>
+              ${r.googleMapsUri ? `<a class="dp-ico" href="${esc(r.googleMapsUri)}" target="_blank" rel="noopener" aria-label="구글 지도" title="구글 지도">${icons.map('icon')}</a>` : ''}
+              <a class="dp-ico cx-tabelog" href="${tabelogUrl(r.name)}" target="_blank" rel="noopener" aria-label="食べログ" title="食べログ" lang="ja">食</a>
+            </div>
+          </div>
+        </li>
+      </ol>
 
-      <section class="reviews" data-reviews></section>
+      <footer class="cx-foot">${pool}</footer>
     </article>
-
-    <div class="r-actions">
-      <a class="btn-primary" href="${esc(p.googleMapsUri)}" target="_blank" rel="noopener">${icons.map('icon')} 구글 지도에서 길찾기</a>
-      <a class="btn-sub" href="https://tabelog.com/rstLst/?vs=1&sk=${encodeURIComponent(p.name)}&sw=${encodeURIComponent(p.name)}" target="_blank" rel="noopener"><span lang="ja">食べログ</span>에서 보기 ↗</a>
-      <button type="button" class="btn-ghost" data-redraw>${icons.dice('icon')} 다시 뽑기</button>
+    <div class="cx-bottom">
+      <button type="button" class="cx-btn ghost" data-swap>${icons.dice('icon')} 맛집만 바꾸기</button>
+      <button type="button" class="cx-btn" data-redraw>${icons.route('icon')} 다시 엮기</button>
     </div>
     <button type="button" class="text-btn" data-change>조건 바꾸기</button>
-    <p class="attribution">가게 정보·리뷰: Google 지도 · 리뷰 요약은 AI가 만든 참고용이에요</p>`;
+    <p class="attribution">가게 정보: Google 지도</p>`;
 
+  resultEl.querySelector('[data-swap]').addEventListener('click', () => {
+    const pid = r.placeId;
+    if (pid && !excluded.includes(pid)) excluded.push(pid);
+    draw();
+  });
   resultEl.querySelector('[data-redraw]').addEventListener('click', () => draw());
+  resultEl.querySelector('[data-r-detail]').addEventListener('click', () => openRestaurantSheet(r));
+  resultEl.querySelector('[data-spot-detail]')?.addEventListener('click', () => openSpotSheet(data.spot));
   swipeToRedraw();
   resultEl.querySelector('[data-change]').addEventListener('click', () => {
     if (stage) stage.idle();
@@ -322,101 +337,97 @@ function renderResult(data) {
   });
 }
 
-async function loadDetailData(pick) {
-  try {
-    return MOCK ? await mockDetail() : await api(`/api/restaurants/${encodeURIComponent(pick.placeId)}`, { auth: false });
-  } catch {
-    return null;
-  }
+function renderSpotStep(spot) {
+  const chips = [
+    `<span class="cx-chip">${kindIcon(spot.kind)} ${esc(kindLabel(spot.kind))}</span>`,
+    `<span class="cx-chip">${distKmLabel(spot.distanceKm)}</span>`,
+    spot.openNow === true ? '<span class="cx-chip open">영업 중</span>' : '',
+    spot.hoursLabel ? `<span class="cx-chip">${esc(spot.hoursLabel)}</span>` : '',
+  ].filter(Boolean).join('');
+
+  const main = spot.fromPlaces
+    ? (spot.googleMapsUri ? `<a class="dp-main" href="${esc(spot.googleMapsUri)}" target="_blank" rel="noopener">구글 지도에서 보기</a>` : '')
+    : '<button type="button" class="dp-main" data-spot-detail>운영시간·요금 보기</button>';
+  const side = !spot.fromPlaces && spot.officialUrl
+    ? `<a class="dp-ico" href="${esc(spot.officialUrl)}" target="_blank" rel="noopener" aria-label="공식 사이트" title="공식 사이트">↗</a>` : '';
+
+  return `
+    <li class="cx-step">
+      <span class="cx-node spot"><span lang="ja">壱</span></span>
+      <div class="cx-body">
+        <span class="cx-label">명소</span>
+        <h2 class="cx-name">${esc(spot.name)}</h2>
+        ${spot.nameJa ? `<p class="cx-ja" lang="ja">${esc(spot.nameJa)}</p>` : ''}
+        <div class="cx-chips">${chips}</div>
+        ${spot.summary ? `<p class="cx-desc">${esc(spot.summary)}</p>` : ''}
+        <div class="cx-actions">${main}${side}</div>
+      </div>
+    </li>`;
 }
 
-async function loadSummaryData(pick, retry = false) {
-  const url = `/api/restaurants/${encodeURIComponent(pick.placeId)}/summary${retry ? '?retry=true' : ''}`;
-  try {
-    return MOCK ? await mockSummary() : await api(url, { auth: false });
-  } catch {
-    return null;
-  }
-}
+function renderFestivalStep(fest) {
+  const dateLabel = dateRangeLabel(fest.startDate, fest.endDate);
+  const chips = [
+    '<span class="cx-chip">🏮 축제</span>',
+    `<span class="cx-chip">${distKmLabel(fest.distanceKm)}</span>`,
+    fest.ongoing ? '<span class="cx-chip open">진행 중</span>' : '',
+    dateLabel ? `<span class="cx-chip">${esc(dateLabel)}</span>` : '',
+  ].filter(Boolean).join('');
 
-async function applyDetail(pick, mySeq, detailPromise) {
-  const d = await detailPromise;
-  if (mySeq !== drawSeq) return;
-
-  if (d?.nameKo && d.nameKo !== pick.name) {
-    const nameKoEl = resultEl.querySelector('[data-name-ko]');
-    if (nameKoEl) nameKoEl.textContent = d.nameKo;
-  }
-
-  const reviews = (d?.reviews || []).slice(0, 2);
-  const rEl = resultEl.querySelector('[data-reviews]');
-  if (!rEl) return;
-  rEl.innerHTML = reviews.length ? `
-    <div class="rv-head">최근 리뷰</div>
-    ${reviews.map(r => `
-      <div class="rv">
-        <div class="rv-meta">
-          ${r.authorUri ? `<a href="${esc(r.authorUri)}" target="_blank" rel="noopener">${esc(r.author)}</a>` : esc(r.author)}
-          <span class="star">${'★'.repeat(Math.round(r.rating || 0))}</span>
-          <span class="muted">${esc(r.relativeTime || '')}</span>
+  return `
+    <li class="cx-step">
+      <span class="cx-node fest"><span lang="ja">壱</span></span>
+      <div class="cx-body">
+        <span class="cx-label">축제</span>
+        <h2 class="cx-name">${esc(fest.name)}</h2>
+        ${fest.nameJa ? `<p class="cx-ja" lang="ja">${esc(fest.nameJa)}</p>` : ''}
+        <div class="cx-chips">${chips}</div>
+        ${fest.summary ? `<p class="cx-desc">${esc(fest.summary)}</p>` : ''}
+        <div class="cx-actions">
+          <a class="dp-main" href="/festival.html?id=${encodeURIComponent(fest.id)}">축제 자세히 보기</a>
+          ${fest.officialUrl ? `<a class="dp-ico" href="${esc(fest.officialUrl)}" target="_blank" rel="noopener" aria-label="공식 사이트" title="공식 사이트">↗</a>` : ''}
         </div>
-        <p class="rv-text">${esc(r.text)}</p>
-      </div>`).join('')}` : '';
+      </div>
+    </li>`;
 }
 
-async function applySummary(pick, mySeq, summaryPromise) {
-  const s = await summaryPromise;
-  if (mySeq !== drawSeq) return;
+function renderEmpty(reason) {
+  const msgMap = {
+    NO_SPOT:       '지금 문을 연 명소가 근처에 없어요.',
+    NO_FESTIVAL:   '이 기간 근처에 열리는 축제가 없어요.',
+    NO_RESTAURANT: '명소 주변에서 맛집을 찾지 못했어요.',
+  };
+  const msg = msgMap[reason] ?? '조건에 맞는 코스가 없어요.';
 
-  const aiEl = resultEl.querySelector('[data-ai]');
-  if (!aiEl) return;
-
-  const fallbackLink = s?.reviewsUri || pick.googleMapsUri;
-
-  if (s?.status === 'OK' && (s.pros?.length || s.cons?.length || s.menus?.length)) {
-    const row = (label, cls, items) => items?.length
-      ? `<div class="ai-row ${cls}"><span class="ai-k">${label}</span><span>${items.map(esc).join(', ')}</span></div>` : '';
-    const attr = s.reviewsUri
-      ? `<p class="ai-attr">Google 리뷰 요약 기반 · ${esc(s.reviewSummaryDisclosure || '')} · <a href="${esc(s.reviewsUri)}" target="_blank" rel="noopener">리뷰 보기 ↗</a></p>` : '';
-    const fullText = s.fullKo || s.reviewSummaryText;
-    const orig = fullText
-      ? `<details class="ai-orig"><summary>요약 전문 보기</summary><p>${esc(fullText)}</p><p class="ai-attr">Google 리뷰 요약을 한국어로 번역했어요${s.reviewSummaryFlagUri ? ` · <a href="${esc(s.reviewSummaryFlagUri)}" target="_blank" rel="noopener" class="ai-flag">신고</a>` : ''}</p></details>` : '';
-    aiEl.querySelector('.ai-body').innerHTML =
-      row('좋아요', 'pro', s.pros) + row('참고', 'con', s.cons) + row('추천 메뉴', 'menu', s.menus) + attr + orig;
-  } else if (s?.status === 'NO_SOURCE') {
-    aiEl.querySelector('.ai-body').innerHTML = `
-      <p class="ai-muted">리뷰가 아직 적어서 AI 요약이 없어요</p>
-      <a href="${esc(fallbackLink)}" class="btn-ghost" target="_blank" rel="noopener">구글 지도에서 리뷰 보기 ↗</a>`;
+  let widerBtn = '';
+  if (reason === 'NO_RESTAURANT') {
+    if (opts.restaurantRadiusM !== '1500') {
+      widerBtn = '<button type="button" class="btn-primary" data-wider>맛집 반경 넓혀서 다시 뽑기</button>';
+    }
   } else {
-    aiEl.querySelector('.ai-body').innerHTML = `
-      <p class="ai-muted">지금은 AI 요약을 불러오지 못했어요</p>
-      <div class="ai-actions">
-        <button type="button" class="btn-ghost" data-ai-retry>다시 시도</button>
-        <a href="${esc(fallbackLink)}" class="btn-ghost" target="_blank" rel="noopener">구글 지도에서 리뷰 보기 ↗</a>
-      </div>`;
-    aiEl.querySelector('[data-ai-retry]').addEventListener('click', (e) => {
-      const btn = e.currentTarget;
-      btn.textContent = '불러오는 중…';
-      btn.disabled = true;
-      applySummary(pick, mySeq, loadSummaryData(pick, true));
-    });
+    if (opts.radiusKm !== '20') {
+      widerBtn = '<button type="button" class="btn-primary" data-wider>범위 넓혀서 다시 뽑기</button>';
+    }
   }
-}
 
-function renderEmpty() {
   resultEl.innerHTML = `
     <div class="empty-state">
-      <div class="swing small">${swingingLanterns()}</div>
-      <h2>조건에 맞는 곳이 없어요</h2>
-      <p class="muted">${excluded.length ? '이 근처는 다 뽑아 봤어요. ' : ''}거리를 넓히거나 조건을 바꿔 보세요.</p>
+      <div class="multi-swing small">${multiLanterns()}</div>
+      <h2>코스를 엮지 못했어요</h2>
+      <p class="muted">${msg}<br>거리를 넓히거나 조건을 바꿔 보세요.</p>
       <div class="r-actions">
-        ${opts.radiusM !== '1500' ? '<button type="button" class="btn-primary" data-wider>거리 넓혀서 다시 뽑기</button>' : ''}
+        ${widerBtn}
         <button type="button" class="btn-ghost" data-change>조건 바꾸기</button>
       </div>
     </div>`;
   resultEl.querySelector('[data-wider]')?.addEventListener('click', () => {
-    const next = opts.radiusM === '400' ? '800' : '1500';
-    document.querySelector(`[data-opt="radiusM"] button[data-v="${next}"]`).click();
+    if (reason === 'NO_RESTAURANT') {
+      const next = opts.restaurantRadiusM === '400' ? '800' : '1500';
+      document.querySelector(`[data-opt="restaurantRadiusM"] button[data-v="${next}"]`).click();
+    } else {
+      const next = opts.radiusKm === '5' ? '10' : '20';
+      document.querySelector(`[data-opt="radiusKm"] button[data-v="${next}"]`).click();
+    }
     draw();
   });
   resultEl.querySelector('[data-change]').addEventListener('click', () => {
@@ -444,48 +455,35 @@ function renderError(e) {
   show('result');
 }
 
-function swingingLanterns() {
-  const lamp = (x, delay, s = 1) => `
-    <g class="lamp" style="animation-delay:${delay}s" transform="translate(${x} 18)">
-      <g transform="scale(${s})">
-        <line x1="0" y1="0" x2="0" y2="8" stroke="#1E2A4A" stroke-width="1.5"/>
-        <rect x="-8" y="8" width="16" height="4" rx="1.5" fill="#1E2A4A"/>
-        <ellipse cx="0" cy="28" rx="15" ry="17" fill="#F2765C"/>
-        <path d="M-14 22h28M-15 28h30M-14 34h28" stroke="#fff" stroke-opacity=".35" stroke-width="1.2"/>
-        <rect x="-8" y="44" width="16" height="4" rx="1.5" fill="#1E2A4A"/>
-      </g>
-    </g>`;
-  return `<svg viewBox="0 0 200 90" aria-hidden="true">
-    <path d="M0 14 Q100 34 200 14" stroke="#1E2A4A" stroke-width="1.5" fill="none"/>
-    ${lamp(45, 0, 0.9)}${lamp(100, 0.25)}${lamp(155, 0.5, 0.9)}
-  </svg>`;
-}
-
-// ---------- 가짜 데이터 (?mock=1) ----------
-function mockDraw() {
-  const list = [
-    { placeId: 'mock-ichiran', name: '一蘭 道頓堀店本館', typeLabel: 'ラーメン屋', rating: 4.3, ratingCount: 9489, score: 4.28, priceLevel: 2, openNow: true, distanceM: 340, googleMapsUri: 'https://maps.google.com' },
-    { placeId: 'mock-tsuru', name: 'つるとんたん 宗右衛門町店', typeLabel: 'うどん屋', rating: 4.0, ratingCount: 4987, score: 3.99, priceLevel: 2, openNow: true, distanceM: 520, googleMapsUri: 'https://maps.google.com' },
-    { placeId: 'mock-kushi', name: '串かつ だるま 道頓堀店', typeLabel: '串揚げ店', rating: 4.1, ratingCount: 3120, score: 4.08, priceLevel: 1, openNow: true, distanceM: 210, googleMapsUri: 'https://maps.google.com' },
-  ].filter(x => !excluded.includes(x.placeId));
-  if (params.get('empty') === '1' || !list.length) return { pick: null, reason: 'NO_CANDIDATES' };
-  return { pick: list[0], candidateCount: 18, poolCount: 7, avgRating: 3.92, radiusM: +opts.radiusM, category: opts.category, cached: false };
-}
-async function mockDetail() {
-  await new Promise(r => setTimeout(r, 700));
-  return { nameKo: '이치란 도톤보리점 본관', reviews: [] };
-}
-async function mockSummary() {
-  await new Promise(r => setTimeout(r, 900));
-  return {
-    status: 'OK',
-    pros: ['진한 돈코츠 국물', '1인석이라 혼밥 편함'],
-    cons: ['저녁엔 대기 30분 이상'],
-    menus: ['돈코츠 라멘', '카에다마'],
-    fullKo: '손님들은 진한 돈코츠 육수와 칸막이가 있는 1인 좌석 구조를 높이 평가합니다. 매운맛과 면 익힘을 직접 선택할 수 있는 점도 인기 요소입니다. 저녁 시간대에는 대기가 30분을 넘는 경우도 있습니다.',
-    reviewSummaryText: 'Diners praise the rich tonkotsu broth and the solo dining setup with privacy screens. The customizable spice level and noodle firmness are highlights. Evening waits can exceed 30 minutes.',
-    reviewSummaryDisclosure: 'Gemini로 요약됨',
-    reviewsUri: 'https://www.google.com/maps/place/ichiran+dotonbori',
-    reviewSummaryFlagUri: 'https://www.google.com/local/content/rap/report',
+// ── 가짜 데이터 (?mock=1) ──
+function mockCourseDraw() {
+  if (params.get('empty') === '1') {
+    return { preset: opts.preset, spot: null, festival: null, restaurants: [], cafe: null, spotDbCount: 0, spotSupplemented: false, restaurantRadiusM: +opts.restaurantRadiusM, reason: 'NO_SPOT' };
+  }
+  const spots = [
+    { id: 1, placeId: 'mock-fushimi', name: '伏見稲荷大社', nameJa: '伏見稲荷大社', kind: 'SHRINE_TEMPLE', prefecture: '京都府', city: '京都市', distanceKm: 1.2, lat: 34.967, lng: 135.773, openNow: true, hoursLabel: '24시간', summary: '일본 전국 약 3만 사를 거느리는 이나리 신사의 총본사. 붉은 도리이가 산길을 따라 이어집니다.', officialUrl: null, googleMapsUri: null, fromPlaces: false },
+    { id: 2, placeId: 'mock-nijo',    name: '二条城',         nameJa: '二条城',         kind: 'HISTORIC',      prefecture: '京都府', city: '京都市', distanceKm: 2.1, lat: 35.014, lng: 135.748, openNow: true, hoursLabel: '8:45–17:00',   summary: '에도 막부의 쇼군이 교토에 머물던 이중 해자를 갖춘 성. 세계문화유산.',                              officialUrl: null, googleMapsUri: null, fromPlaces: false },
+  ];
+  const restaurants = [
+    { placeId: 'mock-soba-1', name: 'かわいそば',      typeLabel: 'そば',     rating: 4.1, ratingCount: 2300, score: 4.09, priceLevel: 1, openNow: true,  distanceM: 230, lat: 34.966, lng: 135.771, googleMapsUri: 'https://www.google.com/maps' },
+    { placeId: 'mock-ramen-1', name: '麺屋 あかつき',   typeLabel: 'ラーメン', rating: 4.3, ratingCount: 1890, score: 4.28, priceLevel: 1, openNow: true,  distanceM: 450, lat: 34.969, lng: 135.775, googleMapsUri: 'https://www.google.com/maps' },
+    { placeId: 'mock-izakaya-1', name: '三条 はなれ',  typeLabel: '居酒屋',  rating: 3.9, ratingCount: 820,  score: 3.88, priceLevel: 2, openNow: false, distanceM: 680, lat: 34.965, lng: 135.770, googleMapsUri: 'https://www.google.com/maps' },
+  ];
+  const festival = {
+    id: 1, name: '伏見稲荷もみじまつり', nameJa: '伏見稲荷もみじまつり',
+    prefecture: '京都府', city: '京都市',
+    startDate: '2026-11-15', endDate: '2026-11-30',
+    dDay: 0, ongoing: true,
+    distanceKm: 1.5, lat: 34.967, lng: 135.773,
+    summary: '단풍이 절정인 11월, 도리이 길에 등불이 켜지고 전통 가무 공연이 펼쳐져요.',
+    officialUrl: null,
   };
+
+  const spot = spots.find(s => !excluded.includes(s.placeId)) ?? spots[0];
+  const rest = restaurants.find(r => !excluded.includes(r.placeId)) ?? null;
+
+  if (opts.preset === 'FESTIVAL_RESTAURANT') {
+    return { preset: 'FESTIVAL_RESTAURANT', spot: null, festival, restaurants: rest ? [rest] : [], cafe: null, spotDbCount: 0, spotSupplemented: false, restaurantRadiusM: +opts.restaurantRadiusM, reason: rest ? null : 'NO_RESTAURANT' };
+  }
+  return { preset: 'SPOT_RESTAURANT', spot, festival: null, restaurants: rest ? [rest] : [], cafe: null, spotDbCount: spots.length, spotSupplemented: false, restaurantRadiusM: +opts.restaurantRadiusM, reason: rest ? null : 'NO_RESTAURANT' };
 }

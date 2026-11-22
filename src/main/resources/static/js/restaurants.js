@@ -3,8 +3,8 @@
 import { api } from './api.js';
 import { renderHeader } from './header.js';
 import { mountSearchBar } from './searchbar.js';
-import { mountSheet } from './sheet.js';
-import { icons, esc } from './icons.js';
+import { openRestaurantSheet as openDetail, priceLabel, walkLabel, typeChip } from './rsheet.js';
+import { icons, esc, dpLight } from './icons.js';
 
 renderHeader();
 document.getElementById('back-link').insertAdjacentHTML('afterbegin', icons.back());
@@ -57,13 +57,13 @@ const fixLat = Number(qp.get('lat'));
 const fixLng = Number(qp.get('lng'));
 if (qp.has('lat') && qp.has('lng') && fixLat > 20 && fixLat < 46 && fixLng > 122 && fixLng < 154) {
   loc = { lat: fixLat, lng: fixLng };
-  const near = qp.get('near') || '축제장';
+  const near = qp.get('near') || '그곳';
   document.getElementById('search-bar').innerHTML = `
     <div class="near-pill">
-      <span>🏮 <b>${esc(near)}</b> 근처</span>
+      <span>📍 <b>${esc(near)}</b> 근처</span>
       <a href="/restaurants.html">내 위치로 보기</a>
     </div>`;
-  document.querySelector('.draw-sub').textContent = '축제장에서 걸어갈 만한 곳을 보정 평점 순으로 보여 드려요.';
+  document.querySelector('.draw-sub').textContent = '그곳에서 걸어갈 만한 곳을 보정 평점 순으로 보여 드려요.';
   load();
 } else {
   mountSearchBar(document.getElementById('search-bar'), (state) => {
@@ -73,14 +73,6 @@ if (qp.has('lat') && qp.has('lng') && fixLat > 20 && fixLat < 46 && fixLng > 122
 }
 
 // ---------- 목록 ----------
-function priceLabel(level) {
-  if (level == null) return '';
-  return level === 0 ? '무료' : '¥'.repeat(level);
-}
-function walkLabel(m) {
-  const min = Math.max(1, Math.round(m / 80));
-  return `도보 ${min}분 · ${m >= 1000 ? (m / 1000).toFixed(1) + 'km' : m + 'm'}`;
-}
 
 async function load() {
   if (!loc && !MOCK) return;
@@ -125,7 +117,7 @@ async function load() {
       <span class="r-main">
         <span class="r-title" lang="ja">${esc(r.name)}</span>
         <span class="r-sub">
-          ${r.typeLabel ? `<span lang="ja">${esc(r.typeLabel)}</span>` : ''}
+          ${typeChip(r, 'r-type')}
           ${r.openNow ? '<span class="open-dot">영업 중</span>' : ''}
         </span>
         <span class="r-meta">
@@ -144,100 +136,88 @@ listEl.addEventListener('click', (e) => {
   openDetail(lastData.restaurants[Number(item.dataset.i)]);
 });
 
-// ---------- 상세 시트 ----------
-async function openDetail(p) {
-  const stats = [
-    p.rating != null ? `<span class="star">★ ${p.rating.toFixed(1)}</span> <span class="muted">(${p.ratingCount.toLocaleString()})</span>` : '',
-    walkLabel(p.distanceM),
-    priceLabel(p.priceLevel),
-  ].filter(Boolean).join('<span class="dot">·</span>');
+// ── 뽑기 패널 ──
+const dpDrawBtn = document.getElementById('dp-draw-btn');
+const dpResult  = document.getElementById('dp-result');
+let dpExcluded  = [];
 
-  const body = `
-    <div class="result-top">
-      ${p.typeLabel ? `<span class="type-chip" lang="ja">${esc(p.typeLabel)}</span>` : ''}
-      ${p.openNow ? '<span class="open-badge">영업 중</span>' : ''}
-    </div>
-    <h3 class="r-name" lang="ja">${esc(p.name)}</h3>
-    <p class="r-name-ko" data-name-ko></p>
-    <div class="r-stats">${stats}</div>
-    <section class="ai-box" data-ai>
-      <div class="ai-head">리뷰 한눈에 <span class="ai-tag">AI 요약</span></div>
-      <div class="ai-body"><div class="sk-line"></div><div class="sk-line short"></div></div>
-    </section>
-    <section class="reviews" data-reviews></section>
-    <p class="attribution">가게 정보·리뷰: Google 지도</p>`;
-  const footer = `
-    <div class="r-actions" style="margin-top:0">
-      <a class="btn-primary" href="${esc(p.googleMapsUri)}" target="_blank" rel="noopener">${icons.map('icon')} 구글 지도에서 길찾기</a>
-      <a class="btn-sub" href="https://tabelog.com/rstLst/?vs=1&sk=${encodeURIComponent(p.name)}&sw=${encodeURIComponent(p.name)}" target="_blank" rel="noopener"><span lang="ja">食べログ</span>에서 보기 ↗</a>
-    </div>`;
-  const wrap = mountSheet('가게 정보', body, { footer });
+dpDrawBtn?.addEventListener('click', () => drawOne());
 
-  const detailP = MOCK ? mockDetail() : api(`/api/restaurants/${encodeURIComponent(p.placeId)}`, { auth: false }).catch(() => null);
+async function drawOne() {
+  if (!loc && !MOCK) {
+    dpDrawBtn.animate([{ transform: 'translateX(-4px)' }, { transform: 'translateX(4px)' }, { transform: 'none' }], { duration: 240 });
+    return;
+  }
+  dpDrawBtn.textContent = '뽑는 중…';
+  dpDrawBtn.closest('.draw-panel')?.classList.add('is-drawing');
+  dpDrawBtn.disabled = true;
 
-  const d = await detailP;
-  if (!wrap.isConnected) return;
-  if (d?.nameKo && d.nameKo !== p.name) wrap.querySelector('[data-name-ko]').textContent = d.nameKo;
-  const reviews = (d?.reviews || []).slice(0, 2);
-  wrap.querySelector('[data-reviews]').innerHTML = reviews.length ? `
-    <div class="rv-head">최근 리뷰</div>
-    ${reviews.map(r => `
-      <div class="rv">
-        <div class="rv-meta">
-          ${r.authorUri ? `<a href="${esc(r.authorUri)}" target="_blank" rel="noopener">${esc(r.author)}</a>` : esc(r.author)}
-          <span class="star">${'★'.repeat(Math.round(r.rating || 0))}</span>
-          <span class="muted">${esc(r.relativeTime || '')}</span>
-        </div>
-        <p class="rv-text">${esc(r.text)}</p>
-      </div>`).join('')}` : '';
-
-  const s = await new Promise(resolve => {
-    if (MOCK) { mockSummary().then(resolve); return; }
-    setTimeout(() => {
-      if (!wrap.isConnected) { resolve(null); return; }
-      api(`/api/restaurants/${encodeURIComponent(p.placeId)}/summary`, { auth: false })
-        .catch(() => null)
-        .then(resolve);
-    }, 1500);
+  const q = new URLSearchParams({
+    lat: (loc?.lat ?? 34.6687).toFixed(6),
+    lng: (loc?.lng ?? 135.5013).toFixed(6),
+    radiusM: opts.radiusM,
+    category: opts.category.join(','),
+    openNow: String(opts.openNow),
   });
-  if (!wrap.isConnected) return;
-  applySheetSummary(wrap, p.placeId, s, s?.reviewsUri || p.googleMapsUri);
+  if (dpExcluded.length) q.set('exclude', dpExcluded.join(','));
+
+  let data;
+  try {
+    data = MOCK ? mockDrawOne() : await api(`/api/restaurants/draw?${q}`, { auth: false });
+  } catch (e) {
+    dpResult.innerHTML = `<p class="muted dp-msg">${esc(e.message)}</p>`;
+    dpResult.hidden = false;
+    dpDrawBtn.textContent = '뽑기';
+    dpDrawBtn.disabled = false;
+    dpDrawBtn.closest('.draw-panel')?.classList.remove('is-drawing');
+    return;
+  }
+  dpDrawBtn.textContent = '다시 뽑기';
+  dpDrawBtn.disabled = false;
+  dpDrawBtn.closest('.draw-panel')?.classList.remove('is-drawing');
+
+  if (!data?.pick) {
+    dpResult.innerHTML = `<p class="muted dp-msg">조건에 맞는 곳이 없어요.${dpExcluded.length ? ' 거리를 넓혀보세요.' : ''}</p>`;
+    dpResult.hidden = false;
+    return;
+  }
+
+  const p = data.pick;
+  dpExcluded.push(p.placeId);
+  if (dpExcluded.length > 10) dpExcluded = dpExcluded.slice(-10);
+
+  dpResult.innerHTML = `
+    <div class="dp-pick">
+      <div class="dp-pick-top">
+        <span class="dp-seal" lang="ja">縁</span>
+        ${typeChip(p)}
+        ${p.openNow ? '<span class="open-badge">영업 중</span>' : ''}
+      </div>
+      <div class="dp-pick-name" lang="ja">${esc(p.name)}</div>
+      <div class="dp-pick-meta">
+        ${p.rating != null ? `<span class="star">★ ${p.rating.toFixed(1)}</span>` : ''}
+        <span>${walkLabel(p.distanceM)}</span>
+        ${p.priceLevel != null ? `<span>${priceLabel(p.priceLevel)}</span>` : ''}
+      </div>
+      <div class="dp-pick-actions">
+        <button type="button" class="dp-main" data-dp-detail>가게 공개 · AI 요약</button>
+        ${p.googleMapsUri ? `<a class="dp-ico" href="${esc(p.googleMapsUri)}" target="_blank" rel="noopener" aria-label="구글 지도" title="구글 지도">${icons.map('icon')}</a>` : ''}
+        <button type="button" class="dp-ico" data-dp-swap aria-label="다시 뽑기" title="다시 뽑기">${icons.dice('icon')}</button>
+      </div>
+    </div>`;
+  dpResult.hidden = false;
+  dpLight();
+  dpResult.querySelector('[data-dp-swap]').addEventListener('click', () => drawOne());
+  dpResult.querySelector('[data-dp-detail]').addEventListener('click', () => openDetail(p));
 }
 
-async function applySheetSummary(wrap, placeId, s, fallbackLink) {
-  const aiEl = wrap.querySelector('[data-ai]');
-  if (!aiEl) return;
-
-  if (s?.status === 'OK' && (s.pros?.length || s.cons?.length || s.menus?.length)) {
-    const row = (label, cls, items) => items?.length
-      ? `<div class="ai-row ${cls}"><span class="ai-k">${label}</span><span>${items.map(esc).join(', ')}</span></div>` : '';
-    const attr = s.reviewsUri
-      ? `<p class="ai-attr">Google 리뷰 요약 기반 · ${esc(s.reviewSummaryDisclosure || '')} · <a href="${esc(s.reviewsUri)}" target="_blank" rel="noopener">리뷰 보기 ↗</a></p>` : '';
-    const fullText = s.fullKo || s.reviewSummaryText;
-    const orig = fullText
-      ? `<details class="ai-orig"><summary>요약 전문 보기</summary><p>${esc(fullText)}</p><p class="ai-attr">Google 리뷰 요약을 한국어로 번역했어요${s.reviewSummaryFlagUri ? ` · <a href="${esc(s.reviewSummaryFlagUri)}" target="_blank" rel="noopener" class="ai-flag">신고</a>` : ''}</p></details>` : '';
-    aiEl.querySelector('.ai-body').innerHTML =
-      row('좋아요', 'pro', s.pros) + row('참고', 'con', s.cons) + row('추천 메뉴', 'menu', s.menus) + attr + orig;
-  } else if (s?.status === 'NO_SOURCE') {
-    aiEl.querySelector('.ai-body').innerHTML = `
-      <p class="ai-muted">리뷰가 아직 적어서 AI 요약이 없어요</p>
-      <a href="${esc(fallbackLink)}" class="btn-ghost" target="_blank" rel="noopener">구글 지도에서 리뷰 보기 ↗</a>`;
-  } else {
-    aiEl.querySelector('.ai-body').innerHTML = `
-      <p class="ai-muted">지금은 AI 요약을 불러오지 못했어요</p>
-      <div class="ai-actions">
-        <button type="button" class="btn-ghost" data-ai-retry>다시 시도</button>
-        <a href="${esc(fallbackLink)}" class="btn-ghost" target="_blank" rel="noopener">구글 지도에서 리뷰 보기 ↗</a>
-      </div>`;
-    aiEl.querySelector('[data-ai-retry]').addEventListener('click', async (e) => {
-      const btn = e.currentTarget;
-      btn.textContent = '불러오는 중…';
-      btn.disabled = true;
-      const retryS = MOCK ? await mockSummary()
-        : await api(`/api/restaurants/${encodeURIComponent(placeId)}/summary?retry=true`, { auth: false }).catch(() => null);
-      applySheetSummary(wrap, placeId, retryS, fallbackLink);
-    });
-  }
+function mockDrawOne() {
+  const pool = [
+    { placeId: 'mock-draw-0', name: '一蘭 道頓堀店本館', typeLabel: 'ラーメン屋', rating: 4.3, ratingCount: 9489, priceLevel: 2, openNow: true, distanceM: 340, googleMapsUri: 'https://maps.google.com' },
+    { placeId: 'mock-draw-1', name: '道頓堀 今井',        typeLabel: 'うどん屋',    rating: 4.2, ratingCount: 2210, priceLevel: 2, openNow: true, distanceM: 450, googleMapsUri: 'https://maps.google.com' },
+  ].filter(x => !dpExcluded.includes(x.placeId));
+  if (!pool.length) return { pick: null };
+  return { pick: pool[0], candidateCount: 12, poolCount: 5, radiusM: +opts.radiusM };
 }
 
 // ---------- 가짜 데이터 (?mock=1) ----------
@@ -255,22 +235,4 @@ function mockNearby() {
   }));
   const list = opts.sort === 'DISTANCE' ? [...base].sort((a, b) => a.distanceM - b.distanceM) : base;
   return { restaurants: list, count: list.length, avgRating: 4.02, radiusM: +opts.radiusM, cached: false };
-}
-async function mockDetail() {
-  await new Promise(r => setTimeout(r, 600));
-  return { nameKo: '이치란 도톤보리점 본관', reviews: [] };
-}
-async function mockSummary() {
-  await new Promise(r => setTimeout(r, 900));
-  return {
-    status: 'OK',
-    pros: ['진한 돈코츠 국물', '1인석이라 혼밥 편함'],
-    cons: ['저녁엔 대기 30분 이상'],
-    menus: ['돈코츠 라멘', '카에다마'],
-    fullKo: '손님들은 진한 돈코츠 육수와 칸막이가 있는 1인 좌석 구조를 높이 평가합니다. 매운맛과 면 익힘을 직접 선택할 수 있는 점도 인기 요소입니다. 저녁 시간대에는 대기가 30분을 넘는 경우도 있습니다.',
-    reviewSummaryText: 'Diners praise the rich tonkotsu broth and the solo dining setup with privacy screens. The customizable spice level and noodle firmness are highlights. Evening waits can exceed 30 minutes.',
-    reviewSummaryDisclosure: 'Gemini로 요약됨',
-    reviewsUri: 'https://www.google.com/maps/place/ichiran+dotonbori',
-    reviewSummaryFlagUri: 'https://www.google.com/local/content/rap/report',
-  };
 }

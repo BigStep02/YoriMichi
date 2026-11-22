@@ -16,7 +16,7 @@ function startStage() {
     const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     // ?scene=ema 처럼 주소로 무대를 바꿔서 미리 볼 수 있음 (디자인 확인용)
     const override = new URLSearchParams(location.search).get('scene');
-    const SCENES = ['street', 'yatai', 'yagura', 'sando', 'shrine', 'alley', 'river', 'ema', 'goldfish', 'moon'];
+    const SCENES = ['street', 'yatai', 'yagura', 'sando', 'shrine', 'alley', 'river', 'ema', 'goldfish', 'moon', 'momiji'];
     const scene = SCENES.includes(override) ? override : (canvas.dataset.scene || 'street');
     stage = acquireStage(canvas, { scene, lite: true, calm });
     if (canvas.dataset.glyph && stage.firstVisit) setTimeout(() => stage.introGlyph(canvas.dataset.glyph), 800);
