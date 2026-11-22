@@ -8,6 +8,8 @@ services:
       ORACLE_PASSWORD: ${ORACLE_PASSWORD}
       APP_USER: framezero
       APP_USER_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "127.0.0.1:1521:1521"   # 서버 안에서만 열림 (외부 차단). IntelliJ에서는 SSH 터널로 접속
     volumes:
       - oracle-data:/opt/oracle/oradata
     healthcheck:
