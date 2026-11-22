@@ -8,5 +8,6 @@ public enum SpotKind {
     VIEWPOINT,      // 전망·경치
     HISTORIC,       // 성·옛 거리
     MUSEUM,         // 박물관·미술관·기념관
-    MARKET          // 시장
+    MARKET,         // 시장
+    ONSEN           // 온천·공중목욕탕
 }
