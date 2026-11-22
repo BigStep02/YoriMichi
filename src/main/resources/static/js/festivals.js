@@ -5,6 +5,7 @@ import { mountSearchBar } from './searchbar.js';
 import { formatRange, dDayLabel, todayTokyo } from './dates.js';
 import { regionKo } from './regions.js';
 import { icons, esc, dpLight } from './icons.js';
+import { openFestivalSheet } from './festsheet.js';
 
 renderHeader();
 document.getElementById('back-link').insertAdjacentHTML('afterbegin', icons.back());
@@ -151,7 +152,7 @@ function drawOne() {
     <div class="dp-pick">
       ${card(f, lastFallback)}
       <div class="dp-pick-actions">
-        <a class="dp-main" href="/festival.html?id=${encodeURIComponent(f.id)}">축제 자세히 보기</a>
+        <a class="dp-main" data-fest-open href="/festival.html?id=${encodeURIComponent(f.id)}">축제 자세히 보기</a>
         <a class="dp-ico" href="/restaurants.html?lat=${f.lat}&lng=${f.lng}&near=${encodeURIComponent(f.name)}" aria-label="근처 맛집" title="근처 맛집">${icons.fork('icon')}</a>
         <a class="dp-ico dp-ico-txt" href="/spots.html?lat=${f.lat}&lng=${f.lng}&near=${encodeURIComponent(f.name)}" aria-label="근처 놀거리" title="근처 놀거리">⛩</a>
       </div>
@@ -160,3 +161,19 @@ function drawOne() {
   dpLight();
   dpDrawBtn.textContent = '다시 뽑기';
 }
+
+// 축제 상세: 맛집·놀거리처럼 시트로 열기 (새 탭·Ctrl 클릭은 원래 페이지로)
+function openFromLink(e) {
+  const a = e.target.closest('a.f-item, a[data-fest-open]');
+  if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+  const id = new URL(a.href, location.href).searchParams.get('id');
+  const f = lastList.find(x => String(x.id) === id);
+  if (!f) return;
+  e.preventDefault();
+  openFestivalSheet(f);
+}
+// router.js가 document 캡처 단계에서 링크를 가로채므로, 그보다 먼저 도는 window 캡처에서 처리
+window.addEventListener('click', (e) => {
+  if (!resultsEl.isConnected || !(resultsEl.contains(e.target) || dpResult.contains(e.target))) return;
+  openFromLink(e);
+}, true);
