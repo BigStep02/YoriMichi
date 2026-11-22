@@ -9,7 +9,12 @@ const KEY_DEV = 'yori-dev';          // 로그인한 계정이 개발자면 '1' 
 /** 개발자 계정 여부 저장. 개발자가 아니게 되면 mock도 같이 끔 */
 export function setDev(on) {
   try {
-    if (on) localStorage.setItem(KEY_DEV, '1');
+    if (on) {
+      const was = localStorage.getItem(KEY_DEV) === '1';
+      localStorage.setItem(KEY_DEV, '1');
+      // 개발자 확인 전에 ?mock=1 로 들어왔으면, 확인된 순간 한 번 새로 불러와서 바로 mock 적용
+      if (!was && new URLSearchParams(location.search).get('mock') === '1') location.reload();
+    }
     else { localStorage.removeItem(KEY_DEV); localStorage.removeItem(KEY_DEVICE); sessionStorage.removeItem(KEY); document.getElementById('mock-badge')?.remove(); }
   } catch {}
 }
