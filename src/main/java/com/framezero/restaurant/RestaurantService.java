@@ -38,14 +38,14 @@ public class RestaurantService {
     public DrawResponse draw(double lat, double lng, int radiusM, List<Category> categories,
                              boolean openNow, Integer maxPrice, List<String> excludeList) {
         int effectiveRadius = radiusM;
-        var load = loadCandidates(lat, lng, effectiveRadius, categories);
+        var load = loadCandidates(lat, lng, effectiveRadius, categories, true);
 
         Set<String> excludeIds = Set.copyOf(excludeList);
         RestaurantPicker.PickResult result = picker.pick(load.candidates(), openNow, maxPrice, excludeIds);
 
         if (result.pick() == null && effectiveRadius < 1500) {
             int expanded = effectiveRadius <= 400 ? 800 : 1500;
-            var expandedLoad = loadCandidates(lat, lng, expanded, categories);
+            var expandedLoad = loadCandidates(lat, lng, expanded, categories, true);
             var expandedResult = picker.pick(expandedLoad.candidates(), openNow, maxPrice, excludeIds);
             if (expandedResult.pick() != null) {
                 load = expandedLoad;
@@ -212,11 +212,20 @@ public class RestaurantService {
     private record CandidateLoad(List<RestaurantPicker.Candidate> candidates, boolean cached) {}
 
     private CandidateLoad loadCandidates(double lat, double lng, int radiusM, List<Category> categories) {
+        return loadCandidates(lat, lng, radiusM, categories, false);
+    }
+
+    private CandidateLoad loadCandidates(double lat, double lng, int radiusM, List<Category> categories, boolean allowReuse) {
         String cacheKey = cache.nearbyKey(lat, lng, radiusM, categories);
         List<RestaurantPicker.Candidate> candidates = cache.getNearby(cacheKey);
         if (candidates != null) return new CandidateLoad(candidates, true);
+        if (allowReuse) {   // 뽑기에서만: 목록은 20곳이 다 보여야 하므로 재사용 안 함
+            candidates = cache.findCovering(lat, lng, radiusM, categories);
+            if (candidates != null) return new CandidateLoad(candidates, true);
+        }
         candidates = placesClient.searchNearby(lat, lng, radiusM, categories);
         cache.putNearby(cacheKey, candidates);
+        cache.putArea(lat, lng, radiusM, categories, candidates);
         cache.putNames(candidates);
         return new CandidateLoad(candidates, false);
     }

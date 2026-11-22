@@ -209,8 +209,24 @@ public class PlacesClient {
     }
 
     /** 명소 보충용 Nearby 검색. API 키 없거나 실패 시 빈 목록 반환 (보충이므로 예외 발생 안 함). */
+    // 명소 보충 결과 캐시 (30분, 좌표 약 100m 단위) — 같은 지역에서 코스를 다시 엮을 때 재호출 방지
+    private record SpotEntry(List<RestaurantPicker.Candidate> list, long expireAt) {}
+    private final java.util.concurrent.ConcurrentHashMap<String, SpotEntry> spotCache = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final long SPOT_TTL_MS = 30 * 60 * 1000L;
+
     public List<RestaurantPicker.Candidate> searchNearbySpots(double lat, double lng, int radiusM) {
         if (isKeyMissing()) return List.of();
+        String key = "%.3f,%.3f,%d".formatted(lat, lng, radiusM);
+        long now = System.currentTimeMillis();
+        SpotEntry hit = spotCache.get(key);
+        if (hit != null && hit.expireAt() > now) return hit.list();
+        if (spotCache.size() > 300) spotCache.entrySet().removeIf(e -> e.getValue().expireAt() <= now);
+        List<RestaurantPicker.Candidate> result = fetchNearbySpots(lat, lng, radiusM);
+        if (!result.isEmpty()) spotCache.put(key, new SpotEntry(result, now + SPOT_TTL_MS));   // 실패(빈 목록)는 캐시하지 않음
+        return result;
+    }
+
+    private List<RestaurantPicker.Candidate> fetchNearbySpots(double lat, double lng, int radiusM) {
 
         var body = Map.of(
                 "includedTypes", SPOT_TYPES,

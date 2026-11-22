@@ -1,5 +1,6 @@
 package com.framezero.restaurant.cache;
 
+import com.framezero.common.GeoUtils;
 import com.framezero.restaurant.Category;
 import com.framezero.restaurant.RestaurantPicker;
 import com.framezero.restaurant.dto.RestaurantDetailDto;
@@ -11,6 +12,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.stream.Collectors;
 
 @Component
@@ -50,6 +52,43 @@ public class RestaurantCache {
     public void putNearby(String key, List<RestaurantPicker.Candidate> candidates) {
         evict(nearbyCache);
         nearbyCache.put(key, new Entry(candidates, Instant.now().plus(NEARBY_TTL)));
+    }
+
+    // ---- 범위 재사용: 이미 검색한 원이 새 원을 통째로 덮으면 그 결과에서 거리로 걸러 씀 (Nearby 호출 절약) ----
+    private record Area(double lat, double lng, int radiusM, String catKey,
+                        List<RestaurantPicker.Candidate> list, Instant expireAt) {
+        boolean alive() { return Instant.now().isBefore(expireAt); }
+    }
+    private static final int MAX_AREAS = 300;
+    private static final int MIN_REUSE = 10;  // 걸러낸 후보가 이보다 적으면 새로 검색 (뽑기 다양성 유지)
+    private final ConcurrentLinkedDeque<Area> areas = new ConcurrentLinkedDeque<>();
+
+    private static String catKey(List<Category> categories) {
+        return categories.stream().map(Enum::name).collect(Collectors.joining(","));
+    }
+
+    public void putArea(double lat, double lng, int radiusM, List<Category> categories,
+                        List<RestaurantPicker.Candidate> candidates) {
+        areas.removeIf(a -> !a.alive());
+        while (areas.size() >= MAX_AREAS) areas.pollFirst();
+        areas.addLast(new Area(lat, lng, radiusM, catKey(categories), candidates, Instant.now().plus(NEARBY_TTL)));
+    }
+
+    /** 새 원(lat,lng,radiusM)을 완전히 덮는 캐시 원이 있으면 그 후보 중 새 원 안의 것만. 없거나 적으면 null */
+    public List<RestaurantPicker.Candidate> findCovering(double lat, double lng, int radiusM, List<Category> categories) {
+        String ck = catKey(categories);
+        for (var it = areas.descendingIterator(); it.hasNext(); ) {
+            Area a = it.next();
+            if (!a.alive() || !a.catKey().equals(ck) || a.radiusM() < radiusM) continue;
+            if (radiusM * 2 < a.radiusM()) continue;   // 너무 넓은 검색의 일부만 쓰면 유명한 곳만 남으므로 제외
+            double dM = GeoUtils.distanceKm(lat, lng, a.lat(), a.lng()) * 1000;
+            if (dM + radiusM > a.radiusM()) continue;
+            var inside = a.list().stream()
+                    .filter(c -> GeoUtils.distanceKm(lat, lng, c.lat(), c.lng()) * 1000 <= radiusM)
+                    .toList();
+            if (inside.size() >= MIN_REUSE) return inside;
+        }
+        return null;
     }
 
     public RestaurantDetailDto getDetail(String placeId) {
