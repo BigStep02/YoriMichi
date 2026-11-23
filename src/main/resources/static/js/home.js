@@ -1,9 +1,10 @@
-// 홈: 지역·날짜 바 + 축제 링크 + 곧 열리는 근처 축제 2개
+// 홈: 지역·날짜 바 + 카테고리 칸 + 지금 근처 寄り道(축제 + 영업 중 놀거리 섞어서 3개)
 import { api } from './api.js';
 import { renderHeader } from './header.js';
 import { mountSearchBar } from './searchbar.js';
 import { todayTokyo, addDays, dDayLabel } from './dates.js';
 import { icons, esc } from './icons.js';
+import { festRow, spotRow, sortFests, sortSpots } from './nearrows.js';
 import { acquireStage, webglAvailable } from './hanabi/hanabi-stage.js';
 
 renderHeader();
@@ -72,11 +73,15 @@ document.querySelectorAll('[data-icon]').forEach(el => {
   if (wrapCls) el.innerHTML = svg; else el.outerHTML = svg;
 });
 
-const festivalLinks = [document.getElementById('festival-link'), document.getElementById('festival-all')];
+const festivalLinks = [document.getElementById('festival-link')];
 const upcomingEl = document.getElementById('upcoming');
 
 const UPCOMING_RADIUS_KM = 50;
-const UPCOMING_DAYS = 90;
+const UPCOMING_DAYS = 30;  // '지금 근처' 느낌: 한 달 안 축제만
+const SPOT_RADIUS_KM = 10;
+const PICKS = 3;          // 칸 수
+const FEST_SOON_DAYS = 14; // 2주 안에 2개 이상이면 축제 2칸, 아니면 1칸
+let spotList = [];
 let seq = 0;
 
 function updateLinks({ from, to }) {
@@ -84,51 +89,44 @@ function updateLinks({ from, to }) {
   festivalLinks.forEach(a => { a.href = href; });
 }
 
-function row(f, i) {
-  const [, m, d] = f.startDate.split('-').map(Number);
-  const badge = f.ongoing || f.dDay >= 0
-    ? `<span class="mini-badge">${dDayLabel(f.dDay, f.ongoing)}</span>` : '';
-  return `
-    <a class="next-card${i % 2 ? ' alt' : ''}" href="/festival.html?id=${encodeURIComponent(f.id)}">
-      <div class="date-box"><div class="m">${m}월</div><div class="d">${d}</div></div>
-      <div class="info">
-        <div class="t">${esc(f.name)}</div>
-        ${f.nameJa ? `<div class="ja" lang="ja">${esc(f.nameJa)}</div>` : ''}
-        <div class="meta">${badge}${esc(f.city || f.prefecture || '')} · ${Number(f.distanceKm).toFixed(1)}km</div>
-      </div>
-      ${icons.chevronRight()}
-    </a>`;
+/** 놀거리: 영업 중 먼저, 종류가 겹치지 않게 가까운 순으로 n개 */
+function pickSpots(list, n) {
+  const sorted = sortSpots(list);
+  const out = [], kinds = new Set();
+  for (const s of sorted) { if (out.length < n && !kinds.has(s.kind)) { out.push(s); kinds.add(s.kind); } }
+  for (const s of sorted) { if (out.length < n && !out.includes(s)) out.push(s); }
+  return out;
 }
 
 async function loadUpcoming(loc) {
   const mySeq = ++seq;
-  upcomingEl.innerHTML = '<div class="next-card skeleton-row" aria-hidden="true"></div>';
+  upcomingEl.innerHTML = '<div class="next-card skeleton-row" aria-hidden="true"></div>'.repeat(2);
   const from = todayTokyo();
-  const q = new URLSearchParams({
-    lat: loc.lat.toFixed(6), lng: loc.lng.toFixed(6),
-    radiusKm: UPCOMING_RADIUS_KM, from, to: addDays(from, UPCOMING_DAYS),
-  });
-  try {
-    const data = await api(`/api/festivals?${q}`);
-    if (mySeq !== seq) return;
-    const list = (data.festivals || [])
-      .slice()
-      .sort((a, b) => a.startDate.localeCompare(b.startDate) || a.distanceKm - b.distanceKm)
-      .slice(0, 2);
-    upcomingEl.innerHTML = list.length
-      ? list.map(row).join('')
-      : '<p class="muted empty-line">근처에 곧 열리는 축제가 없어요. 위치를 바꿔 보세요.</p>';
-  } catch (e) {
-    if (mySeq !== seq) return;
-    upcomingEl.innerHTML = `<p class="muted empty-line">${esc(e.message)}</p>`;
-  }
+  const lat = loc.lat.toFixed(6), lng = loc.lng.toFixed(6);
+  const fq = new URLSearchParams({ lat, lng, radiusKm: UPCOMING_RADIUS_KM, from, to: addDays(from, UPCOMING_DAYS) });
+  const sq = new URLSearchParams({ lat, lng, radiusKm: SPOT_RADIUS_KM });
+  // 둘 다 자체 DB라 Places 비용 0
+  const [fr, sr] = await Promise.allSettled([api(`/api/festivals?${fq}`), api(`/api/spots?${sq}`, { auth: false })]);
+  if (mySeq !== seq) return;
+
+  const fests = fr.status === 'fulfilled'
+    ? sortFests(fr.value.festivals || [])
+    : [];
+  const soon = fests.filter(f => f.ongoing || (f.dDay ?? 99) <= FEST_SOON_DAYS).length;
+  const festPick = fests.slice(0, soon >= 2 ? 2 : 1);
+  spotList = pickSpots(sr.status === 'fulfilled' ? (sr.value.spots || []) : [], PICKS - festPick.length);
+
+  const rows = [...festPick.map(festRow), ...spotList.map(spotRow)];
+  if (rows.length) { upcomingEl.innerHTML = rows.join(''); return; }
+  const err = fr.status === 'rejected' && sr.status === 'rejected' ? fr.reason?.message : '';
+  upcomingEl.innerHTML = `<p class="muted empty-line">${esc(err || '근처에 들를 만한 곳이 아직 없어요. 위치를 바꿔 보세요.')}</p>`;
 }
 
 let lastLocKey = '';
 const bar = mountSearchBar(document.getElementById('search-bar'), (state) => {
   updateLinks(state);
   const key = `${state.loc.lat},${state.loc.lng}`;
-  if (key !== lastLocKey) { // 날짜만 바뀌면 다시 안 불러옴 (곧 열리는 축제는 오늘 기준)
+  if (key !== lastLocKey) { // 날짜만 바뀌면 다시 안 불러옴 (오늘 기준)
     lastLocKey = key;
     loadUpcoming(state.loc);
   }

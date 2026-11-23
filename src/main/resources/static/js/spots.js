@@ -3,7 +3,7 @@
 import { api } from './api.js';
 import { renderHeader } from './header.js';
 import { mountSearchBar } from './searchbar.js';
-import { icons, esc, dpLight } from './icons.js';
+import { icons, esc, dpRun, dpShow } from './icons.js';
 import { regionKo } from './regions.js';
 import { kindLabel, kindIcon, openSpotSheet } from './spotsheet.js';
 
@@ -150,11 +150,12 @@ listEl.addEventListener('click', (e) => {
 // ---------- 뽑기 ----------
 dpBtn.addEventListener('click', () => drawOne());
 
-function drawOne() {
+let dpBusy = false;
+async function drawOne() {
+  if (dpBusy) return;
   const openList = lastList.filter(s => s.openNow === true);   // 뽑기는 지금 영업 중인 곳만
   if (!openList.length) {
-    dpResult.innerHTML = `<p class="muted dp-msg">${lastList.length ? '지금 영업 중인 놀거리가 없어요. 범위를 넓혀 보세요.' : '뽑을 놀거리가 없어요. 범위나 위치를 바꿔 보세요.'}</p>`;
-    dpResult.hidden = false;
+    dpShow(dpResult, `<p class="muted dp-msg">${lastList.length ? '지금 영업 중인 놀거리가 없어요. 범위를 넓혀 보세요.' : '뽑을 놀거리가 없어요. 범위나 위치를 바꿔 보세요.'}</p>`, false);
     return;
   }
   let pool = openList.filter(s => !dpSeen.includes(s.id));
@@ -162,7 +163,14 @@ function drawOne() {
   const s = pool[Math.floor(Math.random() * pool.length)];
   dpSeen.push(s.id);
 
-  dpResult.innerHTML = `
+  dpBusy = true;
+  dpBtn.disabled = true;
+  dpBtn.textContent = '뽑는 중…';
+  await dpRun(() => null);
+  dpBusy = false;
+  dpBtn.disabled = false;
+
+  dpShow(dpResult, `
     <div class="dp-pick">
       <div class="dp-pick-top">
         <span class="dp-seal" lang="ja">縁</span>
@@ -181,9 +189,7 @@ function drawOne() {
         <a class="dp-ico" href="/restaurants.html?lat=${s.lat}&lng=${s.lng}&near=${encodeURIComponent(s.name)}" aria-label="근처 맛집" title="근처 맛집">${icons.fork('icon')}</a>
         <a class="dp-ico" href="/festivals.html?lat=${s.lat}&lng=${s.lng}&near=${encodeURIComponent(s.name)}" aria-label="근처 축제" title="근처 축제">${icons.lantern('icon')}</a>
       </div>
-    </div>`;
-  dpResult.hidden = false;
-  dpLight();
+    </div>`);
   dpBtn.textContent = '다시 뽑기';
   dpResult.querySelector('[data-dp-detail]').addEventListener('click', () => openSpotSheet(s));
 }

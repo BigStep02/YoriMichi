@@ -4,7 +4,7 @@ import { api } from './api.js';
 import { renderHeader } from './header.js';
 import { mountSearchBar } from './searchbar.js';
 import { openRestaurantSheet as openDetail, priceLabel, walkLabel, typeChip } from './rsheet.js';
-import { icons, esc, dpLight } from './icons.js';
+import { icons, esc, dpRun, dpShow } from './icons.js';
 import { isMock } from './mock.js';
 
 renderHeader();
@@ -145,12 +145,12 @@ let dpExcluded  = [];
 dpDrawBtn?.addEventListener('click', () => drawOne());
 
 async function drawOne() {
+  if (dpDrawBtn.disabled) return;   // 뽑는 중 중복 클릭 방지
   if (!loc && !MOCK) {
     dpDrawBtn.animate([{ transform: 'translateX(-4px)' }, { transform: 'translateX(4px)' }, { transform: 'none' }], { duration: 240 });
     return;
   }
   dpDrawBtn.textContent = '뽑는 중…';
-  dpDrawBtn.closest('.draw-panel')?.classList.add('is-drawing');
   dpDrawBtn.disabled = true;
 
   const q = new URLSearchParams({
@@ -164,22 +164,18 @@ async function drawOne() {
 
   let data;
   try {
-    data = MOCK ? mockDrawOne() : await api(`/api/restaurants/draw?${q}`, { auth: false });
+    data = await dpRun(() => MOCK ? mockDrawOne() : api(`/api/restaurants/draw?${q}`, { auth: false }));
   } catch (e) {
-    dpResult.innerHTML = `<p class="muted dp-msg">${esc(e.message)}</p>`;
-    dpResult.hidden = false;
+    dpShow(dpResult, `<p class="muted dp-msg">${esc(e.message)}</p>`, false);
     dpDrawBtn.textContent = '뽑기';
     dpDrawBtn.disabled = false;
-    dpDrawBtn.closest('.draw-panel')?.classList.remove('is-drawing');
     return;
   }
   dpDrawBtn.textContent = '다시 뽑기';
   dpDrawBtn.disabled = false;
-  dpDrawBtn.closest('.draw-panel')?.classList.remove('is-drawing');
 
   if (!data?.pick) {
-    dpResult.innerHTML = `<p class="muted dp-msg">조건에 맞는 곳이 없어요.${dpExcluded.length ? ' 거리를 넓혀보세요.' : ''}</p>`;
-    dpResult.hidden = false;
+    dpShow(dpResult, `<p class="muted dp-msg">조건에 맞는 곳이 없어요.${dpExcluded.length ? ' 거리를 넓혀보세요.' : ''}</p>`, false);
     return;
   }
 
@@ -187,7 +183,7 @@ async function drawOne() {
   dpExcluded.push(p.placeId);
   if (dpExcluded.length > 10) dpExcluded = dpExcluded.slice(-10);
 
-  dpResult.innerHTML = `
+  dpShow(dpResult, `
     <div class="dp-pick">
       <div class="dp-pick-top">
         <span class="dp-seal" lang="ja">縁</span>
@@ -205,9 +201,7 @@ async function drawOne() {
         ${p.googleMapsUri ? `<a class="dp-ico" href="${esc(p.googleMapsUri)}" target="_blank" rel="noopener" aria-label="구글 지도" title="구글 지도">${icons.map('icon')}</a>` : ''}
         <button type="button" class="dp-ico" data-dp-swap aria-label="다시 뽑기" title="다시 뽑기">${icons.dice('icon')}</button>
       </div>
-    </div>`;
-  dpResult.hidden = false;
-  dpLight();
+    </div>`);
   dpResult.querySelector('[data-dp-swap]').addEventListener('click', () => drawOne());
   dpResult.querySelector('[data-dp-detail]').addEventListener('click', () => openDetail(p));
 }

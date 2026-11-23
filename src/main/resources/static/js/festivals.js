@@ -4,7 +4,7 @@ import { renderHeader } from './header.js';
 import { mountSearchBar } from './searchbar.js';
 import { formatRange, dDayLabel, todayTokyo } from './dates.js';
 import { regionKo } from './regions.js';
-import { icons, esc, dpLight } from './icons.js';
+import { icons, esc, dpRun, dpShow } from './icons.js';
 import { openFestivalSheet } from './festsheet.js';
 
 renderHeader();
@@ -137,10 +137,11 @@ const dpDrawBtn = document.getElementById('dp-draw-btn');
 
 dpDrawBtn?.addEventListener('click', () => drawOne());
 
-function drawOne() {
+let dpBusy = false;
+async function drawOne() {
+  if (dpBusy) return;
   if (!lastList.length) {
-    dpResult.innerHTML = '<p class="muted dp-msg">뽑을 축제가 없어요. 위치나 날짜를 바꿔 보세요.</p>';
-    dpResult.hidden = false;
+    dpShow(dpResult, '<p class="muted dp-msg">뽑을 축제가 없어요. 위치나 날짜를 바꿔 보세요.</p>', false);
     return;
   }
   let pool = lastList.filter(f => !dpSeen.includes(f.id));
@@ -148,7 +149,14 @@ function drawOne() {
   const f = pool[Math.floor(Math.random() * pool.length)];
   dpSeen.push(f.id);
 
-  dpResult.innerHTML = `
+  dpBusy = true;
+  dpDrawBtn.disabled = true;
+  dpDrawBtn.textContent = '뽑는 중…';
+  await dpRun(() => null);
+  dpBusy = false;
+  dpDrawBtn.disabled = false;
+
+  dpShow(dpResult, `
     <div class="dp-pick">
       ${card(f, lastFallback)}
       <div class="dp-pick-actions">
@@ -156,9 +164,7 @@ function drawOne() {
         <a class="dp-ico" href="/restaurants.html?lat=${f.lat}&lng=${f.lng}&near=${encodeURIComponent(f.name)}" aria-label="근처 맛집" title="근처 맛집">${icons.fork('icon')}</a>
         <a class="dp-ico dp-ico-txt" href="/spots.html?lat=${f.lat}&lng=${f.lng}&near=${encodeURIComponent(f.name)}" aria-label="근처 놀거리" title="근처 놀거리">⛩</a>
       </div>
-    </div>`;
-  dpResult.hidden = false;
-  dpLight();
+    </div>`);
   dpDrawBtn.textContent = '다시 뽑기';
 }
 

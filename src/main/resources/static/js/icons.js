@@ -70,6 +70,42 @@ export function esc(s) {
   }[ch]));
 }
 
+const RM = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/** 뽑기 패널: 등불이 은은하게 깜빡이는 동안 task 실행 (너무 빨리 끝나면 최소 시간만큼 기다려 연출이 끊기지 않게) */
+export async function dpRun(task, minMs = 800) {
+  const panel = document.getElementById('draw-panel');
+  panel?.classList.remove('lit');
+  panel?.classList.add('is-drawing');
+  try {
+    const [r] = await Promise.all([task(), new Promise(ok => setTimeout(ok, RM() ? 0 : minMs))]);
+    return r;
+  } finally {
+    panel?.classList.remove('is-drawing');
+  }
+}
+
+/** 뽑기 결과 넣기: 이전 높이 → 새 높이로 부드럽게 늘고, 내용은 스르륵 떠오름. lit=false면 등불 연출 없이(안내 문구) */
+export function dpShow(el, html, lit = true) {
+  const from = el.hidden ? 0 : el.getBoundingClientRect().height;
+  el.getAnimations().forEach(a => a.cancel());
+  el.innerHTML = html;
+  el.hidden = false;
+  const to = el.getBoundingClientRect().height;
+  if (!RM()) {
+    el.animate(
+      [{ height: `${from}px`, opacity: from ? 1 : 0 }, { height: `${to}px`, opacity: 1 }],
+      { duration: 420, easing: 'cubic-bezier(.2,.8,.2,1)' },
+    ).onfinish = () => { el.style.overflow = ''; };
+    el.style.overflow = 'hidden';
+    el.firstElementChild?.animate(
+      [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }],
+      { duration: 480, delay: 120, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'backwards' },
+    );
+  }
+  if (lit) dpLight();
+}
+
 /** 뽑기 패널: 결과가 나올 때 등불이 켜지는 연출 */
 export function dpLight() {
   const panel = document.getElementById('draw-panel');

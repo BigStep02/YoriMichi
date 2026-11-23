@@ -18,7 +18,7 @@ export const kindLabel = (k) => KIND_META[k]?.label ?? k ?? '';
 export const kindIcon  = (k) => KIND_META[k]?.icon  ?? '📍';
 
 const DAY_KO = { MON: '월', TUE: '화', WED: '수', THU: '목', FRI: '금', SAT: '토', SUN: '일' };
-function closedKo(v) {
+export function closedKo(v) {
   if (!v) return '';
   if (v === 'NONE') return '정기 휴일 없음';
   return v.split(',').map(d => DAY_KO[d.trim()] ?? d.trim()).join('·') + '요일 휴무';

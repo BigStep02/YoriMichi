@@ -409,6 +409,31 @@ a.cat:hover { transform: translateY(-2px); }
 .mini-badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 999px; background: var(--coral-soft); color: var(--coral-text); margin-right: 4px; }
 .skeleton-row { height: 84px; background: linear-gradient(90deg, #1d1a38 25%, #2c2850 50%, #1d1a38 75%); background-size: 200% 100%; animation: shimmer 1.2s infinite; border: 0; }
 .empty-line { margin: 0; padding: 14px 4px; }
+/* 홈 寄り道: 놀거리 줄 (축제 줄과 같은 모양, 날짜 대신 종류 아이콘) */
+button.next-card { width: 100%; font: inherit; text-align: left; cursor: pointer; }
+.next-card.spot .kind-box {     /* 종류 아이콘: 불 켜진 등불처럼 밝게 (⛩ 같은 어두운 이모지도 잘 보이게) */
+  display: grid; place-items: center; height: 50px; padding: 0; font-size: 24px;
+  background: radial-gradient(circle at 50% 45%, #FFF6E2 0 38%, #F7D99A 70%, #E9B95C 100%) !important;
+  border: 1px solid rgba(255,236,190,.7); box-shadow: 0 0 18px rgba(247,217,154,.45) !important;
+}
+.next-card.spot .kind-box::before, .next-card.spot .kind-box::after { background: #5A3A12 !important; }
+.next-card .mini-badge.open { background: rgba(46,196,182,.18); color: #5FE0D2; }
+.next-card .mini-badge.closed { background: rgba(255,255,255,.08); color: #B5AFC6; }
+a.next-card.spot { cursor: pointer; }
+/* 지금 근처 전체 */
+.nb-tabs { margin: 14px 0 4px; }
+.nb-here { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 16px; border-radius: 999px;
+  background: rgba(16,14,36,.62); border: 1px solid rgba(242,193,78,.32); color: #F5EFE6; font-size: 14px;
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.nb-here b { color: var(--gold); }
+.nb-here button { flex: none; border: 0; background: none; color: var(--gold); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.nb-note { margin: 6px 4px 0; font-size: 12px; }
+.switch-row[hidden] { display: none; }
+.nb-sec { margin: 22px 0 10px; }
+.nb-sec .sec-sub { font-size: 12px; color: var(--gray); }
+.f-sec .sp-season { margin-top: 10px; }
+.sec-ja { font: 700 13px 'Noto Sans JP', sans-serif; color: var(--gold); margin-left: 2px; }
+.sec-title .sec-sub { font-size: 12px; color: var(--gray); }
 
 /* ---------- 상세 ---------- */
 .hero {
@@ -1006,36 +1031,36 @@ body.hanabi-home .cta-icon { background: rgba(255,255,255,.16); }
 
 /* 둘러보기 타일 · 축제 카드: 유리 */
 body.hanabi-home .cat,
-body.hanabi-home .next-card {
+body.hanabi-home .next-card, body[data-page="nearby"] .next-card {
   background: rgba(16,14,36,.66); color: #F5EFE6;
   border: 1px solid rgba(242,193,78,.32);
   backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
 }
 body.hanabi-home .cat .cat-icon { color: #F2C14E; }
 body.hanabi-home .cat .desc,
-body.hanabi-home .next-card .ja,
-body.hanabi-home .next-card .meta,
-body.hanabi-home .next-card > .icon,
-body.hanabi-home .muted { color: #B5AFC6; }
-body.hanabi-home .next-card .ja { color: #F2C14E; font-family: var(--font-kr); }
-body.hanabi-home .sec-title h2 { color: #F5EFE6; font-family: var(--font-kr); font-size: 19px; }
-body.hanabi-home .sec-title a { color: #F2C14E; }
-body.hanabi-home .mini-badge { background: rgba(232,70,46,.25); color: #FF9A86; }
+body.hanabi-home .next-card .ja, body[data-page="nearby"] .next-card .ja,
+body.hanabi-home .next-card .meta, body[data-page="nearby"] .next-card .meta,
+body.hanabi-home .next-card > .icon, body[data-page="nearby"] .next-card > .icon,
+body.hanabi-home .muted, body[data-page="nearby"] .muted { color: #B5AFC6; }
+body.hanabi-home .next-card .ja, body[data-page="nearby"] .next-card .ja { color: #F2C14E; font-family: var(--font-kr); }
+body.hanabi-home .sec-title h2, body[data-page="nearby"] .sec-title h2 { color: #F5EFE6; font-family: var(--font-kr); font-size: 19px; }
+body.hanabi-home .sec-title a, body[data-page="nearby"] .sec-title a { color: #F2C14E; }
+body.hanabi-home .mini-badge, body[data-page="nearby"] .mini-badge { background: rgba(232,70,46,.25); color: #FF9A86; }
 
 /* 축제 날짜 상자 → 작은 등불 */
-body.hanabi-home .date-box,
-body.hanabi-home .next-card.alt .date-box {
+body.hanabi-home .date-box, body[data-page="nearby"] .date-box,
+body.hanabi-home .next-card.alt .date-box, body[data-page="nearby"] .next-card.alt .date-box {
   position: relative; width: 52px; padding: 10px 0 9px; border-radius: 26px / 30px; color: #1A0A05;
   background: repeating-linear-gradient(180deg, #F05A34 0 7px, #C93E22 7px 8px);
   box-shadow: 0 0 22px rgba(232,70,46,.55);
 }
-body.hanabi-home .date-box::before,
-body.hanabi-home .date-box::after { content: ""; position: absolute; left: 14px; right: 14px; height: 5px; background: #1A100B; border-radius: 2px; }
-body.hanabi-home .date-box::before { top: -3px; }
-body.hanabi-home .date-box::after { bottom: -3px; }
-body.hanabi-home .date-box .m { opacity: .85; }
-body.hanabi-home .date-box .d { font-family: var(--font-kr); }
-body.hanabi-home .skeleton-row { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.1); }
+body.hanabi-home .date-box::before, body[data-page="nearby"] .date-box::before,
+body.hanabi-home .date-box::after, body[data-page="nearby"] .date-box::after { content: ""; position: absolute; left: 14px; right: 14px; height: 5px; background: #1A100B; border-radius: 2px; }
+body.hanabi-home .date-box::before, body[data-page="nearby"] .date-box::before { top: -3px; }
+body.hanabi-home .date-box::after, body[data-page="nearby"] .date-box::after { bottom: -3px; }
+body.hanabi-home .date-box .m, body[data-page="nearby"] .date-box .m { opacity: .85; }
+body.hanabi-home .date-box .d, body[data-page="nearby"] .date-box .d { font-family: var(--font-kr); }
+body.hanabi-home .skeleton-row, body[data-page="nearby"] .skeleton-row { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.1); }
 
 /* ════════════════════════════════════════
    폰(세로 화면) 배치 — 위쪽은 3D 무대, 아래쪽은 내용
@@ -1608,16 +1633,27 @@ body.hanabi-home .cats .cat.spot .cat-icon { color: #7FE0C0; }
   background: repeating-linear-gradient(180deg, #F05A34 0 7px, #C93E22 7px 8px);
   color: #1A0A05; font: 900 17px/1 'Noto Sans JP', sans-serif;
   filter: brightness(.62) saturate(.7);
-  transition: filter .4s, box-shadow .4s;
+  transition: filter .6s ease, box-shadow .6s ease;
+}
+/* 등불 속 불빛: opacity·transform만 움직여서(GPU) 끊김 없이. 한자는 항상 불빛 위에 */
+.dp-lantern > span { position: relative; z-index: 1; display: grid; place-items: center; width: 100%; height: 100%; }
+.dp-lantern > span::before {
+  content: ""; position: absolute; inset: 4px 2px; z-index: -1; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,226,150,.95), rgba(255,150,70,.45) 45%, transparent 72%);
+  opacity: 0; transform: scale(.8); will-change: opacity, transform;
+  transition: opacity .6s ease, transform .6s ease;
 }
 .dp-lantern::before, .dp-lantern::after {
   content: ""; position: absolute; left: 11px; right: 11px; height: 5px; background: #1A100B; border-radius: 2px;
 }
 .dp-lantern::before { top: -3px; }
 .dp-lantern::after  { bottom: -3px; }
-.draw-panel.is-drawing .dp-lantern { animation: dp-flicker .5s steps(2) infinite; }
+.draw-panel.is-drawing .dp-lantern { animation: dp-sway 1.6s ease-in-out infinite alternate; transform-origin: 50% -6px; }
+.draw-panel.is-drawing .dp-lantern > span::before { animation: dp-glow .8s ease-in-out infinite alternate; }
 .draw-panel.is-drawn .dp-lantern { filter: none; box-shadow: 0 0 24px rgba(232,70,46,.6), 0 0 60px rgba(242,193,78,.18); }
-.draw-panel.lit .dp-lantern { animation: dp-light-on .9s ease-out; }
+.draw-panel.is-drawn .dp-lantern > span::before { opacity: .55; transform: none; }
+.draw-panel.lit .dp-lantern { animation: dp-light-on .7s cubic-bezier(.2,.8,.2,1); }
+.draw-panel.lit .dp-lantern > span::before { animation: dp-glow-burst .9s ease-out; }
 
 .dp-desc { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .dp-kicker { font-size: 10.5px; font-weight: 700; letter-spacing: .14em; color: var(--gold); font-family: 'Noto Sans JP', sans-serif; }
@@ -1639,7 +1675,6 @@ body.hanabi-home .cats .cat.spot .cat-icon { color: #7FE0C0; }
   margin-top: 14px; padding-top: 14px;
   border-top: 1px dashed rgba(242,193,78,.3);
 }
-.draw-panel.lit .dp-result { animation: dp-rise .55s cubic-bezier(.2,.8,.2,1); }
 .dp-msg { font-size: 13px; color: #B5AFC6; margin: 0; }
 .dp-pick-top { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
 .dp-seal {
@@ -1677,15 +1712,13 @@ body.hanabi-home .cats .cat.spot .cat-icon { color: #7FE0C0; }
 .dp-ico .icon { width: 20px; height: 20px; }
 .dp-main:active, .dp-ico:active { transform: scale(.96); }
 
-@keyframes dp-flicker { 0% { filter: brightness(.7); } 100% { filter: brightness(1.05); box-shadow: 0 0 18px rgba(232,70,46,.5); } }
-@keyframes dp-light-on {
-  0%   { filter: brightness(.6) saturate(.7); box-shadow: none; transform: scale(.94); }
-  40%  { filter: brightness(1.35); box-shadow: 0 0 40px rgba(242,193,78,.8); transform: scale(1.06); }
-  100% { filter: none; transform: none; }
-}
-@keyframes dp-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes dp-sway { from { transform: rotate(-4deg); } to { transform: rotate(4deg); } }
+@keyframes dp-glow { from { opacity: .15; transform: scale(.75); } to { opacity: .85; transform: scale(1.05); } }
+@keyframes dp-light-on { 0% { transform: scale(1); } 35% { transform: scale(1.08); } 100% { transform: none; } }
+@keyframes dp-glow-burst { 0% { opacity: 1; transform: scale(1.25); } 100% { opacity: .55; transform: none; } }
 @media (prefers-reduced-motion: reduce) {
-  .draw-panel.is-drawing .dp-lantern, .draw-panel.lit .dp-lantern, .draw-panel.lit .dp-result { animation: none; }
+  .draw-panel.is-drawing .dp-lantern, .draw-panel.is-drawing .dp-lantern > span::before,
+  .draw-panel.lit .dp-lantern, .draw-panel.lit .dp-lantern > span::before { animation: none; }
 }
 
 /* 놀거리 시트: 팁 박스와 공식 사이트 버튼 간격 */
