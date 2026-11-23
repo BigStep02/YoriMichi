@@ -162,7 +162,7 @@ async function drawOne() {
       <div class="dp-pick-actions">
         <a class="dp-main" data-fest-open href="/festival.html?id=${encodeURIComponent(f.id)}">축제 자세히 보기</a>
         <a class="dp-ico" href="/restaurants.html?lat=${f.lat}&lng=${f.lng}&near=${encodeURIComponent(f.name)}" aria-label="근처 맛집" title="근처 맛집">${icons.fork('icon')}</a>
-        <a class="dp-ico dp-ico-txt" href="/spots.html?lat=${f.lat}&lng=${f.lng}&near=${encodeURIComponent(f.name)}" aria-label="근처 놀거리" title="근처 놀거리">⛩</a>
+        <a class="dp-ico" href="/spots.html?lat=${f.lat}&lng=${f.lng}&near=${encodeURIComponent(f.name)}" aria-label="근처 놀거리" title="근처 놀거리">${icons.torii()}</a>
       </div>
     </div>`);
   dpDrawBtn.textContent = '다시 뽑기';

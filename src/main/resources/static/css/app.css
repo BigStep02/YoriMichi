@@ -422,12 +422,16 @@ button.next-card { width: 100%; font: inherit; text-align: left; cursor: pointer
 a.next-card.spot { cursor: pointer; }
 /* 지금 근처 전체 */
 .nb-tabs { margin: 14px 0 4px; }
-.nb-here { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 16px; border-radius: 999px;
-  background: rgba(16,14,36,.62); border: 1px solid rgba(242,193,78,.32); color: #F5EFE6; font-size: 14px;
-  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
-.nb-here b { color: var(--gold); }
-.nb-here button { flex: none; border: 0; background: none; color: var(--gold); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
-.nb-note { margin: 6px 4px 0; font-size: 12px; }
+/* 지금 여기 바: 검색 바와 같은 모양, 날짜는 고를 수 없는 표시용 */
+.nb-here .chip.nb-static { cursor: default; }
+.nb-here .chip.nb-static:hover { background: none; }
+.nb-here [data-here-refresh] > .icon:last-child { width: 17px; height: 17px; color: var(--gold); opacity: .8; }
+.nb-tabs .torii { width: 17px; height: 17px; }
+/* 도리이 아이콘 (이모지 ⛩ 대신) */
+.torii { display: inline-block; width: 1.2em; height: 1.2em; vertical-align: -0.22em; filter: drop-shadow(0 0 3px rgba(232,70,46,.45)); }
+.kind-box .torii { width: 30px; height: 30px; vertical-align: 0; filter: drop-shadow(0 1px 2px rgba(90,40,10,.35)); }
+.dp-ico .torii { width: 22px; height: 22px; }
+.kind-ic .torii { width: 18px; height: 18px; }
 .switch-row[hidden] { display: none; }
 .nb-sec { margin: 22px 0 10px; }
 .nb-sec .sec-sub { font-size: 12px; color: var(--gray); }

@@ -43,11 +43,11 @@ function render(d) {
 
   const region = regionKo(d.prefecture, d.city);
   const state = d.openNow === true ? '지금 영업 중' : d.openNow === false ? '지금은 영업 전·종료' : '';
-  const kicker = [`${kindIcon(d.kind)} ${kindLabel(d.kind)}`, state].filter(Boolean).join(' · ');
+  const kicker = `<span class="kind-ic">${kindIcon(d.kind)}</span> ${esc([kindLabel(d.kind), state].filter(Boolean).join(' · '))}`;
 
   heroEl.innerHTML = `
     ${backLink}
-    <div class="f-hero-kicker">${esc(kicker)}</div>
+    <div class="f-hero-kicker">${kicker}</div>
     <h1>${esc(d.name)}</h1>
     ${d.nameJa ? `<p class="f-hero-ja" lang="ja">${esc(d.nameJa)}</p>` : ''}
     <div class="f-hero-chips">${d.hoursLabel ? `<span>오늘 ${esc(d.hoursLabel)}</span>` : ''}<span>${esc(region)}</span></div>`;

@@ -4,11 +4,12 @@ import { api } from './api.js';
 import { renderHeader } from './header.js';
 import { getSearchLocation, clearGeoCache } from './location.js';
 import { todayTokyo, addDays } from './dates.js';
-import { icons, esc } from './icons.js';
+import { icons, esc, TORII } from './icons.js';
 import { festRow, spotRow, sortFests, sortSpots } from './nearrows.js';
 
 renderHeader();
 document.getElementById('back-link').insertAdjacentHTML('afterbegin', icons.back());
+document.querySelectorAll('#here [data-ic]').forEach(el => { el.outerHTML = icons[el.dataset.ic]('icon'); });
 
 const RADII = [10, 30, 50];
 const qp = new URLSearchParams(location.search);
@@ -42,7 +43,7 @@ function render() {
   const parts = [];
   if (tab !== 'spot') parts.push(section('🏮 축제', fests.length, fests.map(festRow).join(''),
     festErr || '30일 안에 근처에서 열리는 축제가 없어요. 범위를 넓혀 보세요.'));
-  if (tab !== 'fest') parts.push(section(`⛩ 놀거리${openOnly ? ' · 영업 중' : ''}`, sv.length, sv.map(spotRow).join(''),
+  if (tab !== 'fest') parts.push(section(`${TORII} 놀거리${openOnly ? ' · 영업 중' : ''}`, sv.length, sv.map(spotRow).join(''),
     spotErr || (openOnly && spots.length ? '지금 영업 중인 곳이 없어요.' : '근처에 등록된 놀거리가 없어요. 범위를 넓혀 보세요.')));
   listEl.innerHTML = parts.join('');
 }

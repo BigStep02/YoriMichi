@@ -1,11 +1,11 @@
 // 놀거리 공통: 종류 이름·아이콘, 상세 시트 (근처 놀거리 목록, 코스 뽑기에서 같이 씀)
 import { api } from './api.js';
 import { mountSheet } from './sheet.js';
-import { icons, esc } from './icons.js';
+import { icons, esc, TORII } from './icons.js';
 import { regionKo } from './regions.js';
 
 export const KIND_META = {
-  SHRINE_TEMPLE: { label: '신사·절',       icon: '⛩' },
+  SHRINE_TEMPLE: { label: '신사·절',       icon: TORII },
   PARK_GARDEN:   { label: '공원·정원',     icon: '🌸' },
   HISTORIC:      { label: '성·옛 거리',    icon: '🏯' },
   MUSEUM:        { label: '박물관·미술관', icon: '🏛' },

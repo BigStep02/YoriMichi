@@ -2,7 +2,12 @@
 const svg = (body, cls = 'icon') =>
   `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
 
+/** 도리이(신사) — 이모지 ⛩ 대신. 색이 들어간 그림이라 currentColor 안 씀 */
+export const TORII = '<svg class="torii" viewBox="0 0 24 24" aria-hidden="true"><path d="M1.5 4.4c3.4 1.4 6.9 2 10.5 2s7.1-.6 10.5-2l-.7 2.6c-3.2 1-6.5 1.5-9.8 1.5S5.4 8 2.2 7z" fill="#2A1208"/><path d="M1.7 4.5c3.4 1.3 6.8 1.9 10.3 1.9s6.9-.6 10.3-1.9" fill="none" stroke="#F2C14E" stroke-width=".9" stroke-linecap="round"/><rect x="3.8" y="8.3" width="16.4" height="1.5" rx=".3" fill="#E8462E"/><rect x="11.25" y="9.6" width="1.5" height="2" fill="#E8462E"/><rect x="2.8" y="11.4" width="18.4" height="1.7" rx=".4" fill="#E8462E"/><path d="M5.6 9.6h2.1l.3 10.2H5.3z" fill="#E8462E"/><path d="M16.3 9.6h2.1l.3 10.2h-2.7z" fill="#E8462E"/><rect x="4.7" y="19.4" width="3.8" height="1.8" rx=".4" fill="#2A1208"/><rect x="15.5" y="19.4" width="3.8" height="1.8" rx=".4" fill="#2A1208"/></svg>';
+
 export const icons = {
+  torii: () => TORII,
+  refresh: (c) => svg('<path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/>', c),
   pin: (c) => svg('<path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>', c),
   calendar: (c) => svg('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>', c),
   chevronDown: (c) => svg('<path d="M6 9l6 6 6-6"/>', c),
