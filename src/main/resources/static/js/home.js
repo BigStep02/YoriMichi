@@ -77,10 +77,9 @@ const festivalLinks = [document.getElementById('festival-link')];
 const upcomingEl = document.getElementById('upcoming');
 
 const UPCOMING_RADIUS_KM = 50;
-const UPCOMING_DAYS = 30;  // '지금 근처' 느낌: 한 달 안 축제만
+const UPCOMING_DAYS = 0;   // '지금 근처': 오늘 열려 있는 축제만
 const SPOT_RADIUS_KM = 10;
 const PICKS = 3;          // 칸 수
-const FEST_SOON_DAYS = 14; // 2주 안에 2개 이상이면 축제 2칸, 아니면 1칸
 let spotList = [];
 let seq = 0;
 
@@ -89,9 +88,9 @@ function updateLinks({ from, to }) {
   festivalLinks.forEach(a => { a.href = href; });
 }
 
-/** 놀거리: 영업 중 먼저, 종류가 겹치지 않게 가까운 순으로 n개 */
+/** 놀거리: 지금 문 닫은 곳은 빼고, 영업 중 먼저, 종류가 겹치지 않게 가까운 순으로 n개 */
 function pickSpots(list, n) {
-  const sorted = sortSpots(list);
+  const sorted = sortSpots(list.filter(s => s.openNow !== false));
   const out = [], kinds = new Set();
   for (const s of sorted) { if (out.length < n && !kinds.has(s.kind)) { out.push(s); kinds.add(s.kind); } }
   for (const s of sorted) { if (out.length < n && !out.includes(s)) out.push(s); }
@@ -112,14 +111,13 @@ async function loadUpcoming(loc) {
   const fests = fr.status === 'fulfilled'
     ? sortFests(fr.value.festivals || [])
     : [];
-  const soon = fests.filter(f => f.ongoing || (f.dDay ?? 99) <= FEST_SOON_DAYS).length;
-  const festPick = fests.slice(0, soon >= 2 ? 2 : 1);
+  const festPick = fests.slice(0, 2);   // 오늘 축제는 최대 2칸, 나머지는 놀거리
   spotList = pickSpots(sr.status === 'fulfilled' ? (sr.value.spots || []) : [], PICKS - festPick.length);
 
   const rows = [...festPick.map(festRow), ...spotList.map(spotRow)];
   if (rows.length) { upcomingEl.innerHTML = rows.join(''); return; }
   const err = fr.status === 'rejected' && sr.status === 'rejected' ? fr.reason?.message : '';
-  upcomingEl.innerHTML = `<p class="muted empty-line">${esc(err || '근처에 들를 만한 곳이 아직 없어요. 위치를 바꿔 보세요.')}</p>`;
+  upcomingEl.innerHTML = `<p class="muted empty-line">${esc(err || '지금 근처에 문 연 곳이 없어요. 위치를 바꿔 보세요.')}</p>`;
 }
 
 let lastLocKey = '';

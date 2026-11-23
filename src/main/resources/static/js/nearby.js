@@ -1,9 +1,9 @@
-// N-01 지금 근처 寄り道 전체: 지금 위치 기준 축제(오늘부터 30일) + 놀거리 (둘 다 자체 DB라 Places 비용 0)
+// N-01 지금 근처 寄り道 전체: 지금 위치에서 '지금 당장' 갈 수 있는 곳 — 오늘 열리는 축제 + 영업 중 놀거리 (둘 다 자체 DB라 Places 비용 0)
 // 지역·날짜를 고르지 않음 — 여행 중 '지금 여기'에서 우연히 마주치는 느낌
 import { api } from './api.js';
 import { renderHeader } from './header.js';
 import { getSearchLocation, clearGeoCache } from './location.js';
-import { todayTokyo, addDays } from './dates.js';
+import { todayTokyo } from './dates.js';
 import { icons, esc, TORII } from './icons.js';
 import { festRow, spotRow, sortFests, sortSpots } from './nearrows.js';
 
@@ -15,9 +15,8 @@ const RADII = [10, 30, 50];
 const qp = new URLSearchParams(location.search);
 let radiusKm = RADII.includes(Number(qp.get('radiusKm'))) ? Number(qp.get('radiusKm')) : 10;
 let tab = ['fest', 'spot'].includes(qp.get('tab')) ? qp.get('tab') : 'all';
-let openOnly = false;
+let openOnly = true;   // 기본: 지금 문 연 곳만
 let loc = null;
-const FEST_DAYS = 30;
 let seq = 0;
 let fests = [], spots = [], festErr = '', spotErr = '';
 
@@ -41,8 +40,8 @@ function section(title, count, rows, empty) {
 function render() {
   const sv = openOnly ? spots.filter(s => s.openNow === true) : spots;
   const parts = [];
-  if (tab !== 'spot') parts.push(section('🏮 축제', fests.length, fests.map(festRow).join(''),
-    festErr || '30일 안에 근처에서 열리는 축제가 없어요. 범위를 넓혀 보세요.'));
+  if (tab !== 'spot') parts.push(section('🏮 오늘 열리는 축제', fests.length, fests.map(festRow).join(''),
+    festErr || '오늘 근처에서 열리는 축제는 없어요. 대신 놀거리를 둘러보세요.'));
   if (tab !== 'fest') parts.push(section(`${TORII} 놀거리${openOnly ? ' · 영업 중' : ''}`, sv.length, sv.map(spotRow).join(''),
     spotErr || (openOnly && spots.length ? '지금 영업 중인 곳이 없어요.' : '근처에 등록된 놀거리가 없어요. 범위를 넓혀 보세요.')));
   listEl.innerHTML = parts.join('');
@@ -54,7 +53,7 @@ async function load() {
   listEl.innerHTML = '<div class="next-card skeleton-row" aria-hidden="true"></div>'.repeat(3);
   const lat = loc.lat.toFixed(6), lng = loc.lng.toFixed(6);
   const from = todayTokyo();
-  const fq = new URLSearchParams({ lat, lng, radiusKm, from, to: addDays(from, FEST_DAYS) });
+  const fq = new URLSearchParams({ lat, lng, radiusKm, from, to: from });   // 오늘 열려 있는 축제만
   const sq = new URLSearchParams({ lat, lng, radiusKm });
   const [fr, sr] = await Promise.allSettled([api(`/api/festivals?${fq}`), api(`/api/spots?${sq}`, { auth: false })]);
   if (mySeq !== seq) return;

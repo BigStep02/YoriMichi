@@ -15,8 +15,8 @@
   <script src="/js/vendor/gsap/gsap.min.js" defer></script>
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#070A1A">
-  <link rel="icon" type="image/png" href="/images/icons/favicon-64.png">
-  <link rel="apple-touch-icon" href="/images/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="/images/icons/favicon-64.png?v=4">
+  <link rel="apple-touch-icon" href="/images/icons/apple-touch-icon.png?v=4">
   <meta name="apple-mobile-web-app-title" content="YoriMichi">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -32,22 +32,17 @@
   <main class="container">
     <a class="back" href="/" id="back-link">홈으로</a>
     <h1 class="draw-title">지금 근처 <span class="sec-ja" lang="ja">寄り道</span></h1>
-    <p class="muted draw-sub">지금 있는 곳에서 들를 만한 축제와 놀거리예요.</p>
+    <p class="muted draw-sub">지금 할 게 없을 때, 바로 들를 수 있는 곳이에요.</p>
 
-    <div class="search-bar nb-here" id="here">
-      <div class="row">
-        <button type="button" class="chip" data-here-refresh aria-label="현재 위치 다시 찾기">
-          <i class="chip-mon" aria-hidden="true" data-ic="pin"></i>
-          <span class="chip-tx"><small>지금 여기 <em>今ここ</em></small><span data-here-label>위치 확인 중…</span></span>
-          <span data-ic="refresh"></span>
-        </button>
-        <div class="chip nb-static">
-          <i class="chip-mon" aria-hidden="true" data-ic="calendar"></i>
-          <span class="chip-tx"><small>언제 <em>日取り</em></small><span>오늘부터 30일</span></span>
-        </div>
+    <div class="nb-here" id="here">
+      <i class="chip-mon" aria-hidden="true"><span data-ic="pin"></span></i>
+      <div class="nb-here-tx">
+        <span class="nb-here-k" lang="ja">今ここ</span>
+        <b><span data-here-label>위치 확인 중…</span><em> · 지금 갈 수 있는 곳</em></b>
       </div>
-      <p class="loc-note" id="here-note" hidden></p>
+      <button type="button" class="nb-here-re" data-here-refresh aria-label="현재 위치 다시 찾기" title="다시 찾기"><span data-ic="refresh"></span></button>
     </div>
+    <p class="muted nb-note" id="here-note" hidden></p>
 
     <div class="chips nb-tabs" role="tablist" aria-label="보기">
       <button type="button" role="tab" data-tab="all" aria-pressed="true">전체</button>
@@ -65,7 +60,7 @@
 
     <label class="switch-row compact" id="open-row">
       <span>지금 영업 중인 놀거리만</span>
-      <input type="checkbox" id="open-only">
+      <input type="checkbox" id="open-only" checked>
       <span class="switch" aria-hidden="true"></span>
     </label>
 
