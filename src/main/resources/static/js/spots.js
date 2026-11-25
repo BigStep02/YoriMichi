@@ -3,7 +3,7 @@
 import { api } from './api.js';
 import { renderHeader } from './header.js';
 import { mountSearchBar } from './searchbar.js';
-import { icons, esc, dpRun, dpShow, TITLE_ICONS } from './icons.js';
+import { icons, esc, dpRun, dpShow, dpMount, TITLE_ICONS } from './icons.js';
 import { regionKo } from './regions.js';
 import { kindLabel, kindIcon, openSpotSheet } from './spotsheet.js';
 import { saveButton, syncSave, spotKey } from './saved.js';
@@ -200,10 +200,12 @@ async function drawOne() {
         <button type="button" class="dp-main" data-dp-detail>자세히 보기</button>
         <a class="dp-ico" href="/restaurants.html?lat=${s.lat}&lng=${s.lng}&near=${encodeURIComponent(s.name)}" aria-label="근처 맛집" title="근처 맛집">${icons.fork('icon')}</a>
         <a class="dp-ico" href="/festivals.html?lat=${s.lat}&lng=${s.lng}&near=${encodeURIComponent(s.name)}" aria-label="근처 축제" title="근처 축제">${icons.lantern('icon')}</a>
+        ${saveButton(spotKey(s.id), { type: 'SPOT', spotId: s.id }, 'ico')}
       </div>
     </div>`);
   dpBtn.textContent = '다시 뽑기';
   dpResult.querySelector('[data-dp-detail]').addEventListener('click', () => openSpotSheet(s));
+  syncSave(dpResult);
 }
 
 const fixed = fixedFromQuery(qp);
@@ -221,3 +223,5 @@ if (fixed) {
     load();
   }, { dates: false });
 }
+
+dpMount('spot');   // 뽑기 패널 3D 오미쿠지 통

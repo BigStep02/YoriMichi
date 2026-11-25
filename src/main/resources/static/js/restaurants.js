@@ -4,7 +4,7 @@ import { api } from './api.js';
 import { renderHeader } from './header.js';
 import { mountSearchBar } from './searchbar.js';
 import { openRestaurantSheet as openDetail, priceLabel, walkLabel, typeChip } from './rsheet.js';
-import { icons, esc, dpRun, dpShow, TITLE_ICONS } from './icons.js';
+import { icons, esc, dpRun, dpShow, dpMount, TITLE_ICONS } from './icons.js';
 import { isMock } from './mock.js';
 import { saveButton, syncSave, restKey } from './saved.js';
 
@@ -209,10 +209,12 @@ async function drawOne() {
         <button type="button" class="dp-main" data-dp-detail>가게 공개 · AI 요약</button>
         ${p.googleMapsUri ? `<a class="dp-ico" href="${esc(p.googleMapsUri)}" target="_blank" rel="noopener" aria-label="구글 지도" title="구글 지도">${icons.map('icon')}</a>` : ''}
         <button type="button" class="dp-ico" data-dp-swap aria-label="다시 뽑기" title="다시 뽑기">${icons.dice('icon')}</button>
+        ${p.placeId ? saveButton(restKey(p.placeId), { type: 'RESTAURANT', placeId: p.placeId, lat: p.lat, lng: p.lng }, 'ico') : ''}
       </div>
     </div>`);
   dpResult.querySelector('[data-dp-swap]').addEventListener('click', () => drawOne());
   dpResult.querySelector('[data-dp-detail]').addEventListener('click', () => openDetail(p));
+  syncSave(dpResult);
 }
 
 function mockDrawOne() {
@@ -240,3 +242,5 @@ function mockNearby() {
   const list = opts.sort === 'DISTANCE' ? [...base].sort((a, b) => a.distanceM - b.distanceM) : base;
   return { restaurants: list, count: list.length, avgRating: 4.02, radiusM: +opts.radiusM, cached: false };
 }
+
+dpMount('food');   // 뽑기 패널 3D 오미쿠지 통
