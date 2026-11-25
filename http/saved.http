@@ -1,0 +1,91 @@
+### 저장함(縁帳) 테스트 — 로그인 → 토큰 저장 후 실행
+
+# 로그인
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "password123"
+}
+
+> {% client.global.set("token", response.body.token); %}
+
+###
+
+# 토큰 없이 → 401
+GET http://localhost:8080/api/saved
+
+###
+
+# 축제 저장
+POST http://localhost:8080/api/saved
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "type": "FESTIVAL", "festivalId": 1 }
+
+###
+
+# 놀거리 저장 (두 번 보내도 1개)
+POST http://localhost:8080/api/saved
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "type": "SPOT", "spotId": 1 }
+
+###
+
+# 맛집 저장 — place_id + 좌표(도시 계산용, 저장 안 함) + 만난 곳
+POST http://localhost:8080/api/saved
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "type": "RESTAURANT", "placeId": "ChIJN1t_tDeuEmsRUsoyG83frY4", "lat": 34.9671, "lng": 135.7727, "metType": "SPOT", "metId": 1, "memo": "웨이팅 짧았음" }
+
+###
+
+# 코스 저장
+POST http://localhost:8080/api/saved
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "type": "COURSE", "course": { "preset": "SPOT_RESTAURANT", "stops": [ { "type": "SPOT", "id": 1 }, { "type": "RESTAURANT", "placeId": "ChIJN1t_tDeuEmsRUsoyG83frY4" } ] } }
+
+###
+
+# 키 목록
+GET http://localhost:8080/api/saved/keys
+Authorization: Bearer {{token}}
+
+###
+
+# 전체 목록 / 종류별
+GET http://localhost:8080/api/saved
+Authorization: Bearer {{token}}
+
+###
+
+GET http://localhost:8080/api/saved?type=RESTAURANT
+Authorization: Bearer {{token}}
+
+###
+
+# 메모·방문
+PATCH http://localhost:8080/api/saved/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "memo": "다음엔 저녁에", "visited": true }
+
+###
+
+# 키로 삭제 (저장 버튼 토글)
+DELETE http://localhost:8080/api/saved?key=S:1
+Authorization: Bearer {{token}}
+
+###
+
+# id로 삭제 (남의 것이면 403)
+DELETE http://localhost:8080/api/saved/1
+Authorization: Bearer {{token}}

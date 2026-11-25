@@ -9,6 +9,7 @@ import { acquireStage, webglAvailable } from './hanabi/hanabi-stage.js';
 import { enableHSwipe, enableGroupSwipe } from './swipe.js';
 import { kindLabel, kindIcon, openSpotSheet } from './spotsheet.js';
 import { openRestaurantSheet, typeChip, tabelogUrl } from './rsheet.js';
+import { saveButton, syncSave, spotKey, festKey, restKey, courseKey } from './saved.js';
 import { openFestivalSheet } from './festsheet.js';
 import { isMock } from './mock.js';
 
@@ -273,6 +274,19 @@ function renderResult(data) {
   const isSpot = data.preset !== 'FESTIVAL_RESTAURANT';
   const step1Html = isSpot ? renderSpotStep(data.spot) : renderFestivalStep(data.festival);
 
+  // 저장: 맛집은 '어디서 만났는지'(같은 코스의 놀거리·축제)를 같이 보냄. 코스는 칸 id/place_id만
+  const met = isSpot
+    ? (data.spot?.id ? { metType: 'SPOT', metId: data.spot.id } : {})
+    : (data.festival?.id ? { metType: 'FESTIVAL', metId: data.festival.id } : {});
+  const stop1 = isSpot
+    ? (data.spot?.id ? { type: 'SPOT', id: data.spot.id } : data.spot?.placeId ? { type: 'PLACE', placeId: data.spot.placeId } : null)
+    : (data.festival?.id ? { type: 'FESTIVAL', id: data.festival.id } : null);
+  const stops = [stop1, r.placeId ? { type: 'RESTAURANT', placeId: r.placeId } : null].filter(Boolean);
+  const courseSave = stops.length === 2
+    ? saveButton(courseKey(stops), { type: 'COURSE', course: { preset: data.preset, stops } }, 'pill') : '';
+  const restSave = r.placeId
+    ? saveButton(restKey(r.placeId), { type: 'RESTAURANT', placeId: r.placeId, lat: r.lat, lng: r.lng, ...met }, 'ico') : '';
+
   const rTags = [
     typeChip(r, 'cx-chip'),
     r.rating != null ? `<span class="cx-chip star">★ ${r.rating.toFixed(1)} <small>(${r.ratingCount.toLocaleString()})</small></span>` : '',
@@ -292,6 +306,7 @@ function renderResult(data) {
           <b>오늘의 코스</b>
         </div>
         <span class="cx-count">2 STOPS</span>
+        ${courseSave ? courseSave.replace('save-btn save-pill', 'save-btn save-pill cx-save') : ''}
       </header>
 
       <ol class="cx-steps">
@@ -310,6 +325,7 @@ function renderResult(data) {
               <button type="button" class="dp-main" data-r-detail>가게 공개 · AI 요약</button>
               ${r.googleMapsUri ? `<a class="dp-ico" href="${esc(r.googleMapsUri)}" target="_blank" rel="noopener" aria-label="구글 지도" title="구글 지도">${icons.map('icon')}</a>` : ''}
               <a class="dp-ico cx-tabelog" href="${tabelogUrl(r.name)}" target="_blank" rel="noopener" aria-label="食べログ" title="食べログ" lang="ja">食</a>
+              ${restSave}
             </div>
           </div>
         </li>
@@ -330,7 +346,8 @@ function renderResult(data) {
     draw();
   });
   resultEl.querySelector('[data-redraw]').addEventListener('click', () => draw());
-  resultEl.querySelector('[data-r-detail]').addEventListener('click', () => openRestaurantSheet(r));
+  resultEl.querySelector('[data-r-detail]').addEventListener('click', () => openRestaurantSheet(r, met));
+  syncSave(resultEl);
   resultEl.querySelector('[data-spot-detail]')?.addEventListener('click', () => openSpotSheet(data.spot));
   resultEl.querySelector('[data-fest-detail]')?.addEventListener('click', () => openFestivalSheet(data.festival));
   swipeToRedraw();
@@ -363,7 +380,7 @@ function renderSpotStep(spot) {
         ${spot.nameJa ? `<p class="cx-ja" lang="ja">${esc(spot.nameJa)}</p>` : ''}
         <div class="cx-chips">${chips}</div>
         ${spot.summary ? `<p class="cx-desc">${esc(spot.summary)}</p>` : ''}
-        <div class="cx-actions">${main}${side}</div>
+        <div class="cx-actions">${main}${side}${spot.id && !spot.fromPlaces ? saveButton(spotKey(spot.id), { type: 'SPOT', spotId: spot.id }, 'ico') : ''}</div>
       </div>
     </li>`;
 }
@@ -389,6 +406,7 @@ function renderFestivalStep(fest) {
         <div class="cx-actions">
           <button type="button" class="dp-main" data-fest-detail>축제 자세히 보기</button>
           ${fest.officialUrl ? `<a class="dp-ico" href="${esc(fest.officialUrl)}" target="_blank" rel="noopener" aria-label="공식 사이트" title="공식 사이트">↗</a>` : ''}
+          ${fest.id ? saveButton(festKey(fest.id), { type: 'FESTIVAL', festivalId: fest.id }, 'ico') : ''}
         </div>
       </div>
     </li>`;

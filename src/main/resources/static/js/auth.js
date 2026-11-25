@@ -45,7 +45,8 @@ function bind(form, path, validate) {
     try {
       const { token } = await api(path, { method: 'POST', body, auth: false });
       setToken(token);
-      location.href = '/';
+      const next = new URLSearchParams(location.search).get('next');
+      location.href = next && /^\/(?!\/)/.test(next) ? next : '/';
     } catch (err) {
       // 서버 메시지(409 중복, 400 검증, 401 실패)를 그대로 표시
       errorEl.textContent = err.message;

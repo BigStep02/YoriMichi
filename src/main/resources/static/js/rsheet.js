@@ -3,6 +3,7 @@ import { api } from './api.js';
 import { mountSheet } from './sheet.js';
 import { icons, esc } from './icons.js';
 import { isMock } from './mock.js';
+import { saveButton, syncSave, restKey } from './saved.js';
 
 const MOCK = isMock();
 
@@ -25,10 +26,15 @@ export function tabelogUrl(name) {
   return `https://tabelog.com/rstLst/?vs=1&sk=${encodeURIComponent(name)}&sw=${encodeURIComponent(name)}`;
 }
 
-export async function openRestaurantSheet(p) {
+/** place_id만으로 여는 구글 지도 링크 (API 호출 아님) */
+export function placeMapsUrl(placeId) {
+  return `https://www.google.com/maps/search/?api=1&query=Google&query_place_id=${encodeURIComponent(placeId)}`;
+}
+
+export async function openRestaurantSheet(p, ctx = {}) {
   const stats = [
     p.rating != null ? `<span class="star">★ ${p.rating.toFixed(1)}</span> <span class="muted">(${p.ratingCount.toLocaleString()})</span>` : '',
-    walkLabel(p.distanceM),
+    p.distanceM != null ? walkLabel(p.distanceM) : '',
     priceLabel(p.priceLevel),
   ].filter(Boolean).join('<span class="dot">·</span>');
 
@@ -36,10 +42,11 @@ export async function openRestaurantSheet(p) {
     <div class="result-top">
       ${typeChip(p)}
       ${p.openNow ? '<span class="open-badge">영업 중</span>' : ''}
+      ${p.placeId ? saveButton(restKey(p.placeId), { type: 'RESTAURANT', placeId: p.placeId, lat: p.lat, lng: p.lng, metType: ctx.metType, metId: ctx.metId }) : ''}
     </div>
-    <h3 class="r-name" lang="ja">${esc(p.name)}</h3>
+    <h3 class="r-name" lang="ja" data-r-name>${p.name ? esc(p.name) : '<span class="muted">인연을 여는 중…</span>'}</h3>
     <p class="r-name-ko" data-name-ko></p>
-    <div class="r-stats">${stats}</div>
+    <div class="r-stats" data-r-stats>${stats}</div>
     <section class="ai-box" data-ai>
       <div class="ai-head">리뷰 한눈에 <span class="ai-tag">AI 요약</span></div>
       <div class="ai-body"><div class="sk-line"></div><div class="sk-line short"></div></div>
@@ -48,15 +55,34 @@ export async function openRestaurantSheet(p) {
     <p class="attribution">가게 정보·리뷰: Google 지도</p>`;
   const footer = `
     <div class="r-actions" style="margin-top:0">
-      <a class="btn-primary" href="${esc(p.googleMapsUri)}" target="_blank" rel="noopener">${icons.map('icon')} 구글 지도에서 길찾기</a>
-      <a class="btn-sub" href="${tabelogUrl(p.name)}" target="_blank" rel="noopener"><span lang="ja">食べログ</span>에서 보기 ↗</a>
+      <a class="btn-primary" data-r-map href="${esc(p.googleMapsUri || placeMapsUrl(p.placeId))}" target="_blank" rel="noopener">${icons.map('icon')} 구글 지도에서 길찾기</a>
+      ${p.name ? `<a class="btn-sub" data-r-tabelog href="${tabelogUrl(p.name)}" target="_blank" rel="noopener"><span lang="ja">食べログ</span>에서 보기 ↗</a>` : ''}
     </div>`;
   const wrap = mountSheet('가게 정보', body, { footer });
+  syncSave(wrap);
 
   const detailP = MOCK ? mockDetail() : api(`/api/restaurants/${encodeURIComponent(p.placeId)}`, { auth: false }).catch(() => null);
 
   const d = await detailP;
   if (!wrap.isConnected) return;
+  // 저장함에서 place_id만 들고 열었을 때(봉인 카드 공개): 이름·평점·링크를 Details 응답으로 채움
+  if (!p.name) {
+    if (!d) {
+      wrap.querySelector('[data-r-name]').innerHTML = '<span class="muted">가게 정보를 찾을 수 없어요</span>';
+      wrap.querySelector('[data-ai]')?.remove();
+      return;
+    }
+    p = { ...p, name: d.name, rating: d.rating, ratingCount: d.ratingCount, priceLevel: d.priceLevel, googleMapsUri: d.googleMapsUri };
+    wrap.querySelector('[data-r-name]').textContent = d.name || '';
+    wrap.querySelector('[data-r-stats]').innerHTML = [
+      d.rating != null ? `<span class="star">★ ${d.rating.toFixed(1)}</span> <span class="muted">(${(d.ratingCount || 0).toLocaleString()})</span>` : '',
+      priceLabel(d.priceLevel),
+      d.openNow === true ? '<span class="open-badge">영업 중</span>' : '',
+    ].filter(Boolean).join('<span class="dot">·</span>');
+    const map = wrap.querySelector('[data-r-map]');
+    if (map && d.googleMapsUri) map.href = d.googleMapsUri;
+    map?.insertAdjacentHTML('afterend', `<a class="btn-sub" href="${tabelogUrl(d.name)}" target="_blank" rel="noopener"><span lang="ja">食べログ</span>에서 보기 ↗</a>`);
+  }
   if (d?.nameKo && d.nameKo !== p.name) wrap.querySelector('[data-name-ko]').textContent = d.nameKo;
   const reviews = (d?.reviews || []).slice(0, 2);
   wrap.querySelector('[data-reviews]').innerHTML = reviews.length ? `

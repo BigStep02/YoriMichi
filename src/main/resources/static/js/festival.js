@@ -4,6 +4,7 @@ import { renderHeader } from './header.js';
 import { dDayLabel } from './dates.js';
 import { regionKo } from './regions.js';
 import { icons, esc } from './icons.js';
+import { saveButton, syncSave, festKey } from './saved.js';
 
 renderHeader();
 
@@ -85,6 +86,7 @@ function render(f) {
     <div class="r-actions">
       <a class="btn-primary" href="${esc(mapUrl)}" target="_blank" rel="noopener">${icons.map('icon')} 구글 지도에서 길찾기</a>
       <a class="btn-ghost" href="${esc(nearbyUrl)}">${icons.fork('icon')} 축제장 근처 맛집 보기</a>
+      ${saveButton(festKey(f.id), { type: 'FESTIVAL', festivalId: f.id }, 'ghost')}
       ${official ? `<a class="btn-sub" href="${esc(official)}" target="_blank" rel="noopener">공식 사이트 ↗</a>` : ''}
     </div>`;
 }
@@ -92,7 +94,7 @@ function render(f) {
 async function load() {
   if (!id || !/^\d+$/.test(id)) { renderError('잘못된 주소예요. 축제 목록에서 다시 선택해 주세요.'); return; }
   renderLoading();
-  try { render(await api(`/api/festivals/${id}`)); }
+  try { render(await api(`/api/festivals/${id}`)); syncSave(contentEl); }
   catch (e) { renderError(e.status === 404 ? '해당 축제를 찾을 수 없어요.' : e.message); }
 }
 load();

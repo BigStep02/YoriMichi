@@ -4,6 +4,7 @@ import { mountSheet } from './sheet.js';
 import { icons, esc } from './icons.js';
 import { regionKo } from './regions.js';
 import { formatRange, dDayLabel } from './dates.js';
+import { saveButton, syncSave, festKey } from './saved.js';
 
 const safeUrl = (u) => (/^https?:\/\//i.test(u || '') ? u : null);
 
@@ -16,6 +17,7 @@ export async function openFestivalSheet(f) {
     <div class="result-top">
       <span class="type-chip">🏮 축제</span>
       ${status}
+      ${f.id ? saveButton(festKey(f.id), { type: 'FESTIVAL', festivalId: f.id }) : ''}
     </div>
     <h3 class="r-name">${esc(f.name)}</h3>
     ${f.nameJa ? `<p class="r-name-ko" lang="ja">${esc(f.nameJa)}</p>` : ''}
@@ -30,6 +32,7 @@ export async function openFestivalSheet(f) {
       <a class="btn-sub" href="/festival.html?id=${encodeURIComponent(f.id)}">축제 페이지 전체 보기 →</a>
     </div>`;
   const wrap = mountSheet('축제 정보', body, { footer });
+  syncSave(wrap);
 
   const d = await api(`/api/festivals/${encodeURIComponent(f.id)}`, { auth: false }).catch(() => null);
   if (!wrap.isConnected) return;

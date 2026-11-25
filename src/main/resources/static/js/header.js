@@ -2,6 +2,7 @@
 import { api, getToken, clearToken } from './api.js';
 import { esc, icons } from './icons.js';
 import { setDev } from './mock.js';
+import { OMAMORI } from './saved.js';
 
 export const APP_NAME = 'YoriMichi';
 
@@ -21,7 +22,8 @@ export async function renderHeader() {
   try {
     const me = await api('/api/users/me');
     setDev(!!me.developer);
-    userBox.innerHTML = `<span class="nick">${esc(me.nickname)}</span>님
+    userBox.innerHTML = `<a class="icon-btn saved-link" href="/saved.html" aria-label="저장함 縁帳" title="저장함">${OMAMORI}</a>
+      <span class="nick">${esc(me.nickname)}</span>님
       <button type="button" class="link-btn" data-logout>로그아웃</button>`;
     userBox.querySelector('[data-logout]').addEventListener('click', () => {
       clearToken();

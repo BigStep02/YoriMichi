@@ -3,6 +3,7 @@ import { api } from './api.js';
 import { renderHeader } from './header.js';
 import { regionKo } from './regions.js';
 import { icons, esc } from './icons.js';
+import { saveButton, syncSave, spotKey } from './saved.js';
 import { kindLabel, kindIcon, closedKo, spotMapsUrl } from './spotsheet.js';
 
 renderHeader();
@@ -79,6 +80,7 @@ function render(d) {
       <a class="btn-primary" href="${esc(spotMapsUrl(d))}" target="_blank" rel="noopener">${icons.map('icon')} 구글 지도에서 길찾기</a>
       <a class="btn-ghost" href="/restaurants.html?${near}">${icons.fork('icon')} 근처 맛집 보기</a>
       <a class="btn-ghost" href="/festivals.html?${near}">${icons.lantern('icon')} 근처 축제 보기</a>
+      ${saveButton(spotKey(d.id), { type: 'SPOT', spotId: d.id }, 'ghost')}
       ${official ? `<a class="btn-sub" href="${esc(official)}" target="_blank" rel="noopener">공식 사이트 ↗</a>` : ''}
     </div>`;
 }
@@ -86,7 +88,7 @@ function render(d) {
 async function load() {
   if (!id || !/^\d+$/.test(id)) { renderError('잘못된 주소예요. 놀거리 목록에서 다시 선택해 주세요.'); return; }
   renderLoading();
-  try { render(await api(`/api/spots/${id}`, { auth: false })); }
+  try { render(await api(`/api/spots/${id}`, { auth: false })); syncSave(contentEl); }
   catch (e) { renderError(e.status === 404 ? '해당 놀거리를 찾을 수 없어요.' : e.message); }
 }
 load();

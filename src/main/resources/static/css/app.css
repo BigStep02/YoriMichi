@@ -1886,3 +1886,104 @@ body.hanabi-home .cats .cat.spot .cat-icon { color: #7FE0C0; }
 .search-bar.fixed-loc [data-open="loc"], .search-bar.fixed-loc [data-loc-note] { display: none; }
 .near-pill + .search-bar.fixed-loc { margin-top: 8px; }
 .dp-ico-txt { font-size: 18px; line-height: 1; }
+
+/* ── 저장(縁帳): お守り 버튼 · 토스트 · 저장함 ───────────────────────── */
+.omamori { width: 18px; height: 18px; flex: none; }
+.omamori .om-body { fill: transparent; transition: fill .2s; }
+.save-btn { font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.save-btn[aria-pressed="true"] { color: #FFE7B0; }
+.save-btn[aria-pressed="true"] .om-body { fill: #E8462E; }
+/* 시트 위 알약 */
+.save-pill {
+  margin-left: auto; display: inline-flex; align-items: center; gap: 4px; height: 30px; padding: 0 12px;
+  border-radius: 999px; font-size: 12px; font-weight: 800; color: #F5EFE6;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(242,193,78,.35);
+}
+.save-pill[aria-pressed="true"] { background: rgba(232,70,46,.22); border-color: rgba(242,193,78,.7); }
+/* 상세 페이지 줄 버튼 */
+.save-ghost { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.save-ghost[aria-pressed="true"] { background: rgba(232,70,46,.2); border-color: rgba(242,193,78,.7); }
+/* 아이콘 버튼 (코스 카드·저장함) */
+.save-ico .omamori { width: 21px; height: 21px; }
+.save-ico[aria-pressed="true"] { background: rgba(232,70,46,.22); border-color: rgba(242,193,78,.75); box-shadow: 0 0 16px rgba(232,70,46,.35); }
+.cx-head .cx-save { margin-left: 0; height: 28px; }
+.saved-link .omamori { width: 20px; height: 20px; }
+/* 저장 순간 불빛 */
+.save-pop { animation: save-pop .55s cubic-bezier(.2,.9,.3,1.3); }
+@keyframes save-pop {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(242,193,78,.7); }
+  40% { transform: scale(1.12); box-shadow: 0 0 0 8px rgba(242,193,78,.18); }
+  100% { transform: scale(1); box-shadow: 0 0 0 14px rgba(242,193,78,0); }
+}
+
+.save-toast {
+  position: fixed; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); z-index: 3000;
+  transform: translate(-50%, 16px); opacity: 0; transition: transform .25s ease, opacity .25s ease;
+  display: flex; align-items: center; gap: 14px; max-width: calc(100vw - 32px);
+  padding: 12px 16px; border-radius: 16px; font-size: 14px; font-weight: 700; color: #F5EFE6;
+  background: rgba(14,11,32,.94); border: 1px solid rgba(242,193,78,.4); box-shadow: 0 10px 30px rgba(0,0,0,.45);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+}
+.save-toast.on { transform: translate(-50%, 0); opacity: 1; }
+.save-toast a { color: #F7D57A; font-weight: 900; text-decoration: none; white-space: nowrap; }
+
+/* 저장함 페이지 */
+.sv-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+.sv-tabs::-webkit-scrollbar { display: none; }
+.sv-tabs button { white-space: nowrap; }
+.sv-list { display: flex; flex-direction: column; gap: 10px; }
+.sv-row { display: flex; align-items: center; gap: 8px; }
+.sv-row > .next-card { flex: 1; min-width: 0; margin: 0; }
+.sv-row > .next-card + .next-card { margin-top: 0; }
+.sv-ended { opacity: .62; }
+.sv-memo { margin: 6px 0 0; font-size: 13px; color: var(--gray); white-space: pre-line; }
+.sv-row-memo { margin: -4px 4px 2px; }
+
+.sv-seal {
+  position: relative; display: grid; grid-template-columns: 52px 1fr; gap: 12px; padding: 16px;
+  border-radius: 22px; border: 1px dashed rgba(242,193,78,.45);
+  background:
+    radial-gradient(70% 80% at 0% 0%, rgba(232,70,46,.16), transparent 60%),
+    linear-gradient(180deg, rgba(20,16,44,.78), rgba(10,8,26,.88));
+}
+.sv-seal-mark {
+  width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center;
+  font: 900 24px/1 'Zen Old Mincho', 'Noto Sans JP', serif; color: #FFF1D6;
+  background: radial-gradient(circle at 35% 30%, #F05A34, #A8301A); transform: rotate(-6deg);
+  box-shadow: 0 0 22px rgba(232,70,46,.45), inset 0 0 0 2px rgba(255,241,214,.35);
+}
+.sv-seal-body { min-width: 0; }
+.sv-kicker { font-size: 10.5px; font-weight: 900; letter-spacing: .12em; color: #F7D57A; }
+.sv-seal-t { margin: 4px 0 2px; font-size: 16px; font-weight: 900; line-height: 1.35; word-break: keep-all; }
+.sv-seal-sub { margin: 0; font-size: 12.5px; color: var(--gray); }
+.sv-seal .cx-actions { display: flex; gap: 8px; margin-top: 12px; }
+
+.sv-course {
+  border-radius: 22px; padding: 14px 16px 16px; border: 1px solid rgba(242,193,78,.35);
+  background:
+    radial-gradient(90% 60% at 100% 0%, rgba(242,193,78,.14), transparent 60%),
+    linear-gradient(180deg, rgba(20,16,44,.78), rgba(10,8,26,.9));
+}
+.sv-course-h { display: flex; align-items: center; gap: 12px; }
+.sv-course-h .cx-head-t b { font-size: 17px; }
+.sv-course .cx-kicker { font-size: 11px; color: rgba(245,239,230,.6); }
+.sv-steps { list-style: none; margin: 14px 0 0; padding: 0; }
+.sv-step { display: grid; grid-template-columns: 40px 1fr; gap: 12px; align-items: center; --cx-accent: #F7D57A; }
+.sv-step .cx-node { width: 34px; height: 40px; margin: 0; font-size: 15px; animation: none; }
+.sv-step .cx-node::before, .sv-step .cx-node::after { left: 9px; right: 9px; height: 4px; }
+.sv-step .cx-label { display: block; margin-bottom: 2px; }
+.sv-step-name { font-size: 15px; font-weight: 800; color: #F5EFE6; text-decoration: none; }
+.sv-step-open {
+  font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; padding: 6px 12px; border-radius: 999px;
+  color: #1A0A05; background: linear-gradient(180deg, #F7D57A, #E6AE33); border: 0;
+}
+.sv-thread { height: 16px; margin-left: 19px; border-left: 2px dashed rgba(232,70,46,.6); }
+
+.sv-empty { text-align: center; padding: 40px 16px; border-radius: 22px; background: rgba(20,16,44,.6); border: 1px solid var(--line); }
+.sv-empty-ic { display: inline-grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; margin-bottom: 8px; color: #F7D57A; background: rgba(232,70,46,.18); }
+.sv-empty-ic .omamori { width: 32px; height: 32px; }
+.sv-empty .btn-primary { display: inline-flex; margin-top: 12px; padding: 0 22px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .save-toast { transition: none; }
+}

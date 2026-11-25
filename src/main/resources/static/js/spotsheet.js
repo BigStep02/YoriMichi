@@ -3,6 +3,7 @@ import { api } from './api.js';
 import { mountSheet } from './sheet.js';
 import { icons, esc, TORII } from './icons.js';
 import { regionKo } from './regions.js';
+import { saveButton, syncSave, spotKey } from './saved.js';
 
 export const KIND_META = {
   SHRINE_TEMPLE: { label: '신사·절',       icon: TORII },
@@ -37,6 +38,7 @@ export async function openSpotSheet(s) {
     <div class="result-top">
       <span class="type-chip">${kindIcon(s.kind)} ${esc(kindLabel(s.kind))}</span>
       ${s.openNow === true ? '<span class="open-badge">영업 중</span>' : s.openNow === false ? '<span class="closed-badge">영업 전·종료</span>' : ''}
+      ${s.id ? saveButton(spotKey(s.id), { type: 'SPOT', spotId: s.id }) : ''}
     </div>
     <h3 class="r-name">${esc(s.name)}</h3>
     ${s.nameJa ? `<p class="r-name-ko" lang="ja">${esc(s.nameJa)}</p>` : ''}
@@ -48,6 +50,7 @@ export async function openSpotSheet(s) {
       <a class="btn-sub" href="/restaurants.html?lat=${s.lat}&lng=${s.lng}&near=${encodeURIComponent(s.name)}">근처 맛집 보기 →</a>
     </div>`;
   const wrap = mountSheet('놀거리 정보', body, { footer });
+  syncSave(wrap);
   if (!s.id) { wrap.querySelector('[data-spot-body]').innerHTML = s.summary ? `<p>${esc(s.summary)}</p>` : ''; return; }
 
   const d = await api(`/api/spots/${encodeURIComponent(s.id)}`, { auth: false }).catch(() => null);
