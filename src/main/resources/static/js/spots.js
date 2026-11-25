@@ -6,6 +6,7 @@ import { mountSearchBar } from './searchbar.js';
 import { icons, esc, dpRun, dpShow, TITLE_ICONS } from './icons.js';
 import { regionKo } from './regions.js';
 import { kindLabel, kindIcon, openSpotSheet } from './spotsheet.js';
+import { saveButton, syncSave, spotKey } from './saved.js';
 
 renderHeader();
 document.querySelector('.draw-title')?.insertAdjacentHTML('afterbegin', `<span class="title-ic">${TITLE_ICONS.spot}</span>`);
@@ -70,7 +71,7 @@ function item(s, i) {
   const open = s.openNow === true ? '<span class="open-dot">영업 중</span>'
              : s.openNow === false ? '<span class="muted">영업 전·종료</span>' : '';
   return `
-    <button type="button" class="r-item" data-i="${i}">
+    <div class="r-item" role="button" tabindex="0" data-i="${i}">
       <span class="r-rank" aria-hidden="true">${kindIcon(s.kind)}</span>
       <span class="r-main">
         <span class="r-title">${esc(s.name)}</span>
@@ -85,8 +86,8 @@ function item(s, i) {
           ${open ? `<span class="sep">·</span>${open}` : ''}
         </span>
       </span>
-      ${icons.chevronRight('icon r-chev')}
-    </button>`;
+      ${saveButton(spotKey(s.id), { type: 'SPOT', spotId: s.id }, 'mini')}
+    </div>`;
 }
 
 async function load() {
@@ -141,11 +142,18 @@ function render() {
   countEl.textContent = (data.searchedRadiusKm > radiusKm ? `${radiusKm}km 안에 없어서 ${data.searchedRadiusKm}km까지 · ` : '')
     + `${lastList.length}곳${openOnly ? ' · 영업 중' : ''} · 가까운 순`;
   listEl.innerHTML = lastList.map(item).join('');
+  syncSave(listEl);
 }
 
 listEl.addEventListener('click', (e) => {
+  if (e.target.closest('.save-btn')) return;   // 저장 버튼은 상세를 열지 않음
   const el = e.target.closest('.r-item[data-i]');
   if (el) openSpotSheet(lastList[Number(el.dataset.i)]);
+});
+listEl.addEventListener('keydown', (e) => {
+  if ((e.key !== 'Enter' && e.key !== ' ') || !e.target.matches('.r-item[data-i]')) return;
+  e.preventDefault();
+  openSpotSheet(lastList[Number(e.target.dataset.i)]);
 });
 
 // ---------- 뽑기 ----------

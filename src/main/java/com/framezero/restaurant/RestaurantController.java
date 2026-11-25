@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/restaurants")
@@ -97,6 +98,13 @@ public class RestaurantController {
             @RequestParam(defaultValue = "SCORE") SortOrder sort
     ) {
         return restaurantService.nearby(lat, lng, radiusM, Category.normalize(category), openNow, maxPrice, sort);
+    }
+
+    @GetMapping("/names")
+    @Operation(summary = "R-03 가게 이름만 조회 (저장함 카드 제목용, 최대 30개)")
+    @SecurityRequirements
+    public Map<String, String> names(@RequestParam List<String> ids) {
+        return restaurantService.names(ids);
     }
 
     @GetMapping("/{placeId}")

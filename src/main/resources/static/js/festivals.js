@@ -6,6 +6,7 @@ import { formatRange, dDayLabel, todayTokyo } from './dates.js';
 import { regionKo } from './regions.js';
 import { icons, esc, dpRun, dpShow, TITLE_ICONS } from './icons.js';
 import { openFestivalSheet } from './festsheet.js';
+import { saveButton, syncSave, festKey } from './saved.js';
 
 renderHeader();
 document.querySelector('.draw-title')?.insertAdjacentHTML('afterbegin', `<span class="title-ic">${TITLE_ICONS.fest}</span>`);
@@ -46,11 +47,12 @@ function dateBox(f) {
   return `<div class="date-box"><div class="m">${yr}${m}월</div><div class="d">${d}</div></div>`;
 }
 
-function card(f, later) {
+/** save: 목록에서만 오른쪽 아래 お守り 저장 버튼 (링크 밖에 둠 — 링크 안 버튼은 router가 이동시킴) */
+function card(f, later, save = false) {
   const badge = f.ongoing
     ? '<span class="b-live">진행 중</span>'
     : `<span class="b-d">${dDayLabel(f.dDay, f.ongoing)}</span>`;
-  return `
+  const a = `
     <a class="f-item${later ? ' later' : ''}" href="/festival.html?id=${encodeURIComponent(f.id)}">
       ${dateBox(f)}
       <div class="f-main">
@@ -61,6 +63,8 @@ function card(f, later) {
         ${!later && f.summary ? `<p class="f-sum">${esc(f.summary)}</p>` : ''}
       </div>
     </a>`;
+  const btn = save ? saveButton(festKey(f.id), { type: 'FESTIVAL', festivalId: f.id }, 'mini') : '';
+  return btn ? `<div class="f-wrap">${a}${btn}</div>` : a;
 }
 
 function syncUrl({ from, to }) {
@@ -92,13 +96,15 @@ async function load(state) {
     if (data.fallback) {
       noticeEl.innerHTML = `<div class="f-empty"><b>🏮 이 기간엔 근처 축제가 없어요</b><span>대신 가장 가까운 일정을 모았어요</span></div>`;
       countEl.textContent = '다가오는 축제';
-      resultsEl.innerHTML = list.map(f => card(f, true)).join('');
+      resultsEl.innerHTML = list.map(f => card(f, true, true)).join('');
+      syncSave(resultsEl);
       return;
     }
     noticeEl.innerHTML = data.searchedRadiusKm > radiusKm
       ? `<p class="f-widen">${radiusKm}km 안에 없어서 ${data.searchedRadiusKm}km까지 넓혀 찾았어요</p>` : '';
     countEl.textContent = `이 기간 ${list.length}개 · 가까운 순`;
-    resultsEl.innerHTML = list.map(f => card(f, false)).join('');
+    resultsEl.innerHTML = list.map(f => card(f, false, true)).join('');
+      syncSave(resultsEl);
   } catch (e) {
     if (seq !== requestSeq) return;
     noticeEl.innerHTML = `<div class="f-empty"><b>잠깐 문제가 생겼어요</b><span>${esc(e.message)}</span></div>`;

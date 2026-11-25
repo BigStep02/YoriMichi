@@ -31,6 +31,8 @@ public class PlacesClient {
 
     private static final String NEARBY_URL = "https://places.googleapis.com/v1/places:searchNearby";
     private static final String DETAIL_URL  = "https://places.googleapis.com/v1/places/{placeId}?languageCode=ko";
+    /** 저장함 카드 제목용: 이름만 (목록과 같은 일본어 이름) */
+    private static final String NAME_URL    = "https://places.googleapis.com/v1/places/{placeId}?languageCode=ja";
 
     private static final String NEARBY_FIELD_MASK =
             "places.id,places.displayName,places.location,places.rating," +
@@ -175,6 +177,26 @@ public class PlacesClient {
         } catch (Exception e) {
             log.warn("Places getPlace parse failed: {}", e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "맛집 정보를 불러오지 못했어요");
+        }
+    }
+
+    /** 이름만 가볍게 조회 (FieldMask: id,displayName). 실패하면 null */
+    public String getPlaceName(String placeId) {
+        if (isKeyMissing()) return null;
+        try {
+            tickDetail();   // 일일 한도 넘으면 예외 → 이름 없이 넘어감
+            String json = restClient.get()
+                    .uri(NAME_URL, placeId)
+                    .header("X-Goog-Api-Key", apiKey)
+                    .header("X-Goog-FieldMask", "id,displayName")
+                    .retrieve()
+                    .body(String.class);
+            if (json == null || json.isBlank()) return null;
+            PlaceDetailResult r = objectMapper.readValue(json, PlaceDetailResult.class);
+            return r.displayName() != null ? r.displayName().text() : null;
+        } catch (Exception e) {
+            log.warn("Places getPlaceName failed: {}", e.getMessage());
+            return null;
         }
     }
 

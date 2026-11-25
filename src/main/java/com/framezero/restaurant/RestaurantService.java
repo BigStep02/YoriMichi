@@ -16,7 +16,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Service
@@ -108,6 +110,33 @@ public class RestaurantService {
                 .toList();
 
         return new NearbyResponse(restaurants, restaurants.size(), avgRating, effectiveRadius, categories, sort, load.cached());
+    }
+
+    private static final java.util.regex.Pattern PLACE_ID = java.util.regex.Pattern.compile("^[A-Za-z0-9_-]{10,300}$");
+    private static final int MAX_NAMES = 30;
+
+    /**
+     * 저장함 카드 제목용 가게 이름 (placeId → 이름). DB에는 placeId만 있으므로 그때그때 조회.
+     * 메모리 캐시(뽑기·목록·상세에서 받은 이름) 먼저 보고, 없을 때만 이름 전용 가벼운 조회.
+     */
+    public Map<String, String> names(List<String> placeIds) {
+        Map<String, String> out = new LinkedHashMap<>();
+        placeIds.stream()
+                .filter(id -> id != null && PLACE_ID.matcher(id).matches())
+                .distinct().limit(MAX_NAMES)
+                .forEach(id -> {
+                    String n = cache.getName(id);
+                    if (n == null) {
+                        RestaurantDetailDto d = cache.getDetail(id);
+                        if (d != null) n = d.name();
+                    }
+                    if (n == null) {
+                        n = placesClient.getPlaceName(id);
+                        cache.putName(id, n);
+                    }
+                    if (n != null) out.put(id, n);
+                });
+        return out;
     }
 
     public RestaurantDetailDto detail(String placeId) {

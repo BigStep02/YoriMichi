@@ -127,6 +127,10 @@ public class RestaurantCache {
         candidates.forEach(c -> { if (c.name() != null) nameByPlaceId.put(c.placeId(), c.name()); });
     }
 
+    public void putName(String placeId, String name) {
+        if (placeId != null && name != null) nameByPlaceId.put(placeId, name);
+    }
+
     public String getName(String placeId) {
         return nameByPlaceId.get(placeId);
     }
