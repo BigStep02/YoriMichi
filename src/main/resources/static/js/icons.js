@@ -77,9 +77,38 @@ export function esc(s) {
 
 const RM = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-/** 뽑기 패널: 등불이 은은하게 깜빡이는 동안 task 실행 (너무 빨리 끝나면 최소 시간만큼 기다려 연출이 끊기지 않게) */
+// ── 뽑기 패널 3D 오미쿠지 통 (WebGL 되면 등불 자리에 옻칠 통을 띄움. 안 되면 기존 등불 그대로) ──
+let omk = null;
+/** 페이지마다 한 번: kind = 'food'(食) | 'fest'(祭) | 'spot'(遊) */
+export async function dpMount(kind) {
+  const panel = document.getElementById('draw-panel');
+  const lantern = panel?.querySelector('.dp-lantern');
+  if (!lantern || !window.gsap) return;
+  try {
+    const m = await import('./omikuji/omikuji-stage.js');
+    if (!m.webglOk() || !lantern.isConnected) return;
+    if (omk?.alive) omk.destroy();
+    const slot = document.createElement('span');
+    slot.className = 'dp-omk';
+    slot.setAttribute('role', 'presentation');
+    lantern.after(slot);
+    omk = m.mountOmikuji(slot, { kind, calm: RM(), onTap: () => panel.querySelector('.dp-btn')?.click() });
+    lantern.style.display = 'none';   // CSS display:grid 때문에 hidden 속성만으론 안 숨겨짐
+  } catch (e) {
+    console.warn('오미쿠지 3D를 켤 수 없어요', e);
+  }
+}
+
+/** 뽑기 패널: 등불이 은은하게 깜빡이는 동안 task 실행 (너무 빨리 끝나면 최소 시간만큼 기다려 연출이 끊기지 않게)
+ *  오미쿠지 통이 떠 있으면 통 흔들기 → 막대 뽑기 연출이 끝나는 순간 결과를 돌려줌 */
 export async function dpRun(task, minMs = 800) {
   const panel = document.getElementById('draw-panel');
+  if (omk?.alive && panel?.contains(document.querySelector('.dp-omk'))) {
+    panel.classList.remove('lit');
+    panel.classList.add('is-drawing');
+    try { return await omk.draw(task); }
+    finally { panel.classList.remove('is-drawing'); }
+  }
   panel?.classList.remove('lit');
   panel?.classList.add('is-drawing');
   try {

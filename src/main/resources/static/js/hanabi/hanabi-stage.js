@@ -2203,10 +2203,10 @@ export function createHanabiStage(canvas, opts = {}) {
   function leave() { gsap.killTweensOf(camOff); return gsap.to(camOff, { z: -2.4, y: -.1, duration: .34, ease: 'power2.in' }); }
   function enter() { gsap.killTweensOf(camOff); Object.assign(camOff, { x: 0, y: .5, z: calm ? 1.2 : 3.4 }); gsap.to(camOff, { x: 0, y: 0, z: 0, duration: 1.1, ease: 'power3.out' }); }
   function warm() { try { composer.render(); } catch { /* noop */ } }
-  function resume() {
+  function resume(quiet = false) {
     if (alive) return;
     if (tl) idle();
-    enter();
+    if (!quiet) enter();
     shown = false; alive = true; clock.getDelta(); lastW = 0; resize();
     startSky(SKY_EVERY); if (ambientWas) ambient(true);
     raf = requestAnimationFrame(frame);
@@ -2249,6 +2249,8 @@ export function acquireStage(canvas, opts = {}) {
 }
 /** 지금 무대가 '나가는' 연출 (router.js가 페이지 옮기기 직전에 부름) */
 export function leaveStage() { return currentStage?.stage.leave(); }
+/** 오미쿠지처럼 화면을 덮는 연출 동안 배경 무대를 잠깐 멈춤 (60fps 유지) / 끝나면 그 자리에서 이어서 */
+export function holdStages(on) { if (!currentStage) return; if (on) currentStage.stage.pause(); else currentStage.stage.resume(true); }
 /** 3D가 없는 페이지로 갈 때 */
 export function pauseStages() { if (currentStage) { currentStage.stage.pause(); currentStage = null; } }
 // 처음 들어올 때 다른 페이지 무대도 미리 만들어 둠 → 어느 페이지로 가도 끊기지 않음

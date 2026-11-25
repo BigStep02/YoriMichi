@@ -4,7 +4,7 @@ import { renderHeader } from './header.js';
 import { mountSearchBar } from './searchbar.js';
 import { formatRange, dDayLabel, todayTokyo } from './dates.js';
 import { regionKo } from './regions.js';
-import { icons, esc, dpRun, dpShow, TITLE_ICONS } from './icons.js';
+import { icons, esc, dpRun, dpShow, dpMount, TITLE_ICONS } from './icons.js';
 import { openFestivalSheet } from './festsheet.js';
 import { saveButton, syncSave, festKey } from './saved.js';
 
@@ -170,8 +170,10 @@ async function drawOne() {
         <a class="dp-main" data-fest-open href="/festival.html?id=${encodeURIComponent(f.id)}">축제 자세히 보기</a>
         <a class="dp-ico" href="/restaurants.html?lat=${f.lat}&lng=${f.lng}&near=${encodeURIComponent(f.name)}" aria-label="근처 맛집" title="근처 맛집">${icons.fork('icon')}</a>
         <a class="dp-ico" href="/spots.html?lat=${f.lat}&lng=${f.lng}&near=${encodeURIComponent(f.name)}" aria-label="근처 놀거리" title="근처 놀거리">${icons.torii()}</a>
+        ${saveButton(festKey(f.id), { type: 'FESTIVAL', festivalId: f.id }, 'ico')}
       </div>
     </div>`);
+  syncSave(dpResult);
   dpDrawBtn.textContent = '다시 뽑기';
 }
 
@@ -190,3 +192,5 @@ window.addEventListener('click', (e) => {
   if (!resultsEl.isConnected || !(resultsEl.contains(e.target) || dpResult.contains(e.target))) return;
   openFromLink(e);
 }, true);
+
+dpMount('fest');   // 뽑기 패널 3D 오미쿠지 통
