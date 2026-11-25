@@ -32,7 +32,7 @@
 | 데이터 | 규모 | 출처·방식 |
 |---|---|---|
 | 축제 | 73건 (전국, 겨울 포함) | 직접 조사해 Flyway 시드로 관리. 날짜·URL은 확인된 것만, 없으면 비워 둠 |
-| 놀거리 | 236곳 + 계절별 운영시간 139행 | 직접 조사해 시드로 관리. 정기 휴일·기간별 시간·휴관 반영 |
+| 놀거리 | 258곳 + 계절별 운영시간 164행 | 직접 조사해 시드로 관리. 정기 휴일·기간별 시간·휴관 반영 |
 | 맛집 | 실시간 | Google Places API (New). DB에 저장하지 않고 메모리 캐시만 사용 |
 
 축제·놀거리 데이터는 계속 보강 중입니다 (2027년 봄~가을 축제, 놀거리가 적은 도시).
@@ -42,7 +42,7 @@
 | 구분 | 사용 |
 |---|---|
 | Backend | Spring Boot 4.1, Java 17, Spring Data JPA |
-| DB | Oracle Free (Docker), Flyway (V1~V30) |
+| DB | Oracle Free (Docker), Flyway (V1~V31) |
 | 인증 | JWT, BCrypt |
 | 외부 API | Google Places API (New) Nearby/Details, Gemini API |
 | Frontend | HTML, CSS, JavaScript (프레임워크 없이), Three.js, GSAP |
