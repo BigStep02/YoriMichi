@@ -159,7 +159,7 @@ async function drawOne() {
   dpBusy = true;
   dpDrawBtn.disabled = true;
   dpDrawBtn.textContent = '뽑는 중…';
-  await dpRun(() => null);
+  await dpRun(() => null, 800, () => ({ title: f.name, sub: f.nameJa || '' }));
   dpBusy = false;
   dpDrawBtn.disabled = false;
 

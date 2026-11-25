@@ -180,7 +180,8 @@ async function drawOne() {
 
   let data;
   try {
-    data = await dpRun(() => MOCK ? mockDrawOne() : api(`/api/restaurants/draw?${q}`, { auth: false }));
+    data = await dpRun(() => MOCK ? mockDrawOne() : api(`/api/restaurants/draw?${q}`, { auth: false }), 800,
+      (d) => (d?.pick ? { title: d.pick.name, sub: d.pick.typeLabel } : null));
   } catch (e) {
     dpShow(dpResult, `<p class="muted dp-msg">${esc(e.message)}</p>`, false);
     dpDrawBtn.textContent = '뽑기';

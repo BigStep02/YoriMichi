@@ -111,13 +111,14 @@ export async function dpMount(kind) {
 }
 
 /** 뽑기 패널: 등불이 은은하게 깜빡이는 동안 task 실행 (너무 빨리 끝나면 최소 시간만큼 기다려 연출이 끊기지 않게)
- *  오미쿠지 통이 떠 있으면 통 흔들기 → 막대 뽑기 연출이 끝나는 순간 결과를 돌려줌 */
-export async function dpRun(task, minMs = 800) {
+ *  오미쿠지 통이 떠 있으면 통 흔들기 → 막대 뽑기 연출이 끝나는 순간 결과를 돌려줌
+ *  label(result) → { title, sub }: 연출 마지막에 펼쳐지는 두루마리에 쓸 글 (선택) */
+export async function dpRun(task, minMs = 800, label) {
   const panel = document.getElementById('draw-panel');
   if (omk?.alive && omk.slot && panel?.contains(omk.slot)) {
     panel.classList.remove('lit');
     panel.classList.add('is-drawing');
-    try { return await omk.draw(task); }
+    try { return await omk.draw(task, { label }); }
     finally { panel.classList.remove('is-drawing'); }
   }
   panel?.classList.remove('lit');

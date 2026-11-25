@@ -1805,7 +1805,7 @@ body.hanabi-home .cats .cat.spot .cat-icon { color: #7FE0C0; }
 }
 .dp-omk::before {               /* 통 아래 붉은 스포트라이트 웅덩이 */
   content: ""; position: absolute; left: 4px; right: 4px; bottom: 4px; height: 14px; border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(232,70,46,.45), transparent);
+  background: radial-gradient(closest-side, rgba(212,175,55,.22), transparent);
   pointer-events: none;
 }
 .dp-omk .omk-canvas { position: relative; display: block; width: 100%; height: 100%; }
@@ -1815,10 +1815,22 @@ body.hanabi-home .cats .cat.spot .cat-icon { color: #7FE0C0; }
 .omk-back {
   position: absolute; inset: 0; opacity: 0;
   background:
-    radial-gradient(55% 40% at 50% 46%, rgba(232,70,46,.26), transparent 70%),
-    radial-gradient(120% 80% at 50% 50%, rgba(7,10,26,.88), rgba(4,5,14,.97));
+    #09090B;   /* 3D 장면 배경과 같은 색 → 후처리를 켜고 끌 때 이음매가 안 보임 */
 }
-.omk-flash { position: absolute; inset: 0; opacity: 0; pointer-events: none; background: radial-gradient(circle at 50% 45%, #FFFFFF, #FFF1D6 45%, rgba(255,241,214,.85)); }
+.omk-flash { position: absolute; inset: 0; opacity: 0; pointer-events: none; background: radial-gradient(circle at 50% 45%, #FFFDF8, #F6EEDF 50%, rgba(246,238,223,.9)); }
+/* 결과 타이포그래피: 막대 아래 정적 속에 떠오르는 글. 아래쪽은 숯검정으로 덮어 막대 끝이 어둠 속으로 사라지게 */
+.omk-type {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 46%; opacity: 0; pointer-events: none;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-end; text-align: center;
+  padding: 0 32px calc(15vh + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(to top, #09090B 52%, rgba(9,9,11,.85) 72%, rgba(9,9,11,0));
+}
+.omk-kicker { font: 500 11px/1 var(--font-kr); letter-spacing: .34em; color: #C9A35B; margin-bottom: 18px; font-family: 'Zen Old Mincho', var(--font-jp); }
+.omk-title { font-family: 'Zen Old Mincho', 'Noto Serif KR', 'AppleMyungjo', serif; font-weight: 700; font-size: 30px; line-height: 1.32; letter-spacing: .04em; color: #EFE8DA; word-break: keep-all; max-width: 15em; }
+.omk-rule { display: block; width: 28px; height: 1px; background: #C9A35B; opacity: .75; margin: 20px auto 14px; }
+.omk-sub { font: 400 12px/1.5 var(--font-kr); letter-spacing: .2em; color: rgba(239,232,218,.55); }
+.omk-type.no-title .omk-title, .omk-type.no-title .omk-rule { display: none; }
+
 
 /* 놀거리 시트: 팁 박스와 공식 사이트 버튼 간격 */
 .sp-official {
@@ -2169,3 +2181,4 @@ body.hanabi-home .cats .cat.spot .cat-icon { color: #7FE0C0; }
 /* 근처 축제: 위에 '祭 · MATSURI' 한 줄(::before)이 있어 세로 배치였음 → 그 줄만 한 줄 차지, 아이콘+제목은 가로 */
 body[data-page="festivals"] .draw-title:has(.title-ic) { flex-direction: row; flex-wrap: wrap; align-items: center; }
 body[data-page="festivals"] .draw-title:has(.title-ic)::before { flex-basis: 100%; }
+
