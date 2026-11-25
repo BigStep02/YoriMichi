@@ -4,7 +4,7 @@ import { api } from './api.js';
 import { renderHeader } from './header.js';
 import { mountSearchBar } from './searchbar.js';
 import { openRestaurantSheet as openDetail, priceLabel, walkLabel, typeChip } from './rsheet.js';
-import { icons, esc, dpRun, dpShow, dpMount, TITLE_ICONS } from './icons.js';
+import { icons, esc, dpRun, dpShow, dpMount, bindCard, TITLE_ICONS } from './icons.js';
 import { isMock } from './mock.js';
 import { saveButton, syncSave, restKey } from './saved.js';
 
@@ -114,9 +114,17 @@ async function load() {
   }
 
   countEl.textContent = `${data.count}곳 · 평균 ★${data.avgRating.toFixed(1)}`;
-  listEl.innerHTML = data.restaurants.map((r, i) => `
-    <div class="r-item" role="button" tabindex="0" data-i="${i}">
-      ${opts.sort === 'SCORE' ? `<span class="r-rank${i < 3 ? ' top' : ''}">${i + 1}</span>` : ''}
+  listEl.innerHTML = data.restaurants.map((r, i) => restItem(r, i)).join('');
+  syncSave(listEl);
+}
+
+/** 목록 카드 한 줄. 뽑기 결과(pick)에서도 같은 카드를 씀: 순위 자리에 붉은 '縁', 저장 버튼은 아래 버튼 줄에 */
+function restItem(r, i, pick = false) {
+  const rank = pick ? '<span class="r-rank top" lang="ja">縁</span>'
+    : opts.sort === 'SCORE' ? `<span class="r-rank${i < 3 ? ' top' : ''}">${i + 1}</span>` : '';
+  return `
+    <div class="r-item" role="button" tabindex="0" ${pick ? 'data-dp-card' : `data-i="${i}"`}>
+      ${rank}
       <span class="r-main">
         <span class="r-title" lang="ja">${esc(r.name)}</span>
         <span class="r-sub">
@@ -129,9 +137,8 @@ async function load() {
           ${r.priceLevel != null ? `<span class="sep">·</span><span>${priceLabel(r.priceLevel)}</span>` : ''}
         </span>
       </span>
-      ${r.placeId ? saveButton(restKey(r.placeId), { type: 'RESTAURANT', placeId: r.placeId, lat: r.lat, lng: r.lng }, 'mini') : ''}
-    </div>`).join('');
-  syncSave(listEl);
+      ${!pick && r.placeId ? saveButton(restKey(r.placeId), { type: 'RESTAURANT', placeId: r.placeId, lat: r.lat, lng: r.lng }, 'mini') : ''}
+    </div>`;
 }
 
 listEl.addEventListener('click', (e) => {
@@ -194,17 +201,7 @@ async function drawOne() {
 
   dpShow(dpResult, `
     <div class="dp-pick">
-      <div class="dp-pick-top">
-        <span class="dp-seal" lang="ja">縁</span>
-        ${typeChip(p)}
-        ${p.openNow ? '<span class="open-badge">영업 중</span>' : ''}
-      </div>
-      <div class="dp-pick-name" lang="ja">${esc(p.name)}</div>
-      <div class="dp-pick-meta">
-        ${p.rating != null ? `<span class="star">★ ${p.rating.toFixed(1)}</span>` : ''}
-        <span>${walkLabel(p.distanceM)}</span>
-        ${p.priceLevel != null ? `<span>${priceLabel(p.priceLevel)}</span>` : ''}
-      </div>
+      ${restItem(p, -1, true)}
       <div class="dp-pick-actions">
         <button type="button" class="dp-main" data-dp-detail>가게 공개 · AI 요약</button>
         ${p.googleMapsUri ? `<a class="dp-ico" href="${esc(p.googleMapsUri)}" target="_blank" rel="noopener" aria-label="구글 지도" title="구글 지도">${icons.map('icon')}</a>` : ''}
@@ -214,6 +211,7 @@ async function drawOne() {
     </div>`);
   dpResult.querySelector('[data-dp-swap]').addEventListener('click', () => drawOne());
   dpResult.querySelector('[data-dp-detail]').addEventListener('click', () => openDetail(p));
+  bindCard(dpResult, () => openDetail(p));
   syncSave(dpResult);
 }
 

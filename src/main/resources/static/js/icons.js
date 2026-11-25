@@ -130,6 +130,14 @@ export async function dpRun(task, minMs = 800) {
   }
 }
 
+/** 뽑기 결과에 넣은 목록 카드([data-dp-card])를 누르거나 Enter·Space → 상세 열기 */
+export function bindCard(root, open) {
+  const card = root.querySelector('[data-dp-card]');
+  if (!card) return;
+  card.addEventListener('click', (e) => { if (!e.target.closest('a, button')) open(); });
+  card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
+}
+
 /** 뽑기 결과 넣기: 이전 높이 → 새 높이로 부드럽게 늘고, 내용은 스르륵 떠오름. lit=false면 등불 연출 없이(안내 문구) */
 export function dpShow(el, html, lit = true) {
   const from = el.hidden ? 0 : el.getBoundingClientRect().height;

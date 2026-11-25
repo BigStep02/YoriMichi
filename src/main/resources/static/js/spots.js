@@ -3,7 +3,7 @@
 import { api } from './api.js';
 import { renderHeader } from './header.js';
 import { mountSearchBar } from './searchbar.js';
-import { icons, esc, dpRun, dpShow, dpMount, TITLE_ICONS } from './icons.js';
+import { icons, esc, dpRun, dpShow, dpMount, bindCard, TITLE_ICONS } from './icons.js';
 import { regionKo } from './regions.js';
 import { kindLabel, kindIcon, openSpotSheet } from './spotsheet.js';
 import { saveButton, syncSave, spotKey } from './saved.js';
@@ -70,11 +70,12 @@ function fixedFromQuery(q) {
 // 종류별 한자 도장 (목록 왼쪽 칸)
 const KIND_JA = { SHRINE_TEMPLE: '社', PARK_GARDEN: '園', HISTORIC: '城', MUSEUM: '館', VIEWPOINT: '景', MARKET: '市', AMUSEMENT: '遊', ONSEN: '湯' };
 
-function item(s, i) {
+/** 목록 카드 한 줄. pick=true면 뽑기 결과용: 소개 두 줄을 더 보여 주고, 저장 버튼은 아래 버튼 줄에 */
+function item(s, i, pick = false) {
   const open = s.openNow === true ? '<span class="sp-open on">영업 중</span>'
              : s.openNow === false ? '<span class="sp-open off">영업 전·종료</span>' : '';
   return `
-    <div class="r-item sp-item" role="button" tabindex="0" data-i="${i}" data-kind="${esc(s.kind || '')}">
+    <div class="r-item sp-item" role="button" tabindex="0" ${pick ? 'data-dp-card' : `data-i="${i}"`} data-kind="${esc(s.kind || '')}">
       <span class="sp-kind" aria-hidden="true">
         <span class="sp-kind-ic">${kindIcon(s.kind)}</span>
         <span class="sp-kind-ja" lang="ja">${KIND_JA[s.kind] || '寄'}</span>
@@ -88,8 +89,9 @@ function item(s, i) {
           <span class="sep">·</span><span>${esc(regionKo(s.prefecture, s.city))}</span>
           ${s.hoursLabel ? `<span class="sep">·</span><span>${esc(s.hoursLabel)}</span>` : ''}
         </span>
+        ${pick && s.summary ? `<span class="dp-pick-sum">${esc(s.summary)}</span>` : ''}
       </span>
-      ${saveButton(spotKey(s.id), { type: 'SPOT', spotId: s.id }, 'mini')}
+      ${pick ? '' : saveButton(spotKey(s.id), { type: 'SPOT', spotId: s.id }, 'mini')}
     </div>`;
 }
 
@@ -184,18 +186,7 @@ async function drawOne() {
 
   dpShow(dpResult, `
     <div class="dp-pick">
-      <div class="dp-pick-top">
-        <span class="dp-seal" lang="ja">縁</span>
-        <span class="type-chip">${kindIcon(s.kind)} ${esc(kindLabel(s.kind))}</span>
-        ${s.openNow ? '<span class="open-badge">영업 중</span>' : ''}
-      </div>
-      <div class="dp-pick-name">${esc(s.name)}</div>
-      ${s.nameJa ? `<div class="dp-pick-ja" lang="ja">${esc(s.nameJa)}</div>` : ''}
-      <div class="dp-pick-meta">
-        <span>${Number(s.distanceKm).toFixed(1)}km</span>
-        ${s.hoursLabel ? `<span>${esc(s.hoursLabel)}</span>` : ''}
-      </div>
-      ${s.summary ? `<p class="dp-pick-sum">${esc(s.summary)}</p>` : ''}
+      ${item(s, -1, true)}
       <div class="dp-pick-actions">
         <button type="button" class="dp-main" data-dp-detail>자세히 보기</button>
         <a class="dp-ico" href="/restaurants.html?lat=${s.lat}&lng=${s.lng}&near=${encodeURIComponent(s.name)}" aria-label="근처 맛집" title="근처 맛집">${icons.fork('icon')}</a>
@@ -205,6 +196,7 @@ async function drawOne() {
     </div>`);
   dpBtn.textContent = '다시 뽑기';
   dpResult.querySelector('[data-dp-detail]').addEventListener('click', () => openSpotSheet(s));
+  bindCard(dpResult, () => openSpotSheet(s));
   syncSave(dpResult);
 }
 
