@@ -12,6 +12,23 @@
   <script type="importmap">
   {"imports":{"three":"/js/vendor/three/three.module.min.js","three/addons/":"/js/vendor/three/addons/"}}
   </script>
+  <!-- 3D 모듈을 처음부터 한꺼번에 받아 둠 (import 사슬을 따라 차례로 받느라 기다리던 시간 줄이기) -->
+  <link rel="modulepreload" href="/js/hanabi/hanabi-stage.js">
+  <link rel="modulepreload" href="/js/vendor/three/three.module.min.js">
+  <link rel="modulepreload" href="/js/vendor/three/addons/postprocessing/EffectComposer.js">
+  <link rel="modulepreload" href="/js/vendor/three/addons/postprocessing/RenderPass.js">
+  <link rel="modulepreload" href="/js/vendor/three/addons/postprocessing/UnrealBloomPass.js">
+  <link rel="modulepreload" href="/js/vendor/three/addons/postprocessing/OutputPass.js">
+  <link rel="modulepreload" href="/js/vendor/three/addons/postprocessing/ShaderPass.js">
+  <link rel="modulepreload" href="/js/vendor/three/addons/postprocessing/BokehPass.js">
+  <link rel="modulepreload" href="/js/vendor/three/addons/postprocessing/Pass.js">
+  <link rel="modulepreload" href="/js/vendor/three/addons/postprocessing/MaskPass.js">
+  <link rel="modulepreload" href="/js/vendor/three/addons/objects/Reflector.js">
+  <link rel="modulepreload" href="/js/vendor/three/addons/geometries/RoundedBoxGeometry.js">
+  <link rel="modulepreload" href="/js/vendor/three/addons/shaders/CopyShader.js">
+  <link rel="modulepreload" href="/js/vendor/three/addons/shaders/OutputShader.js">
+  <link rel="modulepreload" href="/js/vendor/three/addons/shaders/LuminosityHighPassShader.js">
+  <link rel="modulepreload" href="/js/vendor/three/addons/shaders/BokehShader.js">
   <script src="/js/vendor/gsap/gsap.min.js" defer></script>
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#070A1A">

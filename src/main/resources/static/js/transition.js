@@ -4,12 +4,11 @@
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let done = false;
   const reveal0 = () => { if (done) return; done = true; requestAnimationFrame(() => { root.classList.add('vt-in'); window.__yoriRevealed = true; dispatchEvent(new Event('yori:revealed')); }); };
-  // 처음 켤 때만: 다른 페이지 무대까지 미리 만드는 동안(멈칫하는 구간) 막을 유지 → 끝나면 걷음
+  // 첫 무대가 그려지면 바로 걷음. 다른 페이지 무대는 이제 한가할 때 하나씩 미리 만들어서(hanabi-stage.js prewarm) 기다릴 필요 없음
   let waited = false;
   const reveal = () => {
     if (waited) return; waited = true;
-    const wait = () => (window.__yoriWarm ? Promise.race([window.__yoriWarm, new Promise((r) => setTimeout(r, 3500))]) : Promise.resolve());
-    setTimeout(() => wait().then(reveal0), 60);
+    setTimeout(reveal0, 60);
   };
   const c = document.getElementById('hanabi-stage');
   if (c && !c.classList.contains('ready')) {

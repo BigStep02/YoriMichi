@@ -3,7 +3,8 @@
 // 뽑기: 통이 화면 가운데로 떠오름 → 묵직하게 두 번 흔들림 → (응답 기다리는 동안 덜그럭) → 윗구멍이 카메라를 향해 기울고
 //       → 막대가 툭 빠져나와 눈앞까지 다가옴 → 번호가 번쩍 → 결과
 // 동작 줄이기: 패널 안에서 막대가 천천히 올라오며 빛남 (이동·흔들림·회전·줌 없음)
-// 사용: const omk = mountOmikuji(slotEl, { kind: 'food'|'fest'|'spot', calm, onTap });  await omk.draw(task)
+// 사용: const omk = mountOmikuji(slotEl, { kind: 'food'|'fest'|'spot', calm, onTap });  await omk.ready;  await omk.draw(task)
+// 성능: WebGL 렌더러·장면은 한 번만 만들고 페이지를 옮기면 canvas만 새 패널로 옮겨 씀 (전환마다 GPU 컨텍스트·셰이더를 새로 만들지 않음)
 import * as THREE from 'three';
 import { holdStages } from '../hanabi/hanabi-stage.js';
 
@@ -58,17 +59,24 @@ function makeEnv(renderer) {
   return rt;
 }
 
+let inst = null;
+/** 패널 칸(slot)에 통을 붙임. 이미 만든 통이 있으면 그대로 옮겨 씀 */
 export function mountOmikuji(slot, opts = {}) {
+  if (!inst || !inst.alive || inst.calm !== !!opts.calm) { inst?.destroy(); inst = build(!!opts.calm); }
+  inst.attach(slot, opts);
+  return inst;
+}
+
+function build(calm) {
   const gsap = window.gsap;
-  const calm = !!opts.calm;
-  let K = KINDS[opts.kind] || KINDS.food;
+  let slot = null, onTap = null;
+  let K = KINDS.food;
   const buzz = (p) => { if (calm) return; try { navigator.vibrate?.(p); } catch { /* noop */ } };
 
   // ── DOM: 패널 칸 안 canvas + 뽑을 때 쓰는 전체 화면 막 ──
   const canvas = document.createElement('canvas');
   canvas.className = 'omk-canvas';
   canvas.setAttribute('aria-hidden', 'true');
-  slot.appendChild(canvas);
   const layer = document.createElement('div');
   layer.className = 'omk-layer';
   layer.innerHTML = '<div class="omk-back"></div><div class="omk-flash"></div>';
@@ -80,6 +88,7 @@ export function mountOmikuji(slot, opts = {}) {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
+  renderer.debug.checkShaderErrors = /[?&]debug3d=1/.test(location.search);   // 켜두면 셰이더 컴파일 동안 메인 스레드가 멈춤
 
   const scene = new THREE.Scene();
   const envRT = makeEnv(renderer);
@@ -176,9 +185,14 @@ export function mountOmikuji(slot, opts = {}) {
 
   // ── 화면 모드 ──
   let full = false;
+  let sizeKey = '';
   function resize() {
     const host = full ? layer : slot;
+    if (!host) return;
     const w = host.clientWidth || 1, h = host.clientHeight || 1;
+    const k = `${w}x${h}x${full}`;
+    if (k === sizeKey) return;   // 같은 크기면 버퍼를 새로 만들지 않음
+    sizeKey = k; since = 1;      // 크기를 바꾸면 화면이 지워지므로 다음 프레임에 바로 다시 그림
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.position.set(0, full ? 0 : .08, full ? CAM_FULL : CAM_PANEL);
@@ -208,24 +222,27 @@ export function mountOmikuji(slot, opts = {}) {
   // ── 시선 따라 기울기 (대기 중) ──
   const parT = { x: 0, y: 0 }, parC = { x: 0, y: 0 };
   let busy = null;
-  if (!calm) {
-    addEventListener('pointermove', (e) => { if (busy) return; parT.y = (e.clientX / innerWidth - .5) * .34; parT.x = (e.clientY / innerHeight - .5) * .22; }, { passive: true });
-    addEventListener('deviceorientation', (e) => { if (busy || e.gamma == null) return; parT.y = Math.max(-1, Math.min(1, e.gamma / 30)) * .17; parT.x = Math.max(-1, Math.min(1, (e.beta - 45) / 30)) * .11; }, { passive: true });
-  }
+  const onPointer = (e) => { if (busy) return; parT.y = (e.clientX / innerWidth - .5) * .34; parT.x = (e.clientY / innerHeight - .5) * .22; };
+  const onTilt = (e) => { if (busy || e.gamma == null) return; parT.y = Math.max(-1, Math.min(1, e.gamma / 30)) * .17; parT.x = Math.max(-1, Math.min(1, (e.beta - 45) / 30)) * .11; };
 
   // ── 그리기 ──
-  let visible = true, alive = true, raf = 0, t = 0;
-  const spin = { v: calm ? 0 : -Math.PI * 2 };
-  const io = new IntersectionObserver((es) => { visible = es[0].isIntersecting; }, { rootMargin: '80px' });
-  io.observe(slot);
+  let visible = true, alive = true, raf = 0, t = 0, since = 0;
+  const spin = { v: 0 };
+  const ro = new ResizeObserver(() => { if (!full) resize(); });   // 칸이 보이게 되거나 크기가 바뀌면 맞춤
   const clock = new THREE.Clock();
   function frame() {
     if (!alive) return;
+    // 패널이 사라짐(다른 페이지로 이동) → 그리기만 멈추고 렌더러는 남겨 둠 (다음 페이지에서 바로 다시 씀)
+    if (!slot || !slot.isConnected) { raf = 0; return; }
     raf = requestAnimationFrame(frame);
-    if (!slot.isConnected) { destroy(); return; }
+    if (!full && slot.clientWidth && `${slot.clientWidth}x${slot.clientHeight}x${full}` !== sizeKey) resize();   // 관찰자 알림이 늦어도 칸 크기에 맞춤
     const dt = Math.min(clock.getDelta(), .05);
-    if (document.hidden || (!visible && !busy)) return;
-    t += dt;
+    // 패널이 화면 밖이면 대기 그리기 멈춤 (뽑는 중·전체 화면일 땐 항상 그림)
+    if (!busy && !full) { const r = slot.getBoundingClientRect(); visible = r.width > 0 && r.bottom > -80 && r.top < innerHeight + 80; }
+    if (document.hidden || (!visible && !busy && !full)) return;
+    t += dt; since += dt;
+    if (!busy && since < 1 / 31) return;   // 대기 중엔 30fps면 충분 (배경 무대와 GPU를 나눠 씀)
+    since = 0;
     parC.x += (parT.x - parC.x) * .07; parC.y += (parT.y - parC.y) * .07;
     par.rotation.set(parC.x + (calm ? 0 : Math.sin(t * .9) * .025), parC.y + spin.v + (calm ? 0 : Math.sin(t * .6) * .08), 0);
     if (!busy) tilt.position.y = calm ? 0 : Math.sin(t * 1.4) * .025;
@@ -237,16 +254,41 @@ export function mountOmikuji(slot, opts = {}) {
     dGeo.attributes.position.needsUpdate = true;
     renderer.render(scene, camera);
   }
-  resize();
-  raf = requestAnimationFrame(frame);
-  addEventListener('resize', resize);
-  // 페이지 들어올 때: 통이 제자리에서 한 바퀴 휙 돌며 자리 잡음
-  if (!calm) gsap.to(spin, { v: 0, duration: 1.1, ease: 'power3.out', delay: .15 });
-  canvas.addEventListener('click', () => { if (!busy) opts.onTap?.(); });
-  slot.addEventListener('click', (e) => { if (e.target === slot && !busy) opts.onTap?.(); });
+  canvas.addEventListener('click', () => { if (!busy) onTap?.(); });
 
   // 폰트가 늦게 오면 한자를 다시 그림
   document.fonts?.load(`900 80px ${SERIF}`).then(() => { glyphTex.redraw(drawGlyph); stickTex.redraw(drawStick(false)); stickGlow.redraw(drawStick(true)); }).catch(() => {});
+
+  // 셰이더를 기다리는 동안 메인 스레드를 막지 않고 미리 준비 → 준비되면 ready
+  const ready = (async () => {
+    try { if (renderer.compileAsync) await renderer.compileAsync(scene, camera); else renderer.compile(scene, camera); } catch { /* noop */ }
+  })();
+
+  /** 칸이 화면에 보이게 된 직후 호출: 크기 맞추고 바로 그리기 시작 */
+  function show() {
+    visible = true; since = 1; resize();
+    clock.getDelta();
+    if (!raf && alive) raf = requestAnimationFrame(frame);
+  }
+
+  /** 새 페이지의 패널 칸으로 옮겨 붙이기 */
+  function attach(el, o = {}) {
+    if (slot && slot !== el) { ro.unobserve(slot); slot.classList.remove('omk-out'); }
+    slot = el; onTap = o.onTap || null;
+    slot.appendChild(canvas);
+    slot.addEventListener('click', (e) => { if (e.target === slot && !busy) onTap?.(); });
+    ro.observe(slot);
+    full = false; layer.remove();
+    resize();
+    addEventListener('resize', resize);
+    if (!calm) {
+      addEventListener('pointermove', onPointer, { passive: true });
+      addEventListener('deviceorientation', onTilt, { passive: true });
+    }
+    setKind(o.kind || 'food', true);
+    clock.getDelta();
+    if (!raf) raf = requestAnimationFrame(frame);
+  }
 
   const play = (tl) => new Promise((ok) => { tl.eventCallback('onComplete', ok); });
 
@@ -348,17 +390,18 @@ export function mountOmikuji(slot, opts = {}) {
     return play(c).then(() => { resetStick(); goPanel(); holdStages(false); });
   }
 
-  function setKind(k) {
-    if (!KINDS[k] || KINDS[k] === K) return;
+  // 페이지 들어올 때: 통이 제자리에서 한 바퀴 휙 돌며 食·祭·遊와 띠 색이 바뀜
+  function setKind(k, enter = false) {
+    if (!KINDS[k]) return;
+    const changed = KINDS[k] !== K;
     K = KINDS[k];
-    bandMat.color.set(K.band); bandMat.sheenColor.set(K.band); faceM.emissive.set(K.glow); glowSpr.material.color.set(K.glow);
-    glyphTex.redraw(drawGlyph);
-    if (!calm) { spin.v = -Math.PI * 2; gsap.to(spin, { v: 0, duration: 1, ease: 'power3.out' }); }
+    if (changed) { bandMat.color.set(K.band); bandMat.sheenColor.set(K.band); faceM.emissive.set(K.glow); glowSpr.material.color.set(K.glow); glyphTex.redraw(drawGlyph); }
+    if (!calm && (changed || enter)) { gsap.killTweensOf(spin); spin.v = -Math.PI * 2; gsap.to(spin, { v: 0, duration: 1.1, ease: 'power3.out', delay: .15 }); }
   }
 
   function destroy() {
     if (!alive) return;
-    alive = false; cancelAnimationFrame(raf); io.disconnect();
+    alive = false; cancelAnimationFrame(raf); raf = 0; ro.disconnect();
     removeEventListener('resize', resize);
     layer.remove();
     if (busy) holdStages(false);
@@ -369,5 +412,5 @@ export function mountOmikuji(slot, opts = {}) {
     canvas.remove();
   }
 
-  return { draw, setKind, destroy, get alive() { return alive; } };
+  return { draw, setKind, attach, show, destroy, ready, calm, get alive() { return alive; }, get slot() { return slot; } };
 }

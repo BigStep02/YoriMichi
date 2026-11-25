@@ -12,6 +12,29 @@ import { BokehPass } from 'three/addons/postprocessing/BokehPass.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
 const gsap = window.gsap;
+// 자동 해상도: 프레임이 2초 동안 절반 넘게 45fps 아래면 해상도를 한 단계(.25) 내림 (최소 1). 올리진 않음(왔다 갔다 끊김 방지)
+// 페이지 들어온 직후 3초(셰이더·텍스처 준비 구간)와 한 번에 0.2초 넘게 멈춘 프레임은 세지 않음. ?pr=1.5 처럼 고정 가능
+const PERF = (() => {
+  const fixed = parseFloat(new URLSearchParams(location.search).get('pr'));
+  const pr = fixed > 0 ? fixed : Math.min(devicePixelRatio || 1, 2);
+  return { pr, min: fixed > 0 ? pr : Math.min(pr, 1), warm: 3, t: 0, n: 0, slow: 0 };
+})();
+function adaptPR(raw) {
+  if (PERF.pr <= PERF.min || document.hidden) return false;
+  if (PERF.warm > 0) { PERF.warm -= Math.min(raw, .1); return false; }
+  if (raw > .2) return false;
+  PERF.t += raw; PERF.n++; if (raw > 1 / 45) PERF.slow++;
+  if (PERF.t < 2) return false;
+  const drop = PERF.slow / PERF.n > .5;
+  PERF.t = PERF.n = PERF.slow = 0;
+  if (!drop) return false;
+  PERF.pr = Math.max(PERF.min, Math.round((PERF.pr - .25) * 100) / 100);
+  PERF.warm = 1.5;   // 바꾼 직후 프레임은 다시 세지 않음
+  return true;
+}
+const DEBUG_3D = /[?&]debug3d=1/.test(location.search);
+const PAPER_CACHE = new Map();   // 등불 종이 그림 (canvas) — 무대끼리 공유
+const fontReady = () => { try { return document.fonts.check('900 40px "Zen Old Mincho"'); } catch { return true; } };
 
 export function webglAvailable() {
   try { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')); }
@@ -42,9 +65,12 @@ export function createHanabiStage(canvas, opts = {}) {
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
     // 그림자는 처음부터 켜둠 (나중에 켜면 모든 무대의 셰이더를 다시 준비해야 해서 끊김)
     renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    // 셰이더 오류 검사 끄기: 켜두면 셰이더마다 컴파일이 끝날 때까지 메인 스레드가 멈춤(첫 진입·전환 버벅임의 주원인).
+    // 컴파일은 GPU 쪽에서 따로 진행됨. 셰이더를 고칠 때만 주소에 ?debug3d=1
+    renderer.debug.checkShaderErrors = DEBUG_3D;
     if (opts.shared) { sharedRenderer = renderer; sharedCanvas = canvas; }
   }
-  const PR = Math.min(devicePixelRatio || 1, 2);   // 모든 무대 같은 해상도 (공유 렌더러)
+  let PR = PERF.pr;   // 모든 무대 같은 해상도 (공유 렌더러). 프레임이 계속 느리면 PERF.pr이 내려감 → resize()에서 맞춤
   renderer.setPixelRatio(PR);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -182,6 +208,9 @@ export function createHanabiStage(canvas, opts = {}) {
 
   function rnd(seed) { let x = seed * 9301 + 49297; return () => ((x = (x * 9301 + 49297) % 233280) / 233280); }
   function lanternPaper(text, kind = 'red', seed = 1) {
+    const ck = `${text}|${kind}|${seed}`;
+    const cached = PAPER_CACHE.get(ck);
+    if (cached) { const t = new THREE.CanvasTexture(cached); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = renderer.capabilities.getMaxAnisotropy(); return t; }
     const r = rnd(seed);
     const c = document.createElement('canvas'); c.width = 512; c.height = 512;
     const g = c.getContext('2d');
@@ -222,6 +251,8 @@ export function createHanabiStage(canvas, opts = {}) {
       chars.forEach((ch, i) => { g.globalAlpha = .93; g.fillText(ch, 512, top + i * step + 10); });
       g.globalAlpha = 1;
     }
+    // 붓글씨 글꼴이 아직 안 왔으면 저장하지 않음 (다음 무대에서 제 글꼴로 다시 그리게)
+    if (!text || fontReady()) PAPER_CACHE.set(ck, c);
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = renderer.capabilities.getMaxAnisotropy(); return t;
   }
 
@@ -1781,10 +1812,13 @@ export function createHanabiStage(canvas, opts = {}) {
     if (!alive) return;   // 쉬고 있는 무대는 돌아올 때 맞춤 (공유 화면을 지우지 않게)
     const r = canvas.getBoundingClientRect();
     if (!r.width || !r.height) return;
-    if (r.width === lastW && r.height === lastH && renderer.getPixelRatio() === PR) return;
+    const prChanged = PR !== PERF.pr;
+    PR = PERF.pr;
+    if (r.width === lastW && r.height === lastH && renderer.getPixelRatio() === PR && !prChanged) return;
     lastW = r.width; lastH = r.height;
     renderer.setPixelRatio(PR);
     renderer.setSize(r.width, r.height, false);
+    if (prChanged) composer.setPixelRatio(PR);
     composer.setSize(r.width, r.height);
     bloom.resolution.set(r.width / 2, r.height / 2);
     camera.aspect = r.width / r.height;
@@ -1793,7 +1827,13 @@ export function createHanabiStage(canvas, opts = {}) {
     try { composer.render(); } catch { /* noop */ }   // 크기를 바꾸면 화면이 지워지므로 바로 다시 그림 (깜빡임 방지)
   }
   resize(); if (!opts.shared) addEventListener('resize', resize);
-  try { renderer.compile(scene, camera); } catch { /* noop */ }   // 셰이더 미리 준비 → 첫 프레임 끊김 줄이기
+  // 셰이더 미리 준비 → 첫 프레임 끊김 줄이기.
+  // compileAsync: GPU가 셰이더를 병렬로 컴파일하는 동안 메인 스레드는 놀지 않음. 다 되면 그때부터 그림 (중간에 멈칫 없음)
+  let compiled = false;
+  const compileP = (async () => {
+    try { if (renderer.compileAsync) await renderer.compileAsync(scene, camera); else renderer.compile(scene, camera); } catch { /* noop */ }
+    compiled = true;
+  })();
   if ('ResizeObserver' in window) new ResizeObserver(resize).observe(canvas);
 
   const clock = new THREE.Clock();
@@ -1802,7 +1842,9 @@ export function createHanabiStage(canvas, opts = {}) {
   const camOff = { x: 0, y: 0, z: 0 };   // 페이지 들어오고 나갈 때 카메라가 앞으로 걸어가는 연출
   const tmp = new THREE.Vector3();
   function frame() {
-    const dt = Math.min(clock.getDelta(), .05); t += dt;
+    if (!compiled) { clock.getDelta(); if (alive) raf = requestAnimationFrame(frame); return; }   // 셰이더 준비 전엔 기다림
+    const raw = clock.getDelta(), dt = Math.min(raw, .05); t += dt;
+    if (adaptPR(raw)) resize();
 
     for (const l of street) {
       const u = l.userData;
@@ -2202,12 +2244,19 @@ export function createHanabiStage(canvas, opts = {}) {
   // 나갈 때: 카메라가 무대 안쪽으로 한 걸음 / 들어올 때: 조금 뒤에서 걸어 들어오며 자리 잡음
   function leave() { gsap.killTweensOf(camOff); return gsap.to(camOff, { z: -2.4, y: -.1, duration: .34, ease: 'power2.in' }); }
   function enter() { gsap.killTweensOf(camOff); Object.assign(camOff, { x: 0, y: .5, z: calm ? 1.2 : 3.4 }); gsap.to(camOff, { x: 0, y: 0, z: 0, duration: 1.1, ease: 'power3.out' }); }
-  function warm() { try { composer.render(); } catch { /* noop */ } }
+  // 미리 만든 무대의 후처리 셰이더·텍스처를 한 번 준비. 화면에는 1px만 그리게 잘라서 지금 보이는 무대 위로 다른 장면이 번쩍이지 않게
+  function warm() {
+    return compileP.then(() => {
+      try { renderer.setScissor(0, 0, 1, 1); renderer.setScissorTest(true); composer.render(); }
+      catch { /* noop */ }
+      finally { renderer.setScissorTest(false); }
+    });
+  }
   function resume(quiet = false) {
     if (alive) return;
     if (tl) idle();
     if (!quiet) enter();
-    shown = false; alive = true; clock.getDelta(); lastW = 0; resize();
+    shown = false; alive = true; clock.getDelta(); PERF.warm = Math.max(PERF.warm, 2); resize();   // 크기가 바뀐 경우에만 다시 잡음
     startSky(SKY_EVERY); if (ambientWas) ambient(true);
     raf = requestAnimationFrame(frame);
   }
@@ -2257,16 +2306,17 @@ export function pauseStages() { if (currentStage) { currentStage.stage.pause(); 
 let warmStarted = false;
 function prewarm(canvas, calm) {
   const list = [{ scene: 'street' }, { scene: 'pond' }, { scene: 'sando', lite: true }, { scene: 'alley', lite: true }, { scene: 'shrine', lite: true }, { scene: 'momiji', lite: true }];
-  return list.reduce((p, o) => p.then(() => new Promise((res) => setTimeout(() => {
+  const idle = () => new Promise((r) => (window.requestIdleCallback ? requestIdleCallback(() => r(), { timeout: 1500 }) : setTimeout(r, 60)));
+  return list.reduce((p, o) => p.then(async () => {
+    await idle();
     const opts = { ...o, calm }, key = stageKey(opts);
-    if (!stageCache.has(key)) {
-      try {
-        const st = createHanabiStage(canvas, { ...opts, shared: true });
-        st.pause(); st.warm();
-        stageCache.set(key, { key, canvas, stage: st, visited: false });
-      } catch (e) { console.warn('미리 만들기 실패', e); }
-    }
-    res();
-  }, 30))), Promise.resolve());
+    if (stageCache.has(key)) return;
+    try {
+      const st = createHanabiStage(canvas, { ...opts, shared: true });
+      st.pause();
+      stageCache.set(key, { key, canvas, stage: st, visited: false });
+      await st.warm();
+    } catch (e) { console.warn('미리 만들기 실패', e); }
+  }), Promise.resolve());
 }
 (window.__spaAddPersistent || ((t, ...a) => t.addEventListener(...a)))(window, 'resize', () => currentStage?.stage.resize());
