@@ -39,12 +39,13 @@ async function loadKeys() {
   return keysReq;
 }
 
-/** 저장 버튼 HTML. variant: 'pill'(시트 위 작은 알약) · 'ghost'(상세 페이지 줄 버튼) · 'ico'(코스 카드 아이콘) */
+/** 저장 버튼 HTML. variant: 'pill'(시트 위 작은 알약) · 'ghost'(상세 페이지 줄 버튼) · 'ico'(코스 카드 아이콘) · 'mini'(목록 줄 오른쪽) */
 export function saveButton(key, body, variant = 'pill') {
   if (!key || isMock()) return '';
   const cls = variant === 'ghost' ? 'btn-ghost save-btn save-ghost'
-    : variant === 'ico' ? 'dp-ico save-btn save-ico' : 'save-btn save-pill';
-  return `<button type="button" class="${cls}" data-save-key="${esc(key)}" data-save-body="${esc(JSON.stringify(body))}" aria-pressed="false" aria-label="저장" title="저장">${OMAMORI}${variant === 'ico' ? '' : '<span class="save-tx">저장</span>'}</button>`;
+    : variant === 'ico' ? 'dp-ico save-btn save-ico'
+    : variant === 'mini' ? 'save-btn save-mini' : 'save-btn save-pill';
+  return `<button type="button" class="${cls}" data-save-key="${esc(key)}" data-save-body="${esc(JSON.stringify(body))}" aria-pressed="false" aria-label="저장" title="저장">${OMAMORI}${variant === 'ico' || variant === 'mini' ? '' : '<span class="save-tx">저장</span>'}</button>`;
 }
 
 function paint(btn, on) {

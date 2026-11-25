@@ -1,5 +1,6 @@
-// 저장함(縁帳): 저장한 코스·축제·놀거리·맛집. 외부 호출 0 (맛집은 [상세 보기] 때만 Details 1회)
-// 맛집은 place_id만 저장되어 있으므로 '봉인 카드'로 보여줌 — 이름 대신 만난 곳·도시·메모
+// 저장함(縁帳): 저장한 코스·축제·놀거리·맛집
+// 맛집은 place_id만 저장 → 카드 제목(가게 이름)은 /api/restaurants/names 로 그때그때 불러옴. 상세는 [상세 보기] 때만
+// 메모는 제목을 바꾸지 않고 카드 아래 나무패(絵馬)로 따로 보여줌
 import { api, getToken } from './api.js';
 import { renderHeader } from './header.js';
 import { regionKo } from './regions.js';
@@ -8,6 +9,7 @@ import { kindIcon, kindLabel } from './spotsheet.js';
 import { openRestaurantSheet, placeMapsUrl } from './rsheet.js';
 import { saveButton, syncSave, toast, OMAMORI } from './saved.js';
 import { formatRange } from './dates.js';
+import { mountSheet, closeSheet } from './sheet.js';
 
 renderHeader();
 document.getElementById('back-link').insertAdjacentHTML('afterbegin', icons.back());
@@ -22,63 +24,100 @@ let items = [];
 const dateLabel = (iso) => { const d = new Date(iso); return `${d.getMonth() + 1}/${d.getDate()}`; };
 
 // ── 카드 ──
+// 축제·놀거리·맛집 모두 같은 도장 카드: 위에 이름, 아래 지역만. 메모는 나무패로 따로
+
+/** 메모 나무패. id를 주면 눌러서 고칠 수 있음 */
+function memoNote(memo, id) {
+  if (!memo) return '';
+  const attr = id != null ? ` role="button" tabindex="0" data-memo="${id}" aria-label="메모 고치기"` : '';
+  return `<div class="sv-note"${attr}><span class="sv-note-seal" lang="ja" aria-hidden="true">記</span><p>${esc(memo)}</p></div>`;
+}
+
+const latLngMapsUrl = (lat, lng) => `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+
+/** 공통 카드. o: { mark, tone, kicker, title, titleJa, sub, ended, main(html), map(url), body(저장 body) } */
+function sealCard(it, o) {
+  return `
+    <article class="sv-seal tone-${o.tone}${o.ended ? ' sv-ended' : ''}" data-id="${it.id}">
+      <span class="sv-seal-mark" lang="ja" aria-hidden="true">${o.mark}</span>
+      <div class="sv-seal-body">
+        <span class="sv-kicker">${o.kicker}</span>
+        <h3 class="sv-seal-t"${o.titleAttr || ''}>${o.title}</h3>
+        ${o.sub ? `<p class="sv-seal-sub">${esc(o.sub)}</p>` : ''}
+        ${memoNote(it.memo, it.id)}
+        <div class="cx-actions">
+          ${o.main}
+          ${o.map ? `<a class="dp-ico" href="${esc(o.map)}" target="_blank" rel="noopener" aria-label="구글 지도" title="구글 지도">${icons.map('icon')}</a>` : ''}
+          <button type="button" class="dp-ico" data-memo="${it.id}" aria-label="${it.memo ? '메모 고치기' : '메모 남기기'}" title="메모">${MEMO_IC}</button>
+          ${saveButton(it.key, { ...o.body, memo: it.memo || undefined }, 'ico')}
+        </div>
+      </div>
+    </article>`;
+}
 
 function festCard(it) {
   const f = it.festival;
-  const [, m, d] = (f.startDate || '--').split('-').map(Number);
-  const badge = f.status === 'ONGOING' ? '<span class="mini-badge open">진행 중</span>'
-    : f.status === 'UPCOMING' ? `<span class="mini-badge">D-${f.dDay}</span>`
-    : '<span class="mini-badge closed">올해 끝남</span>';
-  return row(it, `
-    <a class="next-card${f.status === 'ENDED' ? ' sv-ended' : ''}" href="/festival.html?id=${encodeURIComponent(f.id)}">
-      <div class="date-box"><div class="m">${m || ''}월</div><div class="d">${d || ''}</div></div>
-      <div class="info">
-        <div class="t">${esc(f.name)}</div>
-        ${f.nameJa ? `<div class="ja" lang="ja">${esc(f.nameJa)}</div>` : ''}
-        <div class="meta">${badge}${esc(regionKo(f.prefecture, f.city))}${f.startDate ? ` · ${esc(formatRange(f.startDate, f.endDate))}` : ''}</div>
-      </div>
-    </a>`, { type: 'FESTIVAL', festivalId: f.id });
+  const badge = f.status === 'ONGOING' ? '<span class="sv-badge live">진행 중</span>'
+    : f.status === 'UPCOMING' ? `<span class="sv-badge">D-${f.dDay}</span>`
+    : '<span class="sv-badge off">올해 끝남</span>';
+  return sealCard(it, {
+    mark: '祭', tone: 'fest', ended: f.status === 'ENDED',
+    kicker: `🏮 축제 ${badge}`,
+    title: esc(f.name),
+    sub: [regionKo(f.prefecture, f.city), f.startDate ? formatRange(f.startDate, f.endDate) : ''].filter(Boolean).join(' · '),
+    main: `<a class="dp-main" href="/festival.html?id=${encodeURIComponent(f.id)}">상세 보기</a>`,
+    map: latLngMapsUrl(f.lat, f.lng),
+    body: { type: 'FESTIVAL', festivalId: f.id },
+  });
 }
 
 function spotCard(it) {
   const s = it.spot;
-  const badge = s.openNow === true ? '<span class="mini-badge open">영업 중</span>'
-    : s.openNow === false ? '<span class="mini-badge closed">영업 전·종료</span>' : '';
-  return row(it, `
-    <a class="next-card spot" href="/spot.html?id=${encodeURIComponent(s.id)}">
-      <div class="date-box kind-box" aria-hidden="true">${kindIcon(s.kind)}</div>
-      <div class="info">
-        <div class="t">${esc(s.name)}</div>
-        ${s.nameJa ? `<div class="ja" lang="ja">${esc(s.nameJa)}</div>` : ''}
-        <div class="meta">${badge}${esc(kindLabel(s.kind))} · ${esc(regionKo(s.prefecture, s.city))}</div>
-      </div>
-    </a>`, { type: 'SPOT', spotId: s.id });
+  const badge = s.openNow === true ? '<span class="sv-badge open">영업 중</span>'
+    : s.openNow === false ? '<span class="sv-badge off">영업 전·종료</span>' : '';
+  return sealCard(it, {
+    mark: '遊', tone: 'spot',
+    kicker: `${kindIcon(s.kind)} ${esc(kindLabel(s.kind))} ${badge}`,
+    title: esc(s.name),
+    sub: regionKo(s.prefecture, s.city),
+    main: `<a class="dp-main" href="/spot.html?id=${encodeURIComponent(s.id)}">상세 보기</a>`,
+    map: latLngMapsUrl(s.lat, s.lng),
+    body: { type: 'SPOT', spotId: s.id },
+  });
 }
 
-/** 봉인 카드: 구글 정보 없이 우리 데이터만. 메모 첫 줄이 있으면 그게 제목 */
+/** 맛집: DB엔 place_id만 있어서 이름은 그릴 때 따로 불러옴 (restNames) */
+const restNames = new Map();
 function restCard(it) {
   const r = it.restaurant;
-  const region = regionKo(r.prefecture, r.city);
-  const memoTitle = it.memo ? it.memo.split('\n')[0] : '';
-  const where = r.metName ? `${r.metName} 근처에서` : region ? `${region}에서` : '여행 중에';
-  const title = memoTitle || `${where} 만난 맛집`;
-  const sub = [memoTitle ? `${where} 만남` : region, dateLabel(it.createdAt)].filter(Boolean).join(' · ');
-  return `
-    <article class="sv-seal" data-id="${it.id}">
-      <span class="sv-seal-mark" lang="ja" aria-hidden="true">封</span>
-      <div class="sv-seal-body">
-        <span class="sv-kicker">🍴 맛집 · 봉인된 인연</span>
-        <h3 class="sv-seal-t">${esc(title)}</h3>
-        <p class="sv-seal-sub">${esc(sub)}</p>
-        ${it.memo && memoTitle !== it.memo ? `<p class="sv-memo">${esc(it.memo)}</p>` : ''}
-        <div class="cx-actions">
-          <button type="button" class="dp-main" data-open="${esc(r.placeId)}" data-met-type="${esc(r.metType || '')}" data-met-id="${r.metId ?? ''}">상세 보기</button>
-          <a class="dp-ico" href="${esc(placeMapsUrl(r.placeId))}" target="_blank" rel="noopener" aria-label="구글 지도" title="구글 지도">${icons.map('icon')}</a>
-          <button type="button" class="dp-ico" data-memo="${it.id}" aria-label="메모" title="메모">✎</button>
-          ${saveButton(it.key, { type: 'RESTAURANT', placeId: r.placeId, metType: r.metType || undefined, metId: r.metId ?? undefined, memo: it.memo || undefined }, 'ico')}
-        </div>
-      </div>
-    </article>`;
+  const name = restNames.get(r.placeId);
+  return sealCard(it, {
+    mark: '食', tone: 'rest',
+    kicker: '🍴 맛집',
+    title: name ? esc(name)
+      : `<span class="sv-name-wait">${restNames.has(r.placeId) ? '이름을 불러오지 못했어요' : '가게 이름 불러오는 중'}</span>`,
+    titleAttr: ` lang="ja" data-rname="${esc(r.placeId)}"`,
+    sub: regionKo(r.prefecture, r.city),
+    main: `<button type="button" class="dp-main" data-open="${esc(r.placeId)}" data-met-type="${esc(r.metType || '')}" data-met-id="${r.metId ?? ''}">상세 보기</button>`,
+    map: placeMapsUrl(r.placeId),
+    body: { type: 'RESTAURANT', placeId: r.placeId, metType: r.metType || undefined, metId: r.metId ?? undefined },
+  });
+}
+
+/** 아직 이름 모르는 맛집만 한 번에 조회해서 카드 제목 채움 */
+async function fillRestNames() {
+  const ids = [...new Set(items.filter(i => i.type === 'RESTAURANT').map(i => i.restaurant.placeId))]
+    .filter(id => !restNames.has(id));
+  if (!ids.length) return;
+  let map = {};
+  try {
+    map = await api(`/api/restaurants/names?ids=${ids.map(encodeURIComponent).join(',')}`, { auth: false }) || {};
+  } catch { /* 이름 못 불러와도 카드는 그대로 */ }
+  ids.forEach(id => restNames.set(id, map[id] || null));
+  listEl.querySelectorAll('[data-rname]').forEach(el => {
+    const n = restNames.get(el.dataset.rname);
+    el.innerHTML = n ? esc(n) : '<span class="sv-name-wait">이름을 불러오지 못했어요</span>';
+  });
 }
 
 function courseCard(it) {
@@ -113,16 +152,13 @@ function courseCard(it) {
         <span class="cx-seal" lang="ja">縁</span>
         <div class="cx-head-t">
           <span class="cx-kicker">${esc(first ? regionKo(first.prefecture, first.city) : '오늘의 코스')} · ${dateLabel(it.createdAt)}</span>
-          <b>${it.memo ? esc(it.memo.split('\n')[0]) : '엮은 코스'}</b>
+          <b>엮은 코스</b>
         </div>
         ${saveButton(it.key, { type: 'COURSE', memo: it.memo || undefined, course: { preset: c.preset, stops: c.stops.map(x => ({ type: x.type, id: x.id ?? undefined, placeId: x.placeId ?? undefined })) } }, 'ico')}
       </header>
       <ol class="sv-steps">${c.stops.map(step).join('<li class="sv-thread" aria-hidden="true"></li>')}</ol>
+      ${memoNote(it.memo)}
     </article>`;
-}
-
-function row(it, inner, body) {
-  return `<div class="sv-row" data-id="${it.id}">${inner}${saveButton(it.key, body, 'ico')}</div>${it.memo ? `<p class="sv-memo sv-row-memo">${esc(it.memo)}</p>` : ''}`;
 }
 
 const CARD = { FESTIVAL: festCard, SPOT: spotCard, RESTAURANT: restCard, COURSE: courseCard };
@@ -153,26 +189,77 @@ function render() {
   listEl.innerHTML = html + (types.includes('RESTAURANT') && items.some(i => i.type === 'RESTAURANT')
     ? '<p class="attribution">맛집은 Google 장소 ID만 저장해요 · 가게 정보: Google 지도</p>' : '');
 
+  fillRestNames();
   listEl.querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', () => {
     const ctx = b.dataset.metId ? { metType: b.dataset.metType, metId: Number(b.dataset.metId) } : {};
     openRestaurantSheet({ placeId: b.dataset.open }, ctx);
   }));
-  listEl.querySelectorAll('[data-memo]').forEach(b => b.addEventListener('click', () => editMemo(Number(b.dataset.memo))));
+  listEl.querySelectorAll('[data-memo]').forEach(b => {
+    b.addEventListener('click', () => editMemo(Number(b.dataset.memo)));
+    if (b.matches('.sv-note')) b.addEventListener('keydown', (e) => { if (e.key === 'Enter') editMemo(Number(b.dataset.memo)); });
+  });
   syncSave(listEl);
 }
 
-async function editMemo(id) {
+const MEMO_MAX = 500;
+const MEMO_IC = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20.5h4.2L19.6 9.1a2.1 2.1 0 0 0 0-3L17.9 4.4a2.1 2.1 0 0 0-3 0L3.5 15.8v4.7z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M13.4 5.9l4.7 4.7" stroke="currentColor" stroke-width="1.6"/></svg>';
+const MEMO_CHIPS = ['꼭 다시 가기', '웨이팅 있음', '현금만', '예약 필요', '혼밥 OK'];
+
+/** 메모 시트: 나무패(絵馬)에 적어 거는 느낌 */
+function editMemo(id) {
   const it = items.find(x => x.id === id);
   if (!it) return;
-  const memo = prompt('메모 (첫 줄은 카드 제목이 돼요)', it.memo || '');
-  if (memo === null) return;
-  try {
-    const updated = await api(`/api/saved/${id}`, { method: 'PATCH', body: { memo: memo.slice(0, 500) } });
-    items = items.map(x => x.id === id ? updated : x);
-    render();
-  } catch (e) {
-    toast(e.message || '메모를 저장하지 못했어요');
-  }
+  const where = it.festival?.name || it.spot?.name
+    || (it.restaurant && restNames.get(it.restaurant.placeId)) || (it.course ? '엮은 코스' : '저장한 곳');
+  const body = `
+    <div class="memo-ema">
+      <span class="memo-hole" aria-hidden="true"></span>
+      <div class="memo-head">
+        <span class="memo-seal" lang="ja" aria-hidden="true">記</span>
+        <span class="memo-where">${esc(where)}</span>
+      </div>
+      <textarea class="memo-ta" data-ta maxlength="${MEMO_MAX}" rows="5" placeholder="다음에 뭐 먹을지, 누구랑 올지 적어 두세요" aria-label="메모">${esc(it.memo || '')}</textarea>
+      <div class="memo-count"><b data-n>0</b> / ${MEMO_MAX}</div>
+    </div>
+    <div class="memo-chips" aria-label="빠르게 적기">
+      ${MEMO_CHIPS.map(c => `<button type="button" class="memo-chip" data-chip="${esc(c)}">+ ${esc(c)}</button>`).join('')}
+    </div>`;
+  const footer = `
+    <div class="memo-foot">
+      ${it.memo ? '<button type="button" class="memo-del" data-del>지우기</button>' : ''}
+      <button type="button" class="btn-primary memo-ok" data-ok>${it.memo ? '고쳐 걸기' : '걸어 두기'}</button>
+    </div>`;
+  const wrap = mountSheet(it.memo ? '메모 고치기' : '메모 남기기', body, { footer });
+  wrap.querySelector('.sheet').classList.add('sheet-memo');
+  const ta = wrap.querySelector('[data-ta]');
+  const n = wrap.querySelector('[data-n]');
+  const count = () => { n.textContent = ta.value.length; n.parentElement.classList.toggle('full', ta.value.length >= MEMO_MAX); };
+  count();
+  ta.addEventListener('input', count);
+  setTimeout(() => { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }, 260);
+
+  wrap.querySelectorAll('[data-chip]').forEach(b => b.addEventListener('click', () => {
+    const add = b.dataset.chip;
+    const v = ta.value.trimEnd();
+    ta.value = (v ? `${v}\n${add}` : add).slice(0, MEMO_MAX);
+    count(); ta.focus();
+  }));
+
+  const save = async (memo, btn) => {
+    btn.disabled = true;
+    try {
+      const updated = await api(`/api/saved/${id}`, { method: 'PATCH', body: { memo: memo.slice(0, MEMO_MAX) } });
+      items = items.map(x => x.id === id ? updated : x);
+      closeSheet();
+      render();
+      toast(memo ? '메모를 걸어 뒀어요' : '메모를 지웠어요');
+    } catch (e) {
+      btn.disabled = false;
+      toast(e.message || '메모를 저장하지 못했어요');
+    }
+  };
+  wrap.querySelector('[data-ok]').addEventListener('click', (e) => save(ta.value.trim(), e.currentTarget));
+  wrap.querySelector('[data-del]')?.addEventListener('click', (e) => save('', e.currentTarget));
 }
 
 async function load() {

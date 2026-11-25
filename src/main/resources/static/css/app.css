@@ -1940,8 +1940,29 @@ body.hanabi-home .cats .cat.spot .cat-icon { color: #7FE0C0; }
 .sv-row > .next-card { flex: 1; min-width: 0; margin: 0; }
 .sv-row > .next-card + .next-card { margin-top: 0; }
 .sv-ended { opacity: .62; }
-.sv-memo { margin: 6px 0 0; font-size: 13px; color: var(--gray); white-space: pre-line; }
-.sv-row-memo { margin: -4px 4px 2px; }
+/* 메모: 제목은 그대로 두고, 카드 아래 나무패(絵馬)로 따로 */
+.sv-note {
+  position: relative; display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start;
+  margin-top: 12px; padding: 11px 13px 11px 11px; border-radius: 4px 14px 14px 14px;
+  color: #3A1E0C; background:
+    repeating-linear-gradient(90deg, rgba(90,50,20,.07) 0 2px, transparent 2px 10px),
+    linear-gradient(180deg, #EBC995, #CFA06A);
+  box-shadow: 0 6px 16px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,241,214,.35);
+  transform: rotate(-.6deg);
+}
+.sv-note::before { /* 매단 붉은 실 */
+  content: ""; position: absolute; left: 18px; top: -9px; width: 2px; height: 11px; border-radius: 2px;
+  background: linear-gradient(180deg, transparent, #E8462E); 
+}
+.sv-note[role="button"] { cursor: pointer; }
+.sv-note[role="button"]:active { transform: rotate(-.6deg) scale(.985); }
+.sv-note-seal {
+  width: 24px; height: 24px; border-radius: 6px; display: grid; place-items: center;
+  font: 900 13px/1 'Zen Old Mincho', 'Noto Sans JP', serif; color: #FFF1D6;
+  background: radial-gradient(circle at 35% 30%, #E8553A, #A8301A); transform: rotate(-6deg);
+}
+.sv-note p { margin: 2px 0 0; font-size: 13.5px; font-weight: 700; line-height: 1.55; white-space: pre-line; word-break: keep-all; overflow-wrap: anywhere; }
+.sv-course .sv-note { margin-top: 14px; }
 
 .sv-seal {
   position: relative; display: grid; grid-template-columns: 52px 1fr; gap: 12px; padding: 16px;
@@ -1961,6 +1982,24 @@ body.hanabi-home .cats .cat.spot .cat-icon { color: #7FE0C0; }
 .sv-seal-t { margin: 4px 0 2px; font-size: 16px; font-weight: 900; line-height: 1.35; word-break: keep-all; }
 .sv-seal-sub { margin: 0; font-size: 12.5px; color: var(--gray); }
 .sv-seal .cx-actions { display: flex; gap: 8px; margin-top: 12px; }
+/* 종류별 도장 색: 축제 붉은색(기본) · 놀거리 청록 · 맛집 호박색 */
+.sv-seal.tone-spot { border-color: rgba(127,224,192,.42);
+  background: radial-gradient(70% 80% at 0% 0%, rgba(46,158,130,.18), transparent 60%), linear-gradient(180deg, rgba(20,16,44,.78), rgba(10,8,26,.88)); }
+.sv-seal.tone-spot .sv-seal-mark { background: radial-gradient(circle at 35% 30%, #3FBF9A, #1E6E5A); box-shadow: 0 0 22px rgba(63,191,154,.4), inset 0 0 0 2px rgba(255,241,214,.35); }
+.sv-seal.tone-spot .sv-kicker { color: #9FEBD2; }
+.sv-seal.tone-rest { border-color: rgba(242,193,78,.5);
+  background: radial-gradient(70% 80% at 0% 0%, rgba(242,170,60,.16), transparent 60%), linear-gradient(180deg, rgba(20,16,44,.78), rgba(10,8,26,.88)); }
+.sv-seal.tone-rest .sv-seal-mark { background: radial-gradient(circle at 35% 30%, #F2B24E, #B26A14); box-shadow: 0 0 22px rgba(242,170,60,.4), inset 0 0 0 2px rgba(255,241,214,.35); }
+.sv-kicker { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.sv-badge {
+  font-size: 10.5px; font-weight: 900; letter-spacing: .02em; padding: 1px 7px; border-radius: 5px;
+  color: #FF8A72; border: 1.2px solid rgba(232,70,46,.75); transform: rotate(-3deg);
+}
+.sv-badge.live { color: #FFF3E6; background: rgba(232,70,46,.9); border-color: transparent; }
+.sv-badge.open { color: #6BE0A8; border-color: rgba(107,224,168,.55); }
+.sv-badge.off { color: var(--gray); border-color: rgba(171,165,190,.4); }
+.sv-name-wait { font-size: 14px; font-weight: 700; color: var(--gray); }
+.sv-seal-t[lang="ja"] { font-family: var(--font-jp); }
 
 .sv-course {
   border-radius: 22px; padding: 14px 16px 16px; border: 1px solid rgba(242,193,78,.35);
@@ -1991,6 +2030,66 @@ body.hanabi-home .cats .cat.spot .cat-icon { color: #7FE0C0; }
 @media (prefers-reduced-motion: reduce) {
   .save-toast { transition: none; }
 }
+
+/* 메모 시트: 나무패에 적어 거는 느낌 */
+.sheet-memo .sheet-body { padding-top: 18px; }
+.memo-ema {
+  position: relative; padding: 30px 16px 12px; border-radius: 6px 6px 18px 18px;
+  clip-path: polygon(50% 0, 100% 16px, 100% 100%, 0 100%, 0 16px);
+  color: #3A1E0C; background:
+    repeating-linear-gradient(90deg, rgba(90,50,20,.08) 0 2px, transparent 2px 11px),
+    linear-gradient(180deg, #EECD9B, #C8945C);
+  box-shadow: inset 0 0 0 1px rgba(255,241,214,.35);
+}
+.memo-hole {
+  position: absolute; left: 50%; top: 12px; width: 9px; height: 9px; margin-left: -4.5px; border-radius: 50%;
+  background: #3A1E0C; box-shadow: 0 0 0 2px #E8462E;
+}
+.memo-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.memo-seal {
+  flex: none; width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center;
+  font: 900 14px/1 'Zen Old Mincho', 'Noto Sans JP', serif; color: #FFF1D6;
+  background: radial-gradient(circle at 35% 30%, #E8553A, #A8301A); transform: rotate(-6deg);
+}
+.memo-where { font-size: 13px; font-weight: 900; color: #5A2E12; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.memo-ta {
+  display: block; width: 100%; box-sizing: border-box; min-height: 128px; resize: none; margin: 0; padding: 4px 2px;
+  font: 700 15px/30px var(--font-kr); color: #2A1408; caret-color: #C8321F;
+  border: 0; outline: 0; background: repeating-linear-gradient(180deg, transparent 0 29px, rgba(90,46,18,.28) 29px 30px);
+  background-attachment: local;
+}
+.memo-ta::placeholder { color: rgba(58,30,12,.45); }
+.memo-count { margin-top: 6px; text-align: right; font-size: 11.5px; font-weight: 800; color: rgba(58,30,12,.6); }
+.memo-count.full b { color: #B22E19; }
+.memo-chips { display: flex; gap: 6px; margin-top: 14px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.memo-chips::-webkit-scrollbar { display: none; }
+.memo-chip {
+  flex: none; font: inherit; font-size: 12.5px; font-weight: 800; padding: 7px 12px; border-radius: 999px; cursor: pointer;
+  color: #F7D57A; background: rgba(242,193,78,.08); border: 1px solid rgba(242,193,78,.35);
+}
+.memo-chip:active { transform: scale(.96); }
+.memo-foot { display: flex; gap: 10px; }
+.memo-foot .memo-ok { flex: 1; height: 48px; border-radius: 14px; font-weight: 900; }
+.memo-del {
+  flex: none; height: 48px; padding: 0 18px; border-radius: 14px; cursor: pointer; font: inherit; font-weight: 800;
+  color: #FF9A86; background: rgba(232,70,46,.1); border: 1px solid rgba(232,70,46,.35);
+}
+
+/* 주변 축제 목록: 저장 버튼은 링크 밖(오른쪽 아래)에 겹쳐 둠 */
+.f-wrap { position: relative; }
+.f-wrap + .f-wrap, .f-wrap + .f-item, .f-item + .f-wrap { margin-top: 10px; }
+.f-wrap > .f-item, body[data-page="festivals"] .f-wrap > .f-item { padding-right: 60px; }
+.f-wrap > .save-mini { position: absolute; right: 12px; bottom: 12px; margin: 0; z-index: 1; }
+
+/* 주변 맛집·놀거리 목록: 오른쪽 화살표 대신 お守り 저장 */
+.r-item:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.save-mini {
+  flex: none; width: 40px; height: 40px; margin: -6px -4px -6px 0; border-radius: 12px; display: grid; place-items: center;
+  color: rgba(246,236,221,.7); background: rgba(255,255,255,.05); border: 1px solid rgba(242,193,78,.22);
+  transition: color .2s, background .2s, border-color .2s;
+}
+.save-mini .omamori { width: 20px; height: 20px; }
+.save-mini[aria-pressed="true"] { color: #FFE7B0; background: rgba(232,70,46,.22); border-color: rgba(242,193,78,.7); box-shadow: 0 0 14px rgba(232,70,46,.35); }
 
 /* 주변 맛집·축제·놀거리 제목 왼쪽 컬러 아이콘 — 글자 크기(1em)에 맞춤 */
 .draw-title:has(.title-ic) { display: flex; align-items: center; gap: .3em; }

@@ -6,6 +6,7 @@ import { mountSearchBar } from './searchbar.js';
 import { openRestaurantSheet as openDetail, priceLabel, walkLabel, typeChip } from './rsheet.js';
 import { icons, esc, dpRun, dpShow, TITLE_ICONS } from './icons.js';
 import { isMock } from './mock.js';
+import { saveButton, syncSave, restKey } from './saved.js';
 
 renderHeader();
 document.querySelector('.draw-title')?.insertAdjacentHTML('afterbegin', `<span class="title-ic">${TITLE_ICONS.food}</span>`);
@@ -114,7 +115,7 @@ async function load() {
 
   countEl.textContent = `${data.count}곳 · 평균 ★${data.avgRating.toFixed(1)}`;
   listEl.innerHTML = data.restaurants.map((r, i) => `
-    <button type="button" class="r-item" data-i="${i}">
+    <div class="r-item" role="button" tabindex="0" data-i="${i}">
       ${opts.sort === 'SCORE' ? `<span class="r-rank${i < 3 ? ' top' : ''}">${i + 1}</span>` : ''}
       <span class="r-main">
         <span class="r-title" lang="ja">${esc(r.name)}</span>
@@ -128,14 +129,21 @@ async function load() {
           ${r.priceLevel != null ? `<span class="sep">·</span><span>${priceLabel(r.priceLevel)}</span>` : ''}
         </span>
       </span>
-      ${icons.chevronRight('icon r-chev')}
-    </button>`).join('');
+      ${r.placeId ? saveButton(restKey(r.placeId), { type: 'RESTAURANT', placeId: r.placeId, lat: r.lat, lng: r.lng }, 'mini') : ''}
+    </div>`).join('');
+  syncSave(listEl);
 }
 
 listEl.addEventListener('click', (e) => {
+  if (e.target.closest('.save-btn')) return;   // 저장 버튼은 상세를 열지 않음
   const item = e.target.closest('.r-item[data-i]');
   if (!item || !lastData) return;
   openDetail(lastData.restaurants[Number(item.dataset.i)]);
+});
+listEl.addEventListener('keydown', (e) => {
+  if ((e.key !== 'Enter' && e.key !== ' ') || !e.target.matches('.r-item[data-i]') || !lastData) return;
+  e.preventDefault();
+  openDetail(lastData.restaurants[Number(e.target.dataset.i)]);
 });
 
 // ── 뽑기 패널 ──
