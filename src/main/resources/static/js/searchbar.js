@@ -45,12 +45,12 @@ export function mountSearchBar(el, onChange, { dates = true } = {}) {
     <div class="row">
       <button type="button" class="chip" data-open="loc" aria-haspopup="dialog">
         <i class="chip-mon" aria-hidden="true">${icons.pin()}</i>
-        <span class="chip-tx"><small>어디서 <em>場所</em></small><span data-loc-label>위치 확인 중…</span></span>
+        <span class="chip-tx"><small>어디서</small><span data-loc-label>위치 확인 중…</span></span>
       </button>
       ${dates ? `
       <button type="button" class="chip" data-open="date" aria-haspopup="dialog">
         <i class="chip-mon" aria-hidden="true">${icons.calendar()}</i>
-        <span class="chip-tx"><small>언제 <em>日取り</em></small><span data-date-label></span></span>
+        <span class="chip-tx"><small>언제</small><span data-date-label></span></span>
       </button>` : ''}
     </div>
     <p class="loc-note" data-loc-note hidden></p>`;
