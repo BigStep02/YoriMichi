@@ -42,7 +42,7 @@
 | 구분 | 사용 |
 |---|---|
 | Backend | Spring Boot 4.1, Java 17, Spring Data JPA |
-| DB | Oracle Free (Docker), Flyway (V1~V31) |
+| DB | Oracle Free (Docker), Flyway (V1~V34) |
 | 인증 | JWT, BCrypt |
 | 외부 API | Google Places API (New) Nearby/Details, Gemini API |
 | Frontend | HTML, CSS, JavaScript (프레임워크 없이), Three.js, GSAP |
