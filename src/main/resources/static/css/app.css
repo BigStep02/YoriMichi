@@ -1297,6 +1297,55 @@ body.hanabi .cta.draw-btn .cta-text b { font-family: var(--font-kr); font-weight
 body.hanabi .cta.draw-btn .cta-text span { color: rgba(255,240,228,.78); opacity: 1; }
 @media (prefers-reduced-motion: reduce) { body.hanabi .cta.draw-btn::after { animation: none; } }
 
+/* ── 주변 놀거리 목록: 맛집·축제와 같은 결 (먹 + 실), 왼쪽은 종류별 색 도장 ── */
+.sp-item { --k: #E9C27A; --k-soft: rgba(233,194,122,.16); }
+.sp-item[data-kind="SHRINE_TEMPLE"] { --k: #FF6A4D; --k-soft: rgba(232,70,46,.18); }
+.sp-item[data-kind="PARK_GARDEN"]   { --k: #F7A6C8; --k-soft: rgba(247,166,200,.16); }
+.sp-item[data-kind="HISTORIC"]      { --k: #E9C27A; --k-soft: rgba(233,194,122,.16); }
+.sp-item[data-kind="MUSEUM"]        { --k: #A9B8FF; --k-soft: rgba(169,184,255,.16); }
+.sp-item[data-kind="VIEWPOINT"]     { --k: #7FD3F0; --k-soft: rgba(127,211,240,.15); }
+.sp-item[data-kind="MARKET"]        { --k: #FFA25C; --k-soft: rgba(255,162,92,.16); }
+.sp-item[data-kind="AMUSEMENT"]     { --k: #CDA3FF; --k-soft: rgba(205,163,255,.16); }
+.sp-item[data-kind="ONSEN"]         { --k: #7FE0C0; --k-soft: rgba(127,224,192,.16); }
+body[data-page="spots"] .r-item {
+  position: relative; overflow: hidden; gap: 14px; padding: 14px 14px 14px 16px; border-radius: 16px;
+  background:
+    radial-gradient(60% 120% at 0% 50%, var(--k-soft), transparent 70%),
+    linear-gradient(100deg, rgba(14,14,30,.88), rgba(10,10,24,.74));
+  border: 1px solid rgba(233,194,122,.16); color: #F6ECDD;
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 10px 26px rgba(0,0,0,.32);
+  transition: transform .2s, border-color .2s;
+}
+body[data-page="spots"] .r-item + .r-item { margin-top: 10px; }
+body[data-page="spots"] .r-item::before { /* 왼쪽 실: 종류 색 */
+  content: ""; position: absolute; left: 0; top: 14px; bottom: 14px; width: 2px; border-radius: 2px;
+  background: linear-gradient(180deg, transparent, var(--k) 50%, transparent); box-shadow: 0 0 10px var(--k); opacity: .8;
+}
+body[data-page="spots"] .r-item:hover { transform: translateY(-2px); border-color: rgba(233,194,122,.36); }
+body[data-page="spots"] .r-item.skeleton-row::before { display: none; }
+.sp-kind {
+  flex: none; align-self: stretch; width: 46px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  padding-right: 12px; border-right: 1px solid rgba(233,194,122,.2); box-sizing: content-box;
+}
+.sp-kind-ic {
+  width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; font-size: 20px; line-height: 1;
+  background: var(--k-soft); border: 1px solid color-mix(in srgb, var(--k) 45%, transparent);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--k) 25%, transparent);
+}
+.sp-kind-ic svg { width: 22px; height: 22px; }
+.sp-kind-ja { font: 900 12px/1 'Zen Old Mincho', 'Noto Sans JP', serif; color: var(--k); letter-spacing: .05em; }
+.sp-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.sp-label { font-size: 11px; font-weight: 800; letter-spacing: .04em; color: var(--k); }
+.sp-open { font-size: 10.5px; font-weight: 900; padding: 1px 7px; border-radius: 5px; transform: rotate(-3deg); }
+.sp-open.on { color: #8FD9B0; border: 1.2px solid rgba(107,224,168,.6); box-shadow: 0 0 10px rgba(91,196,142,.25); }
+.sp-open.off { color: rgba(246,236,221,.5); border: 1.2px solid rgba(246,236,221,.22); }
+body[data-page="spots"] .r-title { font-family: var(--font-kr); font-size: 17px; font-weight: 900; color: #F6ECDD; margin-top: 2px; }
+.sp-ja { font-family: var(--font-jp); font-size: 12px; color: rgba(246,236,221,.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body[data-page="spots"] .r-meta { color: rgba(246,236,221,.62); font-weight: 500; font-size: 12.5px; margin-top: 4px; }
+body[data-page="spots"] .r-meta .sep { color: rgba(233,194,122,.35); }
+.sp-dist { color: #F2C14E; font-weight: 800; }
+
 /* ── 주변 맛집 목록: 축제 카드와 같은 결 (먹 + 금선), 순위는 명조 숫자 ── */
 body[data-page="restaurants"] .r-item {
   position: relative; overflow: hidden; gap: 14px; padding: 15px 14px 15px 16px; border-radius: 16px;

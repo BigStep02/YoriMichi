@@ -67,23 +67,26 @@ function fixedFromQuery(q) {
 }
 
 // ---------- 목록 ----------
+// 종류별 한자 도장 (목록 왼쪽 칸)
+const KIND_JA = { SHRINE_TEMPLE: '社', PARK_GARDEN: '園', HISTORIC: '城', MUSEUM: '館', VIEWPOINT: '景', MARKET: '市', AMUSEMENT: '遊', ONSEN: '湯' };
+
 function item(s, i) {
-  const open = s.openNow === true ? '<span class="open-dot">영업 중</span>'
-             : s.openNow === false ? '<span class="muted">영업 전·종료</span>' : '';
+  const open = s.openNow === true ? '<span class="sp-open on">영업 중</span>'
+             : s.openNow === false ? '<span class="sp-open off">영업 전·종료</span>' : '';
   return `
-    <div class="r-item" role="button" tabindex="0" data-i="${i}">
-      <span class="r-rank" aria-hidden="true">${kindIcon(s.kind)}</span>
+    <div class="r-item sp-item" role="button" tabindex="0" data-i="${i}" data-kind="${esc(s.kind || '')}">
+      <span class="sp-kind" aria-hidden="true">
+        <span class="sp-kind-ic">${kindIcon(s.kind)}</span>
+        <span class="sp-kind-ja" lang="ja">${KIND_JA[s.kind] || '寄'}</span>
+      </span>
       <span class="r-main">
+        <span class="sp-top"><span class="sp-label">${esc(kindLabel(s.kind))}</span>${open}</span>
         <span class="r-title">${esc(s.name)}</span>
-        <span class="r-sub">
-          <span>${esc(kindLabel(s.kind))}</span>
-          ${s.nameJa ? `<span lang="ja" class="muted">${esc(s.nameJa)}</span>` : ''}
-        </span>
+        ${s.nameJa ? `<span class="sp-ja" lang="ja">${esc(s.nameJa)}</span>` : ''}
         <span class="r-meta">
-          <span>${Number(s.distanceKm).toFixed(1)}km</span>
+          <span class="sp-dist">${Number(s.distanceKm).toFixed(1)}km</span>
           <span class="sep">·</span><span>${esc(regionKo(s.prefecture, s.city))}</span>
           ${s.hoursLabel ? `<span class="sep">·</span><span>${esc(s.hoursLabel)}</span>` : ''}
-          ${open ? `<span class="sep">·</span>${open}` : ''}
         </span>
       </span>
       ${saveButton(spotKey(s.id), { type: 'SPOT', spotId: s.id }, 'mini')}
