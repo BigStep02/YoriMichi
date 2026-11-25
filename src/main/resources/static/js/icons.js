@@ -79,21 +79,32 @@ const RM = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // ── 뽑기 패널 3D 오미쿠지 통 (WebGL 되면 등불 자리에 옻칠 통을 띄움. 안 되면 기존 등불 그대로) ──
 let omk = null;
+// 첫 화면이 다 뜨고 한가할 때까지 기다림 → 3D 배경·목록 그리기와 겹쳐 버벅이지 않게
+const afterReveal = () => window.__yoriRevealed ? Promise.resolve()
+  : new Promise((ok) => { addEventListener('yori:revealed', ok, { once: true }); setTimeout(ok, 4000); });
+const idle = () => new Promise((ok) => (window.requestIdleCallback ? requestIdleCallback(() => ok(), { timeout: 1200 }) : setTimeout(ok, 250)));
 /** 페이지마다 한 번: kind = 'food'(食) | 'fest'(祭) | 'spot'(遊) */
 export async function dpMount(kind) {
   const panel = document.getElementById('draw-panel');
   const lantern = panel?.querySelector('.dp-lantern');
   if (!lantern || !window.gsap) return;
   try {
+    await afterReveal();
+    await idle();
     const m = await import('./omikuji/omikuji-stage.js');
     if (!m.webglOk() || !lantern.isConnected) return;
-    if (omk?.alive) omk.destroy();
     const slot = document.createElement('span');
     slot.className = 'dp-omk';
     slot.setAttribute('role', 'presentation');
+    slot.hidden = true;
     lantern.after(slot);
-    omk = m.mountOmikuji(slot, { kind, calm: RM(), onTap: () => panel.querySelector('.dp-btn')?.click() });
+    const inst = m.mountOmikuji(slot, { kind, calm: RM(), onTap: () => panel.querySelector('.dp-btn')?.click() });
+    await inst.ready;                       // 셰이더 준비가 끝난 뒤에 등불과 바꿔 끼움 (빈 칸·멈칫 없음)
+    if (!slot.isConnected || panel.classList.contains('is-drawing')) { slot.remove(); return; }
+    omk = inst;
+    slot.hidden = false;
     lantern.style.display = 'none';   // CSS display:grid 때문에 hidden 속성만으론 안 숨겨짐
+    inst.show();
   } catch (e) {
     console.warn('오미쿠지 3D를 켤 수 없어요', e);
   }
@@ -103,7 +114,7 @@ export async function dpMount(kind) {
  *  오미쿠지 통이 떠 있으면 통 흔들기 → 막대 뽑기 연출이 끝나는 순간 결과를 돌려줌 */
 export async function dpRun(task, minMs = 800) {
   const panel = document.getElementById('draw-panel');
-  if (omk?.alive && panel?.contains(document.querySelector('.dp-omk'))) {
+  if (omk?.alive && omk.slot && panel?.contains(omk.slot)) {
     panel.classList.remove('lit');
     panel.classList.add('is-drawing');
     try { return await omk.draw(task); }
