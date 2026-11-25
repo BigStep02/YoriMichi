@@ -321,7 +321,7 @@ function renderResult(data) {
             <span class="cx-label">근처 맛집</span>
             <h2 class="cx-name" lang="ja">${esc(r.name)}</h2>
             <div class="cx-chips">${rTags}</div>
-            <div class="cx-actions">
+            <div class="cx-actions cx-actions-2row">
               <button type="button" class="dp-main" data-r-detail>가게 공개 · AI 요약</button>
               ${r.googleMapsUri ? `<a class="dp-ico" href="${esc(r.googleMapsUri)}" target="_blank" rel="noopener" aria-label="구글 지도" title="구글 지도">${icons.map('icon')}</a>` : ''}
               <a class="dp-ico cx-tabelog" href="${tabelogUrl(r.name)}" target="_blank" rel="noopener" aria-label="食べログ" title="食べログ" lang="ja">食</a>

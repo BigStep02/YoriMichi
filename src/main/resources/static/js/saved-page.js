@@ -1,4 +1,4 @@
-// 저장함(縁帳): 저장한 코스·축제·놀거리·맛집. 외부 호출 0 (맛집은 [인연 열기] 때만 Details 1회)
+// 저장함(縁帳): 저장한 코스·축제·놀거리·맛집. 외부 호출 0 (맛집은 [상세 보기] 때만 Details 1회)
 // 맛집은 place_id만 저장되어 있으므로 '봉인 카드'로 보여줌 — 이름 대신 만난 곳·도시·메모
 import { api, getToken } from './api.js';
 import { renderHeader } from './header.js';
@@ -72,7 +72,7 @@ function restCard(it) {
         <p class="sv-seal-sub">${esc(sub)}</p>
         ${it.memo && memoTitle !== it.memo ? `<p class="sv-memo">${esc(it.memo)}</p>` : ''}
         <div class="cx-actions">
-          <button type="button" class="dp-main" data-open="${esc(r.placeId)}" data-met-type="${esc(r.metType || '')}" data-met-id="${r.metId ?? ''}">인연 열기</button>
+          <button type="button" class="dp-main" data-open="${esc(r.placeId)}" data-met-type="${esc(r.metType || '')}" data-met-id="${r.metId ?? ''}">상세 보기</button>
           <a class="dp-ico" href="${esc(placeMapsUrl(r.placeId))}" target="_blank" rel="noopener" aria-label="구글 지도" title="구글 지도">${icons.map('icon')}</a>
           <button type="button" class="dp-ico" data-memo="${it.id}" aria-label="메모" title="메모">✎</button>
           ${saveButton(it.key, { type: 'RESTAURANT', placeId: r.placeId, metType: r.metType || undefined, metId: r.metId ?? undefined, memo: it.memo || undefined }, 'ico')}
@@ -98,7 +98,7 @@ function courseCard(it) {
     } else {
       const met = c.stops.find(x => x.type === 'SPOT' || x.type === 'FESTIVAL');
       label = '🍴 맛집';
-      body = `<button type="button" class="sv-step-open" data-open="${esc(s.placeId)}" data-met-type="${met?.type || ''}" data-met-id="${met?.id ?? ''}"><span lang="ja">封</span> 인연 열기</button>`;
+      body = `<button type="button" class="sv-step-open" data-open="${esc(s.placeId)}" data-met-type="${met?.type || ''}" data-met-id="${met?.id ?? ''}"><span lang="ja">封</span> 상세 보기</button>`;
     }
     return `
       <li class="sv-step">
