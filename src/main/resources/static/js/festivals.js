@@ -4,10 +4,11 @@ import { renderHeader } from './header.js';
 import { mountSearchBar } from './searchbar.js';
 import { formatRange, dDayLabel, todayTokyo } from './dates.js';
 import { regionKo } from './regions.js';
-import { icons, esc, dpRun, dpShow } from './icons.js';
+import { icons, esc, dpRun, dpShow, TITLE_ICONS } from './icons.js';
 import { openFestivalSheet } from './festsheet.js';
 
 renderHeader();
+document.querySelector('.draw-title')?.insertAdjacentHTML('afterbegin', `<span class="title-ic">${TITLE_ICONS.fest}</span>`);
 document.getElementById('back-link').insertAdjacentHTML('afterbegin', icons.back());
 
 const RADII = [10, 30, 50];

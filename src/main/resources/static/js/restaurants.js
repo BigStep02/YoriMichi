@@ -4,10 +4,11 @@ import { api } from './api.js';
 import { renderHeader } from './header.js';
 import { mountSearchBar } from './searchbar.js';
 import { openRestaurantSheet as openDetail, priceLabel, walkLabel, typeChip } from './rsheet.js';
-import { icons, esc, dpRun, dpShow } from './icons.js';
+import { icons, esc, dpRun, dpShow, TITLE_ICONS } from './icons.js';
 import { isMock } from './mock.js';
 
 renderHeader();
+document.querySelector('.draw-title')?.insertAdjacentHTML('afterbegin', `<span class="title-ic">${TITLE_ICONS.food}</span>`);
 document.getElementById('back-link').insertAdjacentHTML('afterbegin', icons.back());
 
 const MOCK = isMock();

@@ -3,11 +3,12 @@
 import { api } from './api.js';
 import { renderHeader } from './header.js';
 import { mountSearchBar } from './searchbar.js';
-import { icons, esc, dpRun, dpShow } from './icons.js';
+import { icons, esc, dpRun, dpShow, TITLE_ICONS } from './icons.js';
 import { regionKo } from './regions.js';
 import { kindLabel, kindIcon, openSpotSheet } from './spotsheet.js';
 
 renderHeader();
+document.querySelector('.draw-title')?.insertAdjacentHTML('afterbegin', `<span class="title-ic">${TITLE_ICONS.spot}</span>`);
 document.getElementById('back-link').insertAdjacentHTML('afterbegin', icons.back());
 
 const RADII = [5, 10, 30];

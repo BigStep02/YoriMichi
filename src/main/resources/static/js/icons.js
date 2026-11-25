@@ -120,3 +120,28 @@ export function dpLight() {
   void panel.offsetWidth;
   panel.classList.add('lit');
 }
+
+/** 페이지 제목용 컬러 아이콘 (주변 맛집·축제·놀거리). 글자 크기(1em)에 맞춰 그려짐 */
+export const TITLE_ICONS = {
+  food: `<svg class="title-svg" viewBox="0 0 24 24" aria-hidden="true">
+    <defs><linearGradient id="ti-bowl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F0603A"/><stop offset="1" stop-color="#B22E19"/></linearGradient></defs>
+    <path d="M8.6 2.6c-.9 1.1.9 1.9 0 3.1M12 1.8c-.9 1.1.9 1.9 0 3.1" fill="none" stroke="#F5EFE6" stroke-width="1" stroke-linecap="round" opacity=".55"/>
+    <path d="M14.2 1.6 20.6 9.4M16.4 1 21.8 8.2" stroke="#D9A066" stroke-width="1.15" stroke-linecap="round"/>
+    <ellipse cx="12" cy="10.9" rx="8.6" ry="1.9" fill="#F7D57A"/>
+    <path d="M10 10.3c1 .6 2.2.6 3.2 0s2.2-.6 3.2 0M6.6 10.6c1-.5 2-.5 3 0" fill="none" stroke="#E6AE33" stroke-width=".7" stroke-linecap="round"/>
+    <path d="M3 11h18c0 4.6-3.7 8.3-8.3 8.3h-1.4C6.7 19.3 3 15.6 3 11z" fill="url(#ti-bowl)"/>
+    <path d="M4.4 13.6c1.2-.9 2.4-.9 3.6 0s2.4.9 3.6 0 2.4-.9 3.6 0 2.4.9 3.6 0" fill="none" stroke="#F2C14E" stroke-width=".85" stroke-linecap="round"/>
+    <rect x="8.8" y="19" width="6.4" height="1.9" rx=".7" fill="#7E2414"/>
+  </svg>`,
+  fest: `<svg class="title-svg" viewBox="0 0 24 24" aria-hidden="true">
+    <defs><radialGradient id="ti-lan" cx=".45" cy=".42" r=".65"><stop offset="0" stop-color="#FFB27A"/><stop offset=".45" stop-color="#F05A34"/><stop offset="1" stop-color="#B22E19"/></radialGradient></defs>
+    <path d="M12 .8v2.2" stroke="#F2C14E" stroke-width="1.1" stroke-linecap="round"/>
+    <rect x="8.2" y="2.8" width="7.6" height="2.2" rx=".6" fill="#2A1208" stroke="#F2C14E" stroke-width=".6"/>
+    <path d="M7.2 5h9.6c1.9 2 2.8 4.3 2.8 7s-.9 5-2.8 7H7.2c-1.9-2-2.8-4.3-2.8-7s.9-5 2.8-7z" fill="url(#ti-lan)"/>
+    <path d="M5.5 8.2h13M4.8 11.2h14.4M4.8 13.8h14.4M5.5 16.8h13" stroke="#5A1608" stroke-width=".55" opacity=".45"/>
+    <path d="M12 5.2c-1.6 2-2.3 4.3-2.3 6.8s.7 4.8 2.3 6.8" fill="none" stroke="#FFE0B8" stroke-width=".6" opacity=".55"/>
+    <rect x="8.2" y="19" width="7.6" height="2.2" rx=".6" fill="#2A1208" stroke="#F2C14E" stroke-width=".6"/>
+    <path d="M12 21.2v2" stroke="#F2C14E" stroke-width="1.1" stroke-linecap="round"/>
+  </svg>`,
+  spot: TORII.replace('class="torii"', 'class="title-svg"'),
+};
