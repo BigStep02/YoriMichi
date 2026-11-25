@@ -1987,3 +1987,11 @@ body.hanabi-home .cats .cat.spot .cat-icon { color: #7FE0C0; }
 @media (prefers-reduced-motion: reduce) {
   .save-toast { transition: none; }
 }
+
+/* 주변 맛집·축제·놀거리 제목 왼쪽 컬러 아이콘 — 글자 크기(1em)에 맞춤 */
+.draw-title:has(.title-ic) { display: flex; align-items: center; gap: .3em; }
+.title-ic { flex: none; display: inline-grid; place-items: center; width: 1.05em; height: 1.05em; }
+.title-svg { width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 0 6px rgba(242,140,60,.45)); }
+/* 근처 축제: 위에 '祭 · MATSURI' 한 줄(::before)이 있어 세로 배치였음 → 그 줄만 한 줄 차지, 아이콘+제목은 가로 */
+body[data-page="festivals"] .draw-title:has(.title-ic) { flex-direction: row; flex-wrap: wrap; align-items: center; }
+body[data-page="festivals"] .draw-title:has(.title-ic)::before { flex-basis: 100%; }
