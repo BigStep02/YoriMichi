@@ -1,3 +1,30 @@
+// [임시 진단] 홈 화면 앱(아이폰) 또는 주소에 ?diag=1 → 7초 뒤 화면 아래에 3D·오류 상태를 띄움 (원인 찾으면 지울 것)
+(() => {
+  const app = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  if (!app && !/[?&]diag=1/.test(location.search)) return;
+  const log = [];
+  const add = (k, m) => { if (log.length < 14) log.push(`${k}: ${String(m).slice(0, 160)}`); };
+  addEventListener('error', (e) => add('ERR', `${e.message} @${(e.filename || '').split('/').pop()}:${e.lineno}`), true);
+  addEventListener('error', (e) => { const t = e.target; if (t && t !== window && (t.src || t.href)) add('LOAD', t.src || t.href); }, true);
+  addEventListener('unhandledrejection', (e) => add('REJ', e.reason?.message || e.reason));
+  for (const k of ['warn', 'error']) { const o = console[k].bind(console); console[k] = (...a) => { add(k.toUpperCase(), a.map((x) => x?.message || x).join(' ')); o(...a); }; }
+  const gl = (() => { try { const c = document.createElement('canvas'); const g = c.getContext('webgl2') || c.getContext('webgl'); if (!g) return 'NONE'; const r = `${g instanceof WebGL2RenderingContext ? 'gl2' : 'gl1'} max${g.getParameter(g.MAX_TEXTURE_SIZE)} par${!!g.getExtension('KHR_parallel_shader_compile')}`; g.getExtension('WEBGL_lose_context')?.loseContext(); return r; } catch (e) { return 'ERR ' + e.message; } })();
+  setTimeout(() => {
+    const c = document.getElementById('hanabi-stage');
+    const cs = c && getComputedStyle(c);
+    const info = [
+      `app=${app} dpr=${devicePixelRatio} ${innerWidth}x${innerHeight} gl=${gl}`,
+      `canvas=${c ? `${c.className || '(no class)'} ${c.width}x${c.height} op=${cs.opacity} disp=${cs.display}` : 'NONE'} body=${document.body.className}`,
+      `revealed=${!!window.__yoriRevealed} html=${document.documentElement.className}`,
+      ...log,
+    ];
+    const box = document.createElement('pre');
+    box.textContent = info.join('\n');
+    box.style.cssText = 'position:fixed;left:6px;right:6px;bottom:calc(6px + env(safe-area-inset-bottom));z-index:2147483647;margin:0;padding:8px;max-height:45vh;overflow:auto;background:rgba(0,0,0,.85);color:#7CFC9A;font:11px/1.35 ui-monospace,monospace;white-space:pre-wrap;word-break:break-all;border:1px solid #7CFC9A;border-radius:8px';
+    box.addEventListener('click', () => box.remove());
+    document.body.appendChild(box);
+  }, 7000);
+})();
 // 페이지 전환: 나갈 때 먹빛으로 살짝 어두워지고, 새 페이지는 3D 배경이 준비되면 스르륵 밝아짐
 (() => {
   const root = document.documentElement;
