@@ -18,7 +18,7 @@ import { holdStages } from '../hanabi/hanabi-stage.js';
 import { makeDeco, makePetals } from './omikuji-deco.js';
 
 export function webglOk() {
-  try { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')); } catch { return false; }
+  try { const c = document.createElement('canvas'), g = c.getContext('webgl2') || c.getContext('webgl'); g?.getExtension('WEBGL_lose_context')?.loseContext(); return !!g; } catch { return false; }
 }
 
 // 색은 세 가지만: 숯검정(INK) · 샴페인 골드(GOLD) · 주사 레드(SHU, 막대 끝·인장 한 점)
@@ -180,7 +180,7 @@ function build(calm) {
   const buzz = (p) => { if (calm) return; try { navigator.vibrate?.(p); } catch { /* noop */ } };
 
   // ── DOM: 패널 칸 안 canvas + 뽑을 때 쓰는 전체 화면 막 ──
-  const canvas = document.createElement('canvas');
+  let canvas = document.createElement('canvas');
   canvas.className = 'omk-canvas';
   canvas.setAttribute('aria-hidden', 'true');
   const layer = document.createElement('div');
@@ -189,7 +189,16 @@ function build(calm) {
   const back = layer.firstElementChild, flash = layer.lastElementChild;
   const typeEl = layer.querySelector('.omk-type');   // 결과 이름: 막대 아래 정적 속에 떠오르는 글 (3D 위 HTML → 글자가 선명)
 
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+  // 아이폰 홈 화면 앱에서 처음 받은 WebGL이 잃어버린 상태로 와서 실패하는 경우 → 새 canvas·가벼운 설정으로 재시도
+  let renderer;
+  for (const o of [{ antialias: true, powerPreference: 'high-performance' }, { antialias: true }, { antialias: false }]) {
+    try { renderer = new THREE.WebGLRenderer({ canvas, alpha: true, ...o }); break; }
+    catch (e) {
+      if (!o.antialias) throw e;
+      console.warn('오미쿠지 WebGL 다시 시도', e?.message);
+      const fresh = canvas.cloneNode(false); canvas = fresh;
+    }
+  }
   const PR = Math.min(devicePixelRatio || 1, 1.75);   // 전체 화면 + 빛 번짐이라 2배까지는 안 올림 (폰 60fps)
   renderer.setPixelRatio(PR);
   renderer.setClearColor(0x000000, 0);

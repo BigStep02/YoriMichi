@@ -37,8 +37,11 @@ const PAPER_CACHE = new Map();   // 등불 종이 그림 (canvas) — 무대끼�
 const fontReady = () => { try { return document.fonts.check('900 40px "Zen Old Mincho"'); } catch { return true; } };
 
 export function webglAvailable() {
-  try { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')); }
-  catch { return false; }
+  try {
+    const c = document.createElement('canvas'), g = c.getContext('webgl2') || c.getContext('webgl');
+    g?.getExtension('WEBGL_lose_context')?.loseContext();   // 확인용 컨텍스트는 바로 반납 (아이폰은 동시에 쓸 수 있는 WebGL 수가 적음)
+    return !!g;
+  } catch { return false; }
 }
 
 /**
@@ -62,7 +65,18 @@ export function createHanabiStage(canvas, opts = {}) {
   // shared: 페이지를 옮겨도 같은 canvas·렌더러를 계속 씀 (router.js). WebGL을 새로 만들지 않아서 전환이 빠름
   if (opts.shared && sharedRenderer && sharedCanvas === canvas) renderer = sharedRenderer;
   else {
-    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+    // 아이폰 홈 화면 앱: 처음 받은 WebGL이 이미 잃어버린 상태로 와서 만들기가 실패하는 경우가 있음
+    // (getShaderPrecisionFormat → null). 한 번 컨텍스트를 받은 canvas는 다시 못 쓰므로 새 canvas로 바꿔 끼우고 더 가벼운 설정으로 재시도
+    const tries = [{ antialias: true, powerPreference: 'high-performance' }, { antialias: true }, { antialias: false }];
+    for (let i = 0; i < tries.length; i++) {
+      try { renderer = new THREE.WebGLRenderer({ canvas, ...tries[i] }); break; }
+      catch (e) {
+        if (i === tries.length - 1) throw e;
+        console.warn('WebGL 다시 시도', i + 1, e?.message);
+        const fresh = canvas.cloneNode(false);
+        canvas.replaceWith(fresh); canvas = fresh;
+      }
+    }
     // 그림자는 처음부터 켜둠 (나중에 켜면 모든 무대의 셰이더를 다시 준비해야 해서 끊김)
     renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     // 셰이더 오류 검사 끄기: 켜두면 셰이더마다 컴파일이 끝날 때까지 메인 스레드가 멈춤(첫 진입·전환 버벅임의 주원인).
@@ -2270,7 +2284,7 @@ export function createHanabiStage(canvas, opts = {}) {
   if (SCENE === 'river' || SCENE === 'moon') ambient(true);
 
   if (opts.enter) enter();
-  return { play, release, skip, abort, idle, introGlyph, setScroll, ambient, destroy, pause, resume, resize, leave, enter, warm };
+  return { play, release, skip, abort, idle, introGlyph, setScroll, ambient, destroy, pause, resume, resize, leave, enter, warm, canvas };
 }
 
 // ───────── 무대 보관함: 페이지를 오가도 무대를 다시 만들지 않음 ─────────
@@ -2290,7 +2304,9 @@ export function acquireStage(canvas, opts = {}) {
     if (currentStage !== entry) entry.stage.resume(); else entry.stage.enter();
   } else {
     canvas.classList.remove('ready');
-    entry = { key, canvas, stage: createHanabiStage(canvas, { ...opts, shared: true, enter: true }), visited: false };
+    const st = createHanabiStage(canvas, { ...opts, shared: true, enter: true });
+    canvas = st.canvas || canvas;   // 재시도로 canvas가 바뀌었을 수 있음
+    entry = { key, canvas, stage: st, visited: false };
     stageCache.set(key, entry); trim(entry);
   }
   entry.stage.firstVisit = !entry.visited; entry.visited = true;
