@@ -1831,7 +1831,10 @@ export function createHanabiStage(canvas, opts = {}) {
   // compileAsync: GPU가 셰이더를 병렬로 컴파일하는 동안 메인 스레드는 놀지 않음. 다 되면 그때부터 그림 (중간에 멈칫 없음)
   let compiled = false;
   const compileP = (async () => {
-    try { if (renderer.compileAsync) await renderer.compileAsync(scene, camera); else renderer.compile(scene, camera); } catch { /* noop */ }
+    // 아이폰 홈 화면 앱 등 일부 기기에선 compileAsync가 끝났다는 신호가 안 와서 배경이 영영 안 보일 수 있음
+    // → 2.5초가 지나면 준비가 덜 됐어도 그냥 그리기 시작 (조금 멈칫할 수는 있어도 배경은 반드시 보이게)
+    const limit = new Promise((r) => setTimeout(r, 2500));
+    try { if (renderer.compileAsync) await Promise.race([renderer.compileAsync(scene, camera), limit]); else renderer.compile(scene, camera); } catch { /* noop */ }
     compiled = true;
   })();
   if ('ResizeObserver' in window) new ResizeObserver(resize).observe(canvas);
