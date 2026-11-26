@@ -519,7 +519,11 @@ function build(calm) {
       renderer.render(scene, camera);
     }
   }
-  const onCanvasClick = () => { if (!busy) onTap?.(); };
+  // 뽑기 결과가 나온 뒤에도 마무리 연출(통이 패널로 돌아감) 동안은 화면을 덮고 있음
+  // → 그동안이나 막 돌아온 직후(0.5초)의 탭은 새 뽑기로 치지 않음 (실수로 한 번 더 뽑히던 문제)
+  let tapReadyAt = 0;
+  const canTap = () => !busy && !outroP && !full && performance.now() >= tapReadyAt;
+  const onCanvasClick = () => { if (canTap()) onTap?.(); };
   canvas.addEventListener('click', onCanvasClick);
 
   // 폰트가 늦게 오면 한자를 다시 그림
@@ -548,7 +552,7 @@ function build(calm) {
     listenAC?.abort();
     listenAC = new AbortController();
     const signal = listenAC.signal;
-    slot.addEventListener('click', (e) => { if (e.target === slot && !busy) onTap?.(); }, { signal });
+    slot.addEventListener('click', (e) => { if (e.target === slot && canTap()) onTap?.(); }, { signal });
     ro.observe(slot);
     full = false; layer.remove();
     resize();
@@ -728,7 +732,7 @@ function build(calm) {
         gsap.to(holder.scale, { x: p.s, y: p.s, z: p.s, duration: .5, ease: 'power3.inOut' });
       }, off + .56)
       .to({}, { duration: .52 }, off + .56);
-    return play(c).then(() => { resetStick(); resetFx(); goPanel(); holdStages(false); });
+    return play(c).then(() => { resetStick(); resetFx(); goPanel(); holdStages(false); tapReadyAt = performance.now() + 500; });
   }
 
   // 페이지 들어올 때: 통이 제자리에서 한 바퀴 휙 돌며 食·祭·遊와 띠 색이 바뀜
