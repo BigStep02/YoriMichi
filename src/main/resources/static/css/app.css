@@ -1213,7 +1213,7 @@ body.hanabi-bg .f-sec .f-verify { font-size: 11.5px; line-height: 1.5; color: rg
 /* ── 근처 축제 목록: 먹 + 금선 + 붉은 실, 도장 D-day ── */
 body[data-page="festivals"] .draw-title { font-family: var(--font-kr); font-weight: 900; letter-spacing: .02em; display: flex; flex-direction: column; }
 body[data-page="festivals"] .draw-title::before { content: "祭 · MATSURI"; font-size: 11px; letter-spacing: .32em; color: #E9C27A; font-weight: 700; margin-bottom: 4px; }
-body:is([data-page="festivals"], [data-page="nearby"]) .f-item {
+body:is([data-page="festivals"], [data-page="nearby"], .hanabi-home) .f-item {
   position: relative; overflow: hidden; gap: 16px; padding: 16px 16px 16px 18px; border-radius: 16px;
   background: linear-gradient(100deg, rgba(24,10,16,.86), rgba(12,10,24,.74));
   border: 1px solid rgba(233,194,122,.16); color: #F6ECDD;
@@ -1221,35 +1221,35 @@ body:is([data-page="festivals"], [data-page="nearby"]) .f-item {
   box-shadow: 0 12px 30px rgba(0,0,0,.35);
   transition: transform .2s, border-color .2s, box-shadow .2s;
 }
-body:is([data-page="festivals"], [data-page="nearby"]) .f-item::before { /* 왼쪽 붉은 실 */
+body:is([data-page="festivals"], [data-page="nearby"], .hanabi-home) .f-item::before { /* 왼쪽 붉은 실 */
   content: ""; position: absolute; left: 0; top: 14px; bottom: 14px; width: 2px; border-radius: 2px;
   background: linear-gradient(180deg, transparent, #E8462E 20%, #FF7A55 50%, #E8462E 80%, transparent);
   box-shadow: 0 0 10px rgba(255,90,60,.6); opacity: .75; transition: opacity .2s;
 }
-body:is([data-page="festivals"], [data-page="nearby"]) .f-item:hover, body:is([data-page="festivals"], [data-page="nearby"]) .f-item:active { transform: translateY(-2px); border-color: rgba(233,194,122,.38); box-shadow: 0 16px 36px rgba(0,0,0,.45), 0 0 0 1px rgba(233,194,122,.08) inset; }
-body:is([data-page="festivals"], [data-page="nearby"]) .f-item:hover::before { opacity: 1; }
-body:is([data-page="festivals"], [data-page="nearby"]) .f-item .date-box {
+body:is([data-page="festivals"], [data-page="nearby"], .hanabi-home) .f-item:hover, body:is([data-page="festivals"], [data-page="nearby"], .hanabi-home) .f-item:active { transform: translateY(-2px); border-color: rgba(233,194,122,.38); box-shadow: 0 16px 36px rgba(0,0,0,.45), 0 0 0 1px rgba(233,194,122,.08) inset; }
+body:is([data-page="festivals"], [data-page="nearby"], .hanabi-home) .f-item:hover::before { opacity: 1; }
+body:is([data-page="festivals"], [data-page="nearby"], .hanabi-home) .f-item .date-box {
   width: 52px; background: none; color: #F6ECDD; border-radius: 0; padding: 2px 14px 2px 0; margin-right: -2px;
   border-right: 1px solid rgba(233,194,122,.25); align-self: stretch; display: flex; flex-direction: column; justify-content: center;
 }
-body:is([data-page="festivals"], [data-page="nearby"]) .f-item .date-box .m { font-size: 10.5px; letter-spacing: .08em; color: #E9C27A; opacity: 1; font-weight: 700; }
-body:is([data-page="festivals"], [data-page="nearby"]) .f-item .date-box .d { font-family: var(--font-kr); font-size: 32px; font-weight: 900; line-height: 1.05; }
-body:is([data-page="festivals"], [data-page="nearby"]) .f-item .date-box.live { background: none; }
-body:is([data-page="festivals"], [data-page="nearby"]) .f-item .date-box.live .m { color: #FF7A62; }
-body:is([data-page="festivals"], [data-page="nearby"]) .f-item.later .date-box { background: none; color: rgba(246,236,221,.6); }
-body:is([data-page="festivals"], [data-page="nearby"]) .f-top { position: absolute; top: 14px; right: 14px; margin: 0; }
-body:is([data-page="festivals"], [data-page="nearby"]) .b-d, body:is([data-page="festivals"], [data-page="nearby"]) .b-live { /* 도장 */
+body:is([data-page="festivals"], [data-page="nearby"], .hanabi-home) .f-item .date-box .m { font-size: 10.5px; letter-spacing: .08em; color: #E9C27A; opacity: 1; font-weight: 700; }
+body:is([data-page="festivals"], [data-page="nearby"], .hanabi-home) .f-item .date-box .d { font-family: var(--font-kr); font-size: 32px; font-weight: 900; line-height: 1.05; }
+body:is([data-page="festivals"], [data-page="nearby"], .hanabi-home) .f-item .date-box.live { background: none; }
+body:is([data-page="festivals"], [data-page="nearby"], .hanabi-home) .f-item .date-box.live .m { color: #FF7A62; }
+body:is([data-page="festivals"], [data-page="nearby"], .hanabi-home) .f-item.later .date-box { background: none; color: rgba(246,236,221,.6); }
+body:is([data-page="festivals"], [data-page="nearby"], .hanabi-home) .f-top { position: absolute; top: 14px; right: 14px; margin: 0; }
+body:is([data-page="festivals"], [data-page="nearby"], .hanabi-home) .b-d, body:is([data-page="festivals"], [data-page="nearby"], .hanabi-home) .b-live { /* 도장 */
   font-family: var(--font-kr); font-size: 11.5px; font-weight: 900; letter-spacing: .04em;
   background: none; color: #FF7A62; border: 1.5px solid rgba(232,70,46,.85); border-radius: 5px; padding: 2px 7px;
   transform: rotate(-4deg); display: inline-block; box-shadow: 0 0 12px rgba(232,70,46,.25);
 }
-body:is([data-page="festivals"], [data-page="nearby"]) .b-live { background: rgba(232,70,46,.9); color: #FFF3E6; }
-body:is([data-page="festivals"], [data-page="nearby"]) .f-name { font-family: var(--font-kr); font-size: 19px; font-weight: 900; padding-right: 64px; }
-body:is([data-page="festivals"], [data-page="nearby"]) .f-ja { color: #E9C27A; font-size: 12.5px; margin-top: 1px; letter-spacing: .04em; }
-body:is([data-page="festivals"], [data-page="nearby"]) .f-meta { color: rgba(246,236,221,.62); font-weight: 500; font-size: 12.5px; margin-top: 10px; }
-body:is([data-page="festivals"], [data-page="nearby"]) .f-sum { color: rgba(246,236,221,.75); }
-body:is([data-page="festivals"], [data-page="nearby"]) .f-item .date-box { width: 60px; }
-body:is([data-page="festivals"], [data-page="nearby"]) .f-item .date-box .m { white-space: nowrap; font-size: 10px; letter-spacing: .02em; }
+body:is([data-page="festivals"], [data-page="nearby"], .hanabi-home) .b-live { background: rgba(232,70,46,.9); color: #FFF3E6; }
+body:is([data-page="festivals"], [data-page="nearby"], .hanabi-home) .f-name { font-family: var(--font-kr); font-size: 19px; font-weight: 900; padding-right: 64px; }
+body:is([data-page="festivals"], [data-page="nearby"], .hanabi-home) .f-ja { color: #E9C27A; font-size: 12.5px; margin-top: 1px; letter-spacing: .04em; }
+body:is([data-page="festivals"], [data-page="nearby"], .hanabi-home) .f-meta { color: rgba(246,236,221,.62); font-weight: 500; font-size: 12.5px; margin-top: 10px; }
+body:is([data-page="festivals"], [data-page="nearby"], .hanabi-home) .f-sum { color: rgba(246,236,221,.75); }
+body:is([data-page="festivals"], [data-page="nearby"], .hanabi-home) .f-item .date-box { width: 60px; }
+body:is([data-page="festivals"], [data-page="nearby"], .hanabi-home) .f-item .date-box .m { white-space: nowrap; font-size: 10px; letter-spacing: .02em; }
 body[data-page="festivals"] .draw-sub { text-shadow: 0 1px 8px rgba(0,0,0,.8); }
 
 /* ── 달력: 기간을 끊김 없는 띠로, 시작·끝은 원 ── */
@@ -1313,7 +1313,7 @@ body.hanabi .cta.draw-btn .cta-text span { color: rgba(255,240,228,.78); opacity
 .sp-item[data-kind="MARKET"]        { --k: #FFA25C; --k-soft: rgba(255,162,92,.16); }
 .sp-item[data-kind="AMUSEMENT"]     { --k: #CDA3FF; --k-soft: rgba(205,163,255,.16); }
 .sp-item[data-kind="ONSEN"]         { --k: #7FE0C0; --k-soft: rgba(127,224,192,.16); }
-body:is([data-page="spots"], [data-page="nearby"]) .r-item {
+body:is([data-page="spots"], [data-page="nearby"], .hanabi-home) .r-item {
   position: relative; overflow: hidden; gap: 14px; padding: 14px 14px 14px 16px; border-radius: 16px;
   background:
     radial-gradient(60% 120% at 0% 50%, var(--k-soft), transparent 70%),
@@ -1323,13 +1323,13 @@ body:is([data-page="spots"], [data-page="nearby"]) .r-item {
   box-shadow: 0 10px 26px rgba(0,0,0,.32);
   transition: transform .2s, border-color .2s;
 }
-body:is([data-page="spots"], [data-page="nearby"]) .r-item + .r-item { margin-top: 10px; }
-body:is([data-page="spots"], [data-page="nearby"]) .r-item::before { /* 왼쪽 실: 종류 색 */
+body:is([data-page="spots"], [data-page="nearby"], .hanabi-home) .r-item + .r-item { margin-top: 10px; }
+body:is([data-page="spots"], [data-page="nearby"], .hanabi-home) .r-item::before { /* 왼쪽 실: 종류 색 */
   content: ""; position: absolute; left: 0; top: 14px; bottom: 14px; width: 2px; border-radius: 2px;
   background: linear-gradient(180deg, transparent, var(--k) 50%, transparent); box-shadow: 0 0 10px var(--k); opacity: .8;
 }
-body:is([data-page="spots"], [data-page="nearby"]) .r-item:hover { transform: translateY(-2px); border-color: rgba(233,194,122,.36); }
-body:is([data-page="spots"], [data-page="nearby"]) .r-item.skeleton-row::before { display: none; }
+body:is([data-page="spots"], [data-page="nearby"], .hanabi-home) .r-item:hover { transform: translateY(-2px); border-color: rgba(233,194,122,.36); }
+body:is([data-page="spots"], [data-page="nearby"], .hanabi-home) .r-item.skeleton-row::before { display: none; }
 .sp-kind {
   flex: none; align-self: stretch; width: 46px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
   padding-right: 12px; border-right: 1px solid rgba(233,194,122,.2); box-sizing: content-box;
@@ -1346,10 +1346,10 @@ body:is([data-page="spots"], [data-page="nearby"]) .r-item.skeleton-row::before 
 .sp-open { font-size: 10.5px; font-weight: 900; padding: 1px 7px; border-radius: 5px; transform: rotate(-3deg); }
 .sp-open.on { color: #8FD9B0; border: 1.2px solid rgba(107,224,168,.6); box-shadow: 0 0 10px rgba(91,196,142,.25); }
 .sp-open.off { color: rgba(246,236,221,.5); border: 1.2px solid rgba(246,236,221,.22); }
-body:is([data-page="spots"], [data-page="nearby"]) .r-title { font-family: var(--font-kr); font-size: 17px; font-weight: 900; color: #F6ECDD; margin-top: 2px; }
+body:is([data-page="spots"], [data-page="nearby"], .hanabi-home) .r-title { font-family: var(--font-kr); font-size: 17px; font-weight: 900; color: #F6ECDD; margin-top: 2px; }
 .sp-ja { font-family: var(--font-jp); font-size: 12px; color: rgba(246,236,221,.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-body:is([data-page="spots"], [data-page="nearby"]) .r-meta { color: rgba(246,236,221,.62); font-weight: 500; font-size: 12.5px; margin-top: 4px; }
-body:is([data-page="spots"], [data-page="nearby"]) .r-meta .sep { color: rgba(233,194,122,.35); }
+body:is([data-page="spots"], [data-page="nearby"], .hanabi-home) .r-meta { color: rgba(246,236,221,.62); font-weight: 500; font-size: 12.5px; margin-top: 4px; }
+body:is([data-page="spots"], [data-page="nearby"], .hanabi-home) .r-meta .sep { color: rgba(233,194,122,.35); }
 .sp-dist { color: #F2C14E; font-weight: 800; }
 
 /* ── 주변 맛집 목록: 축제 카드와 같은 결 (먹 + 금선), 순위는 명조 숫자 ── */
@@ -1539,7 +1539,7 @@ html.is-app body::before {
 .city.on { background: radial-gradient(circle at 50% 38%, #FF9058, #C8321F 75%); border-color: transparent; color: #FFF; box-shadow: 0 0 14px rgba(255,100,50,.45); }
 
 /* 진행 중 날짜칸: 숫자 + 'O월까지' */
-body:is([data-page="festivals"], [data-page="nearby"]) .f-item .date-box .u { font-size: 10px; font-weight: 700; color: rgba(246,236,221,.6); margin-top: 2px; white-space: nowrap; }
+body:is([data-page="festivals"], [data-page="nearby"], .hanabi-home) .f-item .date-box .u { font-size: 10px; font-weight: 700; color: rgba(246,236,221,.6); margin-top: 2px; white-space: nowrap; }
 
 /* ══════════════════════════════════════════
    코스 뽑기 (spots.html)
@@ -2174,7 +2174,7 @@ body.hanabi-home .cats .cat.spot .cat-icon { color: #7FE0C0; }
 /* 주변 축제 목록: 저장 버튼은 링크 밖(오른쪽 아래)에 겹쳐 둠 */
 .f-wrap { position: relative; }
 .f-wrap + .f-wrap, .f-wrap + .f-item, .f-item + .f-wrap { margin-top: 10px; }
-.f-wrap > .f-item, body:is([data-page="festivals"], [data-page="nearby"]) .f-wrap > .f-item { padding-right: 60px; }
+.f-wrap > .f-item, body:is([data-page="festivals"], [data-page="nearby"], .hanabi-home) .f-wrap > .f-item { padding-right: 60px; }
 .f-wrap > .save-mini { position: absolute; right: 12px; bottom: 12px; margin: 0; z-index: 1; }
 
 /* 주변 맛집·놀거리 목록: 오른쪽 화살표 대신 お守り 저장 */
@@ -2195,3 +2195,10 @@ body.hanabi-home .cats .cat.spot .cat-icon { color: #7FE0C0; }
 body[data-page="festivals"] .draw-title:has(.title-ic) { flex-direction: row; flex-wrap: wrap; align-items: center; }
 body[data-page="festivals"] .draw-title:has(.title-ic)::before { flex-basis: 100%; }
 
+/* 지금 근처·홈: 축제 카드 날짜 칸은 '근처 축제'처럼 숫자만 (예전 작은 등불 장식의 검은 띠·붉은 빛이 겹치지 않게) */
+body:is([data-page="nearby"], .hanabi-home) .f-item .date-box { box-shadow: none; }
+body:is([data-page="nearby"], .hanabi-home) .f-item .date-box::before,
+body:is([data-page="nearby"], .hanabi-home) .f-item .date-box::after { content: none; }
+/* 홈의 놀거리 카드는 링크 */
+a.r-item { text-decoration: none; color: inherit; }
+.f-wrap + .r-item, .f-wrap + a.r-item { margin-top: 10px; }

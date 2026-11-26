@@ -4,7 +4,8 @@ import { renderHeader } from './header.js';
 import { mountSearchBar } from './searchbar.js';
 import { todayTokyo, addDays, dDayLabel } from './dates.js';
 import { icons, esc } from './icons.js';
-import { festRow, spotRow, sortFests, sortSpots } from './nearrows.js';
+import { festCard, spotCard, sortFests, sortSpots } from './nearrows.js';
+import { syncSave } from './saved.js';
 import { acquireStage, webglAvailable } from './hanabi/hanabi-stage.js';
 
 renderHeader();
@@ -114,8 +115,9 @@ async function loadUpcoming(loc) {
   const festPick = fests.slice(0, 2);   // 오늘 축제는 최대 2칸, 나머지는 놀거리
   spotList = pickSpots(sr.status === 'fulfilled' ? (sr.value.spots || []) : [], PICKS - festPick.length);
 
-  const rows = [...festPick.map(festRow), ...spotList.map(spotRow)];
-  if (rows.length) { upcomingEl.innerHTML = rows.join(''); return; }
+  // '지금 근처 전체'·'근처 축제'·'근처 놀거리'와 같은 카드 모양
+  const rows = [...festPick.map(festCard), ...spotList.map((s, i) => spotCard(s, i, { link: true }))];
+  if (rows.length) { upcomingEl.innerHTML = rows.join(''); syncSave(upcomingEl); return; }
   const err = fr.status === 'rejected' && sr.status === 'rejected' ? fr.reason?.message : '';
   upcomingEl.innerHTML = `<p class="muted empty-line">${esc(err || '지금 근처에 문 연 곳이 없어요. 위치를 바꿔 보세요.')}</p>`;
 }

@@ -3,12 +3,11 @@
 import { api } from './api.js';
 import { renderHeader } from './header.js';
 import { getSearchLocation, clearGeoCache } from './location.js';
-import { todayTokyo, formatRange, dDayLabel } from './dates.js';
+import { todayTokyo } from './dates.js';
 import { icons, esc, TORII } from './icons.js';
-import { sortFests, sortSpots } from './nearrows.js';
-import { regionKo } from './regions.js';
-import { kindLabel, kindIcon, openSpotSheet } from './spotsheet.js';
-import { saveButton, syncSave, festKey, spotKey } from './saved.js';
+import { sortFests, sortSpots, festCard, spotCard } from './nearrows.js';
+import { openSpotSheet } from './spotsheet.js';
+import { syncSave } from './saved.js';
 
 renderHeader();
 document.getElementById('back-link').insertAdjacentHTML('afterbegin', icons.back());
@@ -34,57 +33,7 @@ function renderControls() {
   openRow.hidden = tab === 'fest';
 }
 
-// ── 카드: '근처 축제'·'근처 놀거리' 목록과 같은 모양 (CSS도 그 페이지 규칙을 같이 씀) ──
-function dateBox(f) {
-  if (f.ongoing) {
-    const [, em, ed] = f.endDate.split('-').map(Number);
-    return `<div class="date-box live"><div class="m">진행 중</div><div class="d">${ed}</div><div class="u">${em}월까지</div></div>`;
-  }
-  const [y, m, d] = f.startDate.split('-').map(Number);
-  const yr = String(y) !== todayTokyo().slice(0, 4) ? `${String(y).slice(2)}년 ` : '';
-  return `<div class="date-box"><div class="m">${yr}${m}월</div><div class="d">${d}</div></div>`;
-}
-function festCard(f) {
-  const badge = f.ongoing ? '<span class="b-live">진행 중</span>' : `<span class="b-d">${dDayLabel(f.dDay, f.ongoing)}</span>`;
-  return `
-    <div class="f-wrap">
-      <a class="f-item" href="/festival.html?id=${encodeURIComponent(f.id)}">
-        ${dateBox(f)}
-        <div class="f-main">
-          <div class="f-top">${badge}</div>
-          <div class="f-name">${esc(f.name)}</div>
-          ${f.nameJa ? `<div class="f-ja" lang="ja">${esc(f.nameJa)}</div>` : ''}
-          <div class="f-meta">${formatRange(f.startDate, f.endDate, false)} · ${esc(regionKo(f.prefecture, f.city))} · ${Number(f.distanceKm).toFixed(1)}km</div>
-          ${f.summary ? `<p class="f-sum">${esc(f.summary)}</p>` : ''}
-        </div>
-      </a>
-      ${saveButton(festKey(f.id), { type: 'FESTIVAL', festivalId: f.id }, 'mini')}
-    </div>`;
-}
-const KIND_JA = { SHRINE_TEMPLE: '社', PARK_GARDEN: '園', HISTORIC: '城', MUSEUM: '館', VIEWPOINT: '景', MARKET: '市', AMUSEMENT: '遊', ONSEN: '湯' };
 let shownSpots = [];
-function spotCard(s, i) {
-  const open = s.openNow === true ? '<span class="sp-open on">영업 중</span>'
-             : s.openNow === false ? '<span class="sp-open off">영업 전·종료</span>' : '';
-  return `
-    <div class="r-item sp-item" role="button" tabindex="0" data-i="${i}" data-kind="${esc(s.kind || '')}">
-      <span class="sp-kind" aria-hidden="true">
-        <span class="sp-kind-ic">${kindIcon(s.kind)}</span>
-        <span class="sp-kind-ja" lang="ja">${KIND_JA[s.kind] || '寄'}</span>
-      </span>
-      <span class="r-main">
-        <span class="sp-top"><span class="sp-label">${esc(kindLabel(s.kind))}</span>${open}</span>
-        <span class="r-title">${esc(s.name)}</span>
-        ${s.nameJa ? `<span class="sp-ja" lang="ja">${esc(s.nameJa)}</span>` : ''}
-        <span class="r-meta">
-          <span class="sp-dist">${Number(s.distanceKm).toFixed(1)}km</span>
-          <span class="sep">·</span><span>${esc(regionKo(s.prefecture, s.city))}</span>
-          ${s.hoursLabel ? `<span class="sep">·</span><span>${esc(s.hoursLabel)}</span>` : ''}
-        </span>
-      </span>
-      ${saveButton(spotKey(s.id), { type: 'SPOT', spotId: s.id }, 'mini')}
-    </div>`;
-}
 // 놀거리 카드를 누르면 '근처 놀거리'처럼 상세 시트 (저장 버튼은 제외)
 listEl.addEventListener('click', (e) => {
   if (e.target.closest('.save-btn')) return;
