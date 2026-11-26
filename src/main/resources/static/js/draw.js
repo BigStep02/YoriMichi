@@ -266,6 +266,8 @@ function todayLabel() {
 }
 
 function renderResult(data) {
+  // 결과를 이 페이지의 방문 기록에 넣어 둠 → 결과에서 다른 페이지로 갔다가 '뒤로'로 돌아오면 같은 결과를 다시 보여 줌
+  try { history.replaceState({ ...(history.state || {}), drawResult: data, drawExcluded: excluded }, ''); } catch { /* 기록 못 해도 괜찮음 */ }
   const r = data.restaurants[0];
   const isSpot = data.preset !== 'FESTIVAL_RESTAURANT';
   const step1Html = isSpot ? renderSpotStep(data.spot) : renderFestivalStep(data.festival);
@@ -503,4 +505,14 @@ function mockCourseDraw() {
     return { preset: 'FESTIVAL_RESTAURANT', spot: null, festival, restaurants: rest ? [rest] : [], cafe: null, spotDbCount: 0, spotSupplemented: false, restaurantRadiusM: +opts.restaurantRadiusM, reason: rest ? null : 'NO_RESTAURANT' };
   }
   return { preset: 'SPOT_RESTAURANT', spot, festival: null, restaurants: rest ? [rest] : [], cafe: null, spotDbCount: spots.length, spotSupplemented: false, restaurantRadiusM: +opts.restaurantRadiusM, reason: rest ? null : 'NO_RESTAURANT' };
+}
+
+// ── 뒤로 가기로 돌아왔을 때: 마지막 결과를 연출 없이 바로 다시 보여 줌 ──
+{
+  const st = history.state;
+  if (st?.drawResult && hasResult(st.drawResult)) {
+    excluded = Array.isArray(st.drawExcluded) ? st.drawExcluded : [];
+    renderResult(st.drawResult);
+    Object.entries(steps).forEach(([k, el]) => { el.hidden = k !== 'result'; });
+  }
 }

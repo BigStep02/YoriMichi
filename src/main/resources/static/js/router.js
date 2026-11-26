@@ -26,7 +26,7 @@ const persist = (fn) => { const b = bag; bag = null; try { fn(); } finally { bag
 
 if (supported) persist(() => {
   history.scrollRestoration = 'manual';
-  history.replaceState({ spa: true, y: 0 }, '');
+  history.replaceState({ ...(history.state || {}), spa: true, y: 0 }, '');   // 페이지가 넣어 둔 상태(뽑기 결과 등)는 유지
   document.addEventListener('click', onClick, true);
   window.addEventListener('popstate', (e) => { if (e.state?.spa) go(location.href, { push: false, y: e.state.y || 0 }); else location.reload(); });
 });
@@ -62,7 +62,7 @@ async function go(href, { push, y = 0 }) {
     ]);
     if (my !== seq) return;
     const doc = new DOMParser().parseFromString(html, 'text/html');
-    if (push) { history.replaceState({ spa: true, y: scrollY }, ''); history.pushState({ spa: true, y: 0 }, '', href); }
+    if (push) { history.replaceState({ ...(history.state || {}), spa: true, y: scrollY }, ''); history.pushState({ spa: true, y: 0 }, '', href); }
     window.__spaPrev = window.__spaCur || document.referrer; window.__spaCur = href;
     swap(doc);
     scrollTo(0, y);
