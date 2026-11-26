@@ -5,7 +5,6 @@
 // 동작 줄이기: 패널 안에서 막대가 천천히 올라오며 빛남 (이동·흔들림·회전·줌 없음)
 // 사용: const omk = mountOmikuji(slotEl, { kind: 'food'|'fest'|'spot', calm, onTap });  await omk.ready;  await omk.draw(task, { label })
 //   label(result) → { title, sub } : 번쩍인 뒤 펼쳐지는 와시 두루마리에 쓸 글 (없으면 번호만)
-// 겉면: 금 마키에 무늬(도리이·おみくじ 액자·마엽·청해파·벚꽃), 주변에 벚꽃잎이 흩날림 (동작 줄이기에선 꽃잎 없음) — omikuji-deco.js
 // 성능: WebGL 렌더러·장면은 한 번만 만들고 페이지를 옮기면 canvas만 새 패널로 옮겨 씀 (전환마다 GPU 컨텍스트·셰이더를 새로 만들지 않음)
 import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
@@ -15,7 +14,6 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { holdStages } from '../hanabi/hanabi-stage.js';
-import { makeDeco, makePetals } from './omikuji-deco.js';
 
 export function webglOk() {
   try { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')); } catch { return false; }
@@ -195,7 +193,7 @@ function build(calm) {
   renderer.setClearColor(0x000000, 0);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.15;   // 무늬가 잘 보이게 살짝 밝게
+  renderer.toneMappingExposure = 1;
   renderer.debug.checkShaderErrors = /[?&]debug3d=1/.test(location.search);   // 켜두면 셰이더 컴파일 동안 메인 스레드가 멈춤
 
   const scene = new THREE.Scene();
@@ -204,8 +202,8 @@ function build(calm) {
   const camera = new THREE.PerspectiveCamera(FOV, 1, .1, 50);
 
   // 빛: 중성 흰색 키라이트 하나 + 아주 약한 보조광. 금색으로 물들이는 조명은 쓰지 않음 (금색은 재질에서만)
-  scene.add(new THREE.HemisphereLight('#3A3A40', '#000000', .6));
-  const key = new THREE.DirectionalLight('#FFF8EE', 1.6); key.position.set(-2.4, 4, 3); scene.add(key);
+  scene.add(new THREE.HemisphereLight('#2A2A2E', '#000000', .35));
+  const key = new THREE.DirectionalLight('#FFF8EE', 1.1); key.position.set(-2.4, 4, 3); scene.add(key);
   const SPOT0 = 0;   // 예전 스포트라이트 자리 (동작 줄이기 버전이 밝기를 살짝 올리는 데만 씀)
   const spot = new THREE.SpotLight('#FFF4E2', SPOT0, 12, .32, .9, 1.4); spot.position.set(0, 5, 2.4); scene.add(spot);
 
@@ -220,7 +218,7 @@ function build(calm) {
   const lacquerTex = canvasTex(4, 4, (g) => { g.fillStyle = '#FFFFFF'; g.fillRect(0, 0, 4, 4); });   // (예전 텍스처 자리, 정리용)
   // 옻칠: 아래층은 빛을 거의 먹는 깊은 검정(퍼진 광택 X), 위 클리어코트만 거울처럼 → 검은 면 위에 하이라이트가 칼같이 맺힘
   const lacquer = new THREE.MeshPhysicalMaterial({ color: '#040405', roughness: .7, metalness: 0, specularIntensity: .15, clearcoat: 1, clearcoatRoughness: .03, envMapIntensity: 1 });
-  const gold = new THREE.MeshPhysicalMaterial({ color: '#C9A35B', metalness: 1, roughness: .3, anisotropy: .7, envMapIntensity: .7 });
+  const gold = new THREE.MeshPhysicalMaterial({ color: '#C9A35B', metalness: 1, roughness: .3, anisotropy: .7, envMapIntensity: .32 });
   const iron = new THREE.MeshPhysicalMaterial({ color: '#141416', metalness: .85, roughness: .5, envMapIntensity: .2 });
   const voidM = new THREE.MeshStandardMaterial({ color: '#000000', roughness: 1 });
 
@@ -277,7 +275,7 @@ function build(calm) {
   const glyphTex = canvasTex(512, 512, drawGlyph, false);   // 높이맵 원본 (노멀·거칠기 계산용)
   const medNormal = new THREE.CanvasTexture(heightToNormal(glyphTex.image, 2.4));
   const medRough = canvasTex(512, 512, (g, w, h) => { g.drawImage(glyphTex.image, 0, 0); g.globalCompositeOperation = 'difference'; g.fillStyle = '#FFFFFF'; g.fillRect(0, 0, w, h); g.globalCompositeOperation = 'source-over'; g.fillStyle = 'rgba(70,70,70,1)'; g.globalCompositeOperation = 'lighten'; g.fillRect(0, 0, w, h); }, false);
-  const medFace = new THREE.MeshPhysicalMaterial({ color: '#CDA85E', metalness: 1, roughness: 1, roughnessMap: medRough, normalMap: medNormal, normalScale: new THREE.Vector2(1, 1), envMapIntensity: .7 });
+  const medFace = new THREE.MeshPhysicalMaterial({ color: '#CDA85E', metalness: 1, roughness: 1, roughnessMap: medRough, normalMap: medNormal, normalScale: new THREE.Vector2(1, 1), envMapIntensity: .36 });
   const remakeEmblem = () => {
     glyphTex.redraw(drawGlyph);
     medNormal.image = heightToNormal(glyphTex.image, 2.4); medNormal.needsUpdate = true;
@@ -286,60 +284,13 @@ function build(calm) {
   const glyph = new THREE.Group();
   const medFaceM = new THREE.Mesh(new THREE.CircleGeometry(MED_R - .004, 96), medFace); medFaceM.position.z = MED_T + .0015;
   glyph.add(medRim, medFaceM);
-  const MED_Y = BODY_H * .30;   // 위쪽은 「おみくじ」 액자, 아래쪽 청해파 사이
+  const MED_Y = BODY_H * .46;
   glyph.position.set(0, Y0 + BASE_H + GAP + MED_Y, RV * Math.cos(Math.PI / 6) * (1 - .025 * MED_Y / BODY_H) - .006);   // 면에 살짝 파묻힌 인레이
   tilt.add(glyph);
   // 주사 레드 한 점: 베이스 정면의 아주 작은 인장
   const sealM = new THREE.MeshStandardMaterial({ color: SHU, roughness: .55 });
   const seal = new THREE.Mesh(new THREE.BoxGeometry(.022, .022, .004), sealM);
   seal.position.set(0, Y0 + BASE_H + GAP + .06, RV * Math.cos(Math.PI / 6) - .0005); tilt.add(seal);   // 몸통 아래쪽 정면에 아주 작게
-
-  // ── 금 마키에 무늬: 면마다 얇은 금박 판을 옻칠 바로 위에 얹음 (무늬 모양 = alphaMap, 도드라짐 = normalMap) ──
-  const FLAT = (RV - CR / Math.sin(Math.PI / 3)) * .94, APO_B = RV * Math.cos(Math.PI / 6);   // 면의 평평한 폭(모서리 둥근 곳 제외) · 면까지 거리
-  const DY0 = .028, DY1 = BODY_H - .022, DECO_W = 440, PPU = DECO_W / FLAT;                    // 몸통 베벨 안쪽 높이 · 무늬 1단위당 px
-  const deco = makeDeco({
-    W: DECO_W, H: Math.round((DY1 - DY0) * PPU), serif: SERIF,
-    med: { f: (DY1 - MED_Y) / (DY1 - DY0), r: MED_R * PPU },
-    seal: { f: (DY1 - .06) / (DY1 - DY0), r: .011 * PPU },
-    lidPx: 512 / 1.3, lidR: lidRV - .05, aperR: .25,
-  });
-  const decoMat = (s) => new THREE.MeshPhysicalMaterial({
-    color: '#D2AE62', metalness: .9, roughness: .4, anisotropy: .5, envMapIntensity: 1,
-    emissive: '#8A6A2E', emissiveIntensity: .38,   // 어느 각도에서도 금박 무늬가 은은하게 보이게 (빛이 안 닿는 면도 검게 죽지 않음)
-    alphaMap: s.mask, normalMap: s.normal, normalScale: new THREE.Vector2(.9, .9),
-    transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
-  });
-  const frontMat = decoMat(deco.front), sideMat = decoMat(deco.side), lidMat = decoMat(deco.lid);
-  // 면 하나를 덮는 사각형 (몸통처럼 위로 살짝 좁아짐). flip: 옆면 무늬를 좌우 뒤집어 번갈아 씀
-  const faceQuad = (phi, flip) => {
-    const nx = Math.cos(phi), nz = Math.sin(phi), tx = Math.sin(phi), tz = -Math.cos(phi), pos = [], uv = [];
-    for (const [y, v] of [[DY0, 0], [DY1, 1]]) {
-      const sc = 1 - .025 * y / BODY_H, a = APO_B * sc + .0012, hw = FLAT / 2 * sc;
-      for (const s of [-1, 1]) { pos.push(nx * a + tx * hw * s, y, nz * a + tz * hw * s); uv.push(flip ? (1 - s) / 2 : (s + 1) / 2, v); }
-    }
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-    g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
-    g.setIndex([0, 1, 2, 2, 1, 3]); g.computeVertexNormals();
-    return g;
-  };
-  for (let k = 0; k < 6; k++) {   // k=1 이 정면(+z)
-    const m = new THREE.Mesh(faceQuad(Math.PI / 6 + k * Math.PI / 3, k !== 1 && k % 2 === 0), k === 1 ? frontMat : sideMat);
-    m.position.y = Y0 + BASE_H + GAP; tilt.add(m);
-  }
-  const lidDeco = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 1.3).rotateX(-Math.PI / 2), lidMat);
-  lidDeco.position.y = topY + .0003; tilt.add(lidDeco);
-  // 금 띠: 몸통 아래 + 뚜껑 위·아래 (위쪽 몸통 띠는 위의 inlay)
-  const bandProfile = [{ o: 0, y: 0, nr: .4, ny: -.9 }, { o: 0, y: 0, nr: 1, ny: 0 }, { o: 0, y: .008, nr: 1, ny: 0 }, { o: 0, y: .008, nr: .4, ny: .9 }];
-  const band = (rv, y) => { const b = new THREE.Mesh(sweepHex({ rv, cr: CR, h: .008, profile: bandProfile, capTop: false, capBottom: false }), gold); b.position.y = y; tilt.add(b); };
-  band(RV * (1 - .025 * .045 / BODY_H) + .0025, Y0 + BASE_H + GAP + .045);
-  band(lidRV + .0025, H / 2 - LID_H + .028);
-  band(lidRV + .0025, H / 2 - LID_H + .17);
-
-  // ── 흩날리는 벚꽃잎 (통을 따라 움직이되 흔들림·기울기와는 따로) ──
-  const petals = calm ? null : makePetals(40);
-  if (petals) holder.add(petals.mesh);
-  let pAcc = 0;
 
   // ── 막대: 히노키색 나무, 끝은 붉은 칠, 앞면에 '第○番' 먹글씨 ──
   let num = 1;
@@ -477,11 +428,9 @@ function build(calm) {
     // 패널이 화면 밖이면 대기 그리기 멈춤 (뽑는 중·전체 화면일 땐 항상 그림)
     if (!busy && !full) { const r = slot.getBoundingClientRect(); visible = r.width > 0 && r.bottom > -80 && r.top < innerHeight + 80; }
     if (document.hidden || (!visible && !busy && !full)) return;
-    t += dt; since += dt; pAcc += dt;
+    t += dt; since += dt;
     if (!busy && since < 1 / 31) return;   // 대기 중엔 30fps면 충분 (배경 무대와 GPU를 나눠 씀)
     since = 0;
-    if (petals) petals.step(pAcc);
-    pAcc = 0;
     parC.x += (parT.x - parC.x) * .07; parC.y += (parT.y - parC.y) * .07;
     par.rotation.set(parC.x + (calm ? 0 : Math.sin(t * .9) * .025), parC.y + spin.v + (calm ? 0 : Math.sin(t * .6) * .08), 0);
     if (!busy) tilt.position.y = calm ? 0 : Math.sin(t * 1.4) * .025;
@@ -508,7 +457,7 @@ function build(calm) {
   canvas.addEventListener('click', onCanvasClick);
 
   // 폰트가 늦게 오면 한자를 다시 그림
-  document.fonts?.load(`700 80px ${SERIF}`).then(() => { remakeEmblem(); deco.redrawFront(); stickTex.redraw(drawStick(false)); stickGlow.redraw(drawStick(true)); }).catch(() => {});
+  document.fonts?.load(`700 80px ${SERIF}`).then(() => { remakeEmblem(); stickTex.redraw(drawStick(false)); stickGlow.redraw(drawStick(true)); }).catch(() => {});
 
   // 셰이더를 기다리는 동안 메인 스레드를 막지 않고 미리 준비 → 준비되면 ready
   const ready = (async () => {
@@ -737,7 +686,6 @@ function build(calm) {
     scene.traverse((o) => { o.geometry?.dispose?.(); for (const m of [].concat(o.material || [])) m.dispose?.(); });
     for (const tx of [lacquerTex, glyphTex, medNormal, medRough, stickTex, stickGlow, glowTex, fadeTex, shadowTex]) tx.dispose();   // 게이트 후광·보케·입자는 glowTex를 같이 씀
     floor.dispose?.();          // 반사 바닥의 렌더 타깃·재질
-    deco.dispose(); petals?.dispose();
     composer.dispose?.();       // 후처리 렌더 타깃
     bloomPass.dispose?.(); grade.dispose?.();
     envRT.dispose();
