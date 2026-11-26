@@ -685,7 +685,7 @@ function build(calm) {
     };
     const b = gsap.timeline();
     curTl = b;
-    if (skipped) b.timeScale(6);   // 건너뛰기: 막대가 나와 번호·결과 글씨가 뜨는 마지막 장면까지만 빠르게 (약 0.5초)
+    if (skipped) b.timeScale(2.5);   // 막대가 나오기 전에 건너뛰기: 막대가 빠져나와 번호·결과 글씨가 뜨는 장면을 2.5배속으로 (약 1.3초) — 6배속은 너무 빨라 그냥 끝난 것처럼 보였음
     b.call(() => buzz(8), null, 0)
       .to(aperCover.rotation, { y: Math.PI * .5, duration: .5, ease: 'power2.inOut' }, 0)
       .to(aperCover.scale, { x: .001, y: 1, z: .001, duration: .5, ease: 'power2.inOut' }, 0)
