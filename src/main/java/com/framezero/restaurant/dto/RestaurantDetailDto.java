@@ -10,6 +10,8 @@ public record RestaurantDetailDto(
         Double rating,
         Integer ratingCount,
         Integer priceLevel,
+        Integer priceMin,
+        Integer priceMax,
         Boolean openNow,
         List<String> weekdayHours,
         String googleMapsUri,

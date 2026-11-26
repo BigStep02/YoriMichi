@@ -36,7 +36,7 @@ public class PlacesClient {
 
     private static final String NEARBY_FIELD_MASK =
             "places.id,places.displayName,places.location,places.rating," +
-            "places.userRatingCount,places.priceLevel,places.currentOpeningHours.openNow," +
+            "places.userRatingCount,places.priceLevel,places.priceRange,places.currentOpeningHours.openNow," +
             "places.primaryTypeDisplayName,places.primaryType,places.googleMapsUri";
 
     private static final List<String> SPOT_TYPES = List.of(
@@ -45,7 +45,7 @@ public class PlacesClient {
     );
 
     private static final String DETAIL_FIELD_MASK =
-            "id,displayName,formattedAddress,location,rating,userRatingCount,priceLevel," +
+            "id,displayName,formattedAddress,location,rating,userRatingCount,priceLevel,priceRange," +
             "currentOpeningHours.openNow,regularOpeningHours.weekdayDescriptions," +
             "googleMapsUri,websiteUri,reviews,reviewSummary";
 
@@ -226,7 +226,9 @@ public class PlacesClient {
                 p.location().latitude() != null ? p.location().latitude() : 0.0,
                 p.location().longitude() != null ? p.location().longitude() : 0.0,
                 p.googleMapsUri(),
-                TypeLabelKo.of(p.primaryType())
+                TypeLabelKo.of(p.primaryType()),
+                p.priceRange() != null ? p.priceRange().min() : null,
+                p.priceRange() != null ? p.priceRange().max() : null
         );
     }
 

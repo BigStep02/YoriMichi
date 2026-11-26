@@ -23,8 +23,16 @@ public class RestaurantPicker {
             double lat,
             double lng,
             String googleMapsUri,
-            String typeKo
-    ) {}
+            String typeKo,
+            Integer priceMin,   // 1인 가격대 (엔). 구글 priceRange, 없으면 null
+            Integer priceMax    // 상한 (null이면 '이상')
+    ) {
+        /** 가격대 없이 만드는 기존 방식 (테스트·명소 보충 등) */
+        public Candidate(String placeId, String name, String typeLabel, double rating, int ratingCount, Integer priceLevel,
+                         Boolean openNow, double lat, double lng, String googleMapsUri, String typeKo) {
+            this(placeId, name, typeLabel, rating, ratingCount, priceLevel, openNow, lat, lng, googleMapsUri, typeKo, null, null);
+        }
+    }
 
     public record PickResult(
             Candidate pick,

@@ -134,7 +134,7 @@ function restItem(r, i, pick = false) {
         <span class="r-meta">
           ${r.rating != null ? `<span class="star">★ ${r.rating.toFixed(1)}</span><span class="muted">(${r.ratingCount.toLocaleString()})</span>` : ''}
           <span class="sep">·</span><span>${walkLabel(r.distanceM)}</span>
-          ${r.priceLevel != null ? `<span class="sep">·</span><span>${priceLabel(r.priceLevel)}</span>` : ''}
+          ${priceLabel(r) ? `<span class="sep">·</span><span>${priceLabel(r)}</span>` : ''}
         </span>
       </span>
       ${!pick && r.placeId ? saveButton(restKey(r.placeId), { type: 'RESTAURANT', placeId: r.placeId, lat: r.lat, lng: r.lng }, 'mini') : ''}

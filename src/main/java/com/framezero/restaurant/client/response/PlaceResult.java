@@ -7,6 +7,7 @@ public record PlaceResult(
         Double rating,
         Integer userRatingCount,
         String priceLevel,
+        PriceRange priceRange,
         OpeningHours currentOpeningHours,
         LocalizedText primaryTypeDisplayName,
         String googleMapsUri,

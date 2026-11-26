@@ -13,5 +13,7 @@ public record RestaurantPickDto(
         double lat,
         double lng,
         String googleMapsUri,
-        String typeKo
+        String typeKo,
+        Integer priceMin,
+        Integer priceMax
 ) {}

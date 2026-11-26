@@ -7,9 +7,26 @@ import { saveButton, syncSave, restKey } from './saved.js';
 
 const MOCK = isMock();
 
-export function priceLabel(level) {
-  if (level == null) return '';
-  return level === 0 ? '무료' : '¥'.repeat(level);
+// 구글 priceLevel만 있을 때 쓰는 일본 기준 대략 가격대 (엔, 1인)
+const LEVEL_RANGE = { 1: [null, 1000], 2: [1000, 3000], 3: [3000, 8000], 4: [8000, null] };
+const yen = (n) => n.toLocaleString('ko-KR');
+/** 1인 가격대 표기. p = { priceMin, priceMax, priceLevel } (예전처럼 숫자 등급만 줘도 됨)
+ *  - 구글 가격대(priceRange)가 있으면 그대로: '1인 1,000~2,000엔'
+ *  - 등급만 있으면 대략값: '1인 약 1,000~3,000엔' */
+export function priceLabel(p) {
+  if (p == null) return '';
+  const o = typeof p === 'number' ? { priceLevel: p } : p;
+  let lo = o.priceMin ?? null, hi = o.priceMax ?? null, approx = false;
+  if (lo == null && hi == null) {
+    if (o.priceLevel === 0) return '무료';
+    const r = LEVEL_RANGE[o.priceLevel];
+    if (!r) return '';
+    [lo, hi] = r; approx = true;
+  }
+  const a = approx ? '약 ' : '';
+  if (lo != null && hi != null) return `1인 ${a}${yen(lo)}~${yen(hi)}엔`;
+  if (lo != null) return `1인 ${a}${yen(lo)}엔~`;
+  return `1인 ${a}~${yen(hi)}엔`;
 }
 export function walkLabel(m) {
   const min = Math.max(1, Math.round(m / 80));
@@ -35,7 +52,7 @@ export async function openRestaurantSheet(p, ctx = {}) {
   const stats = [
     p.rating != null ? `<span class="star">★ ${p.rating.toFixed(1)}</span> <span class="muted">(${p.ratingCount.toLocaleString()})</span>` : '',
     p.distanceM != null ? walkLabel(p.distanceM) : '',
-    priceLabel(p.priceLevel),
+    priceLabel(p),
   ].filter(Boolean).join('<span class="dot">·</span>');
 
   const body = `
@@ -72,11 +89,11 @@ export async function openRestaurantSheet(p, ctx = {}) {
       wrap.querySelector('[data-ai]')?.remove();
       return;
     }
-    p = { ...p, name: d.name, rating: d.rating, ratingCount: d.ratingCount, priceLevel: d.priceLevel, googleMapsUri: d.googleMapsUri };
+    p = { ...p, name: d.name, rating: d.rating, ratingCount: d.ratingCount, priceLevel: d.priceLevel, priceMin: d.priceMin ?? p.priceMin, priceMax: d.priceMax ?? p.priceMax, googleMapsUri: d.googleMapsUri };
     wrap.querySelector('[data-r-name]').textContent = d.name || '';
     wrap.querySelector('[data-r-stats]').innerHTML = [
       d.rating != null ? `<span class="star">★ ${d.rating.toFixed(1)}</span> <span class="muted">(${(d.ratingCount || 0).toLocaleString()})</span>` : '',
-      priceLabel(d.priceLevel),
+      priceLabel({ priceLevel: d.priceLevel, priceMin: d.priceMin, priceMax: d.priceMax }),
       d.openNow === true ? '<span class="open-badge">영업 중</span>' : '',
     ].filter(Boolean).join('<span class="dot">·</span>');
     const map = wrap.querySelector('[data-r-map]');

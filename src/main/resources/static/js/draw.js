@@ -8,7 +8,7 @@ import { icons, multiLanterns, esc } from './icons.js';
 import { acquireStage, webglAvailable } from './hanabi/hanabi-stage.js';
 import { enableHSwipe, enableGroupSwipe } from './swipe.js';
 import { kindLabel, kindIcon, openSpotSheet } from './spotsheet.js';
-import { openRestaurantSheet, typeChip, tabelogUrl } from './rsheet.js';
+import { openRestaurantSheet, typeChip, tabelogUrl, priceLabel } from './rsheet.js';
 import { saveButton, syncSave, spotKey, festKey, restKey, courseKey } from './saved.js';
 import { openFestivalSheet } from './festsheet.js';
 import { isMock } from './mock.js';
@@ -253,10 +253,6 @@ function distMLabel(m) {
   const min = Math.max(1, Math.round(m / 80));
   return `도보 ${min}분 · ${m >= 1000 ? (m / 1000).toFixed(1) + 'km' : m + 'm'}`;
 }
-function priceLabel(level) {
-  if (level == null) return '';
-  return level === 0 ? '무료' : '¥'.repeat(level);
-}
 function dateRangeLabel(start, end) {
   if (!start || !end) return null;
   const s = new Date(start + 'T00:00:00'), e = new Date(end + 'T00:00:00');
@@ -290,7 +286,7 @@ function renderResult(data) {
   const rTags = [
     typeChip(r, 'cx-chip'),
     r.rating != null ? `<span class="cx-chip star">★ ${r.rating.toFixed(1)} <small>(${r.ratingCount.toLocaleString()})</small></span>` : '',
-    r.priceLevel ? `<span class="cx-chip">${priceLabel(r.priceLevel)}</span>` : '',
+    priceLabel(r) ? `<span class="cx-chip">${priceLabel(r)}</span>` : '',
     r.openNow ? '<span class="cx-chip open">영업 중</span>' : '',
   ].filter(Boolean).join('');
 

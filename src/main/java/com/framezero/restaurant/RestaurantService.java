@@ -164,6 +164,8 @@ public class RestaurantService {
                 detail.formattedAddress(),
                 detail.rating(), detail.userRatingCount(),
                 PlacesClient.parsePriceLevel(detail.priceLevel()),
+                detail.priceRange() != null ? detail.priceRange().min() : null,
+                detail.priceRange() != null ? detail.priceRange().max() : null,
                 detail.currentOpeningHours() != null ? detail.currentOpeningHours().openNow() : null,
                 detail.regularOpeningHours() != null ? detail.regularOpeningHours().weekdayDescriptions() : null,
                 detail.googleMapsUri(), detail.websiteUri(),
@@ -269,7 +271,8 @@ public class RestaurantService {
                 c.placeId(), c.name(), c.typeLabel(),
                 c.rating(), c.ratingCount(), score,
                 c.priceLevel(), c.openNow(),
-                distMInt(lat, lng, c), c.lat(), c.lng(), c.googleMapsUri(), c.typeKo()
+                distMInt(lat, lng, c), c.lat(), c.lng(), c.googleMapsUri(), c.typeKo(),
+                c.priceMin(), c.priceMax()
         );
     }
 
