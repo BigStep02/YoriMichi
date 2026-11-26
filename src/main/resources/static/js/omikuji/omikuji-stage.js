@@ -185,8 +185,12 @@ function build(calm) {
   canvas.setAttribute('aria-hidden', 'true');
   const layer = document.createElement('div');
   layer.className = 'omk-layer';
-  layer.innerHTML = '<div class="omk-back"></div><div class="omk-type" aria-hidden="true"><span class="omk-kicker"></span><b class="omk-title"></b><i class="omk-rule"></i><span class="omk-sub"></span></div><div class="omk-flash"></div>';
-  const back = layer.firstElementChild, flash = layer.lastElementChild;
+  layer.innerHTML = '<div class="omk-back"></div><div class="omk-type" aria-hidden="true"><span class="omk-kicker"></span><b class="omk-title"></b><i class="omk-rule"></i><span class="omk-sub"></span></div><div class="omk-flash"></div><button type="button" class="omk-skip" hidden>건너뛰기 ›</button>';
+  const back = layer.firstElementChild, flash = layer.querySelector('.omk-flash');
+  // 건너뛰기: 결과가 오면 연출을 생략하고 바로 결과로 (응답 전이면 응답이 오는 즉시)
+  const skipEl = layer.querySelector('.omk-skip');
+  let skipped = false, curTl = null;
+  skipEl.addEventListener('click', (e) => { e.stopPropagation(); skipped = true; skipEl.hidden = true; curTl?.timeScale(8); });
   const typeEl = layer.querySelector('.omk-type');   // 결과 이름: 막대 아래 정적 속에 떠오르는 글 (3D 위 HTML → 글자가 선명)
 
   // 아이폰 홈 화면 앱에서 처음 받은 WebGL이 잃어버린 상태로 와서 실패하는 경우 → 새 canvas·가벼운 설정으로 재시도
@@ -654,17 +658,25 @@ function build(calm) {
       .to(camOff, { y: .45, z: -1.7, duration: 1.4, ease: 'power2.inOut' }, .1)
       .to(lookOff, { y: .2, duration: 1.4, ease: 'power2.inOut' }, .1)
       .to(fx, { glow: .35, duration: .8, ease: 'sine.inOut' }, .7);   // 안쪽에서 빛이 먼저 은은하게
+    skipped = false; skipEl.hidden = false;
+    curTl = a;
     await play(a);
 
     // 2) 응답을 기다리는 동안: 안쪽 빛만 천천히 숨 쉼 (흔들림 없음)
-    while (!done) {
+    while (!done && !skipped) {
       const w = gsap.timeline();
+      curTl = w;
       w.to(fx, { glow: .6, duration: .7, ease: 'sine.inOut' }).to(fx, { glow: .35, duration: .7, ease: 'sine.inOut' });
       await play(w);
     }
     let result;
     try { result = await job; }
-    catch (e) { await outro(false); throw e; }
+    catch (e) { skipEl.hidden = true; curTl = null; await outro(false, skipped); throw e; }
+    if (skipped) {   // 건너뛰기: 막대 연출 없이 바로 마무리 → 아래 패널에 결과 카드
+      skipEl.hidden = true; curTl = null;
+      outroP = outro(false, true).finally(() => { outroP = null; });
+      return result;
+    }
     try { wLabel = label ? label(result) : null; } catch { wLabel = null; }
     fillType();
 
@@ -676,6 +688,7 @@ function build(calm) {
       p.y += -NUM_Y + .2; return p;
     };
     const b = gsap.timeline();
+    curTl = b;
     b.call(() => buzz(8), null, 0)
       .to(aperCover.rotation, { y: Math.PI * .5, duration: .5, ease: 'power2.inOut' }, 0)
       .to(aperCover.scale, { x: .001, y: 1, z: .001, duration: .5, ease: 'power2.inOut' }, 0)
@@ -704,14 +717,16 @@ function build(calm) {
       // 정적 속에 결과 글
       .to(typeEl, { opacity: 1, y: 0, duration: .6, ease: 'power2.out' }, 2.7);
     await play(b);
-    outroP = outro(true).finally(() => { outroP = null; });
+    skipEl.hidden = true; curTl = null;
+    outroP = outro(true, skipped).finally(() => { outroP = null; });
     return result;
   }
 
   // 마무리: 잠깐 머문 뒤 글이 사라지고, 막대는 위로 흐려지며, 무대 불이 꺼진 뒤 통이 패널 제자리로 돌아감
-  function outro(picked) {
+  function outro(picked, fast = false) {
     const c = gsap.timeline();
-    const off = picked ? 1.3 : 0;   // 결과를 읽을 시간 (그동안 아래 패널엔 결과 카드가 이미 그려져 있음)
+    if (fast) c.timeScale(1.8);   // 건너뛰기: 마무리도 빠르게
+    const off = picked ? (fast ? .4 : 1.3) : 0;   // 결과를 읽을 시간 (그동안 아래 패널엔 결과 카드가 이미 그려져 있음)
     if (picked) {
       c.to(typeEl, { opacity: 0, y: -6, duration: .45, ease: 'power2.in' }, off - .4)
         .to([...new Set(stickMats)], { opacity: 0, duration: .5, ease: 'power1.in' }, off - .35)

@@ -1818,6 +1818,13 @@ body.hanabi-home .cats .cat.spot .cat-icon { color: #7FE0C0; }
 .dp-omk.omk-out::before { opacity: 0; }
 .omk-layer { position: fixed; inset: 0; z-index: 200; touch-action: none; }
 .omk-layer .omk-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.omk-skip {
+  position: absolute; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 3;
+  height: 44px; padding: 0 24px; border-radius: 999px; border: 1px solid rgba(245,239,230,.18);
+  background: rgba(10,10,30,.72); color: #F5EFE6; font: inherit; font-size: 15px; cursor: pointer;
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+.omk-skip[hidden] { display: none; }
 .omk-back {
   position: absolute; inset: 0; opacity: 0;
   background:
