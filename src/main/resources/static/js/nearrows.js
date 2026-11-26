@@ -71,11 +71,11 @@ export function festCard(f) {
     </div>`;
 }
 const KIND_JA = { SHRINE_TEMPLE: '社', PARK_GARDEN: '園', HISTORIC: '城', MUSEUM: '館', VIEWPOINT: '景', MARKET: '市', AMUSEMENT: '遊', ONSEN: '湯' };
-/** link=true(홈): 누르면 상세 페이지로 가는 링크 · 저장 버튼 없음 / 기본(지금 근처): 누르면 상세 시트 */
+/** link=true(홈): 누르면 상세 페이지로 가는 링크 (저장 버튼은 링크 밖에 — 링크 안 버튼은 router가 이동시킴) / 기본(지금 근처): 누르면 상세 시트 */
 export function spotCard(s, i, { link = false } = {}) {
   const open = s.openNow === true ? '<span class="sp-open on">영업 중</span>'
              : s.openNow === false ? '<span class="sp-open off">영업 전·종료</span>' : '';
-  return `
+  const card = `
     <${link ? `a href="/spot.html?id=${encodeURIComponent(s.id)}"` : `div role="button" tabindex="0" data-i="${i}"`} class="r-item sp-item" data-kind="${esc(s.kind || '')}">
       <span class="sp-kind" aria-hidden="true">
         <span class="sp-kind-ic">${kindIcon(s.kind)}</span>
@@ -93,4 +93,5 @@ export function spotCard(s, i, { link = false } = {}) {
       </span>
       ${link ? '' : saveButton(spotKey(s.id), { type: 'SPOT', spotId: s.id }, 'mini')}
     </${link ? 'a' : 'div'}>`;
+  return link ? `<div class="f-wrap">${card}${saveButton(spotKey(s.id), { type: 'SPOT', spotId: s.id }, 'mini')}</div>` : card;
 }

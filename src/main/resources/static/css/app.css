@@ -2202,3 +2202,6 @@ body:is([data-page="nearby"], .hanabi-home) .f-item .date-box::after { content: 
 /* 홈의 놀거리 카드는 링크 */
 a.r-item { text-decoration: none; color: inherit; }
 .f-wrap + .r-item, .f-wrap + a.r-item { margin-top: 10px; }
+/* 홈 놀거리 카드(링크) 오른쪽 아래 저장 버튼 자리 */
+.f-wrap > a.r-item { padding-right: 60px; }
+.f-wrap + .f-wrap { margin-top: 10px; }

@@ -146,7 +146,7 @@ function render() {
   }
   countEl.textContent = (data.searchedRadiusKm > radiusKm ? `${radiusKm}km 안에 없어서 ${data.searchedRadiusKm}km까지 · ` : '')
     + `${lastList.length}곳${openOnly ? ' · 영업 중' : ''} · 가까운 순`;
-  listEl.innerHTML = lastList.map(item).join('');
+  listEl.innerHTML = lastList.map((s, i) => item(s, i)).join('')   // map(item)이면 3번째 인자(배열)가 pick으로 들어가 저장 버튼이 사라졌음;
   syncSave(listEl);
 }
 
