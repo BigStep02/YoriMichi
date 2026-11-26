@@ -283,6 +283,62 @@ async function load() {
   }
 }
 
+// ── 저장 해제 → 새로고침 없이 카드가 스르륵 사라지고, 개수·빈 섹션도 바로 정리 ──
+const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/** 카드가 옆으로 살짝 밀리며 흐려진 뒤, 높이가 접히며 아래 카드들이 부드럽게 올라옴 */
+function vanish(el) {
+  el.style.pointerEvents = 'none';
+  if (reduceMotion()) {
+    return el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, fill: 'forwards' }).finished.then(() => el.remove(), () => el.remove());
+  }
+  const cs = getComputedStyle(el), h = el.offsetHeight;
+  const gap = parseFloat(getComputedStyle(el.parentElement).rowGap) || 0;
+  // 목록 사이 간격(gap)까지 같이 접어야 마지막에 툭 튀지 않음
+  const edge = el.previousElementSibling ? 'marginTop' : 'marginBottom';
+  const full = { height: `${h}px`, paddingTop: cs.paddingTop, paddingBottom: cs.paddingBottom, [edge]: '0px' };
+  const gone = { height: '0px', paddingTop: '0px', paddingBottom: '0px', [edge]: el.nextElementSibling || el.previousElementSibling ? `${-gap}px` : '0px' };
+  el.style.overflow = 'hidden';
+  const a = el.animate([
+    { ...full, opacity: 1, transform: 'none', filter: 'blur(0px)' },
+    { ...full, opacity: 0, transform: 'translateX(16px) scale(.97)', filter: 'blur(2px)', offset: .5 },
+    { ...gone, opacity: 0, transform: 'translateX(16px) scale(.97)', filter: 'blur(2px)' },
+  ], { duration: 620, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' });
+  return a.finished.then(() => el.remove(), () => el.remove());
+}
+function fadeOut(el) {
+  if (!el) return Promise.resolve();
+  return el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: reduceMotion() ? 150 : 320, easing: 'ease', fill: 'forwards' }).finished.then(() => el.remove(), () => el.remove());
+}
+function fadeIn(el) { el?.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: reduceMotion() ? 150 : 420, easing: 'ease-out' }); }
+
+/** 섹션별 개수 다시 세기 · 빈 섹션 제목 지우기 */
+function tidy() {
+  if (!items.length || (tab !== 'ALL' && !items.some(it => it.type === tab))) {   // 다 지웠으면 빈 화면 안내를 부드럽게
+    render(); fadeIn(listEl.firstElementChild); return;
+  }
+  listEl.querySelectorAll('.sv-list').forEach(list => {
+    const title = list.previousElementSibling?.classList.contains('sec-title') ? list.previousElementSibling : null;
+    if (!list.children.length) { fadeOut(title); fadeOut(list); return; }
+    const n = title?.querySelector('.sec-sub'); if (n) n.textContent = list.children.length;
+  });
+  if (!items.some(i => i.type === 'RESTAURANT')) fadeOut(listEl.querySelector('.attribution'));
+}
+
+document.addEventListener('yori:saved-change', (e) => {
+  const { key, on } = e.detail || {};
+  if (on || !key) return;
+  const before = items.length;
+  items = items.filter(it => it.key !== key);
+  if (items.length === before) return;
+  const cards = [...listEl.querySelectorAll('[data-save-key]')]
+    .filter(b => b.dataset.saveKey === key)
+    .map(b => b.closest('article'))
+    .filter(Boolean);
+  if (!cards.length) { render(); return; }
+  Promise.all(cards.map(vanish)).then(tidy);
+});
+
 tabButtons.forEach(b => b.addEventListener('click', () => {
   tab = b.dataset.tab;
   const u = new URL(location.href);

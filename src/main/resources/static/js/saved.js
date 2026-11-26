@@ -91,6 +91,8 @@ async function toggle(btn) {
     if (was) {
       await api(`/api/saved?key=${encodeURIComponent(key)}`, { method: 'DELETE' });
       toast('저장을 해제했어요');
+      // 저장함 화면이 열려 있으면 그 카드를 바로 지우게 알림 (새로고침 없이)
+      document.dispatchEvent(new CustomEvent('yori:saved-change', { detail: { key, on: false } }));
     } else {
       await api('/api/saved', { method: 'POST', body: JSON.parse(btn.dataset.saveBody || '{}') });
       toast('縁帳에 저장했어요', { href: '/saved.html', label: '저장함' });
