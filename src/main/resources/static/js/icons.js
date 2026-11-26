@@ -84,13 +84,18 @@ const afterReveal = () => window.__yoriRevealed ? Promise.resolve()
   : new Promise((ok) => { addEventListener('yori:revealed', ok, { once: true }); setTimeout(ok, 4000); });
 const idle = () => new Promise((ok) => (window.requestIdleCallback ? requestIdleCallback(() => ok(), { timeout: 1200 }) : setTimeout(ok, 250)));
 /** 페이지마다 한 번: kind = 'food'(食) | 'fest'(祭) | 'spot'(遊) */
-export async function dpMount(kind) {
+let omkPending = null;   // 통을 준비하는 중이면 그 약속 (뽑기 버튼이 먼저 눌리면 이걸 기다렸다가 오미쿠지로 뽑음)
+let hurry = null;        // 뽑기 버튼이 먼저 눌리면 '한가할 때까지' 기다리던 걸 건너뛰고 바로 준비
+export function dpMount(kind) {
+  omkPending = mountOmk(kind).finally(() => { omkPending = null; hurry = null; });
+  return omkPending;
+}
+async function mountOmk(kind) {
   const panel = document.getElementById('draw-panel');
   const lantern = panel?.querySelector('.dp-lantern');
   if (!lantern || !window.gsap) return;
   try {
-    await afterReveal();
-    await idle();
+    await Promise.race([(async () => { await afterReveal(); await idle(); })(), new Promise((ok) => { hurry = ok; })]);
     const m = await import('./omikuji/omikuji-stage.js');
     if (!m.webglOk() || !lantern.isConnected) return;
     const slot = document.createElement('span');
@@ -115,6 +120,13 @@ export async function dpMount(kind) {
  *  label(result) → { title, sub }: 연출 마지막에 펼쳐지는 두루마리에 쓸 글 (선택) */
 export async function dpRun(task, minMs = 800, label) {
   const panel = document.getElementById('draw-panel');
+  // 처음 들어와서 통이 아직 준비 중일 때 뽑기를 누르면: 예전 등불 방식으로 뽑지 않고 통이 뜰 때까지 잠깐(최대 4초) 기다림
+  if (!(omk?.alive && omk.slot && panel?.contains(omk.slot)) && omkPending) {
+    hurry?.();
+    panel?.classList.add('omk-loading');
+    try { await Promise.race([omkPending, new Promise((ok) => setTimeout(ok, 4000))]); }
+    finally { panel?.classList.remove('omk-loading'); }
+  }
   if (omk?.alive && omk.slot && panel?.contains(omk.slot)) {
     panel.classList.remove('lit');
     panel.classList.add('is-drawing');
