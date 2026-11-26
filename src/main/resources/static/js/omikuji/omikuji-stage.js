@@ -672,11 +672,7 @@ function build(calm) {
     let result;
     try { result = await job; }
     catch (e) { skipEl.hidden = true; curTl = null; await outro(false, skipped); throw e; }
-    if (skipped) {   // 건너뛰기: 막대 연출 없이 바로 마무리 → 아래 패널에 결과 카드
-      skipEl.hidden = true; curTl = null;
-      outroP = outro(false, true).finally(() => { outroP = null; });
-      return result;
-    }
+
     try { wLabel = label ? label(result) : null; } catch { wLabel = null; }
     fillType();
 
@@ -689,6 +685,7 @@ function build(calm) {
     };
     const b = gsap.timeline();
     curTl = b;
+    if (skipped) b.timeScale(6);   // 건너뛰기: 막대가 나와 번호·결과 글씨가 뜨는 마지막 장면까지만 빠르게 (약 0.5초)
     b.call(() => buzz(8), null, 0)
       .to(aperCover.rotation, { y: Math.PI * .5, duration: .5, ease: 'power2.inOut' }, 0)
       .to(aperCover.scale, { x: .001, y: 1, z: .001, duration: .5, ease: 'power2.inOut' }, 0)
@@ -726,7 +723,7 @@ function build(calm) {
   function outro(picked, fast = false) {
     const c = gsap.timeline();
     if (fast) c.timeScale(1.8);   // 건너뛰기: 마무리도 빠르게
-    const off = picked ? (fast ? .4 : 1.3) : 0;   // 결과를 읽을 시간 (그동안 아래 패널엔 결과 카드가 이미 그려져 있음)
+    const off = picked ? (fast ? 1.7 : 1.3) : 0;   // 결과 글씨 읽을 시간 (빠른 마무리는 1.8배속이라 실제 약 0.9초)   // 결과를 읽을 시간 (그동안 아래 패널엔 결과 카드가 이미 그려져 있음)
     if (picked) {
       c.to(typeEl, { opacity: 0, y: -6, duration: .45, ease: 'power2.in' }, off - .4)
         .to([...new Set(stickMats)], { opacity: 0, duration: .5, ease: 'power1.in' }, off - .35)
